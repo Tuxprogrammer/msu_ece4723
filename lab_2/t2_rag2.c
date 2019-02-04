@@ -1,44 +1,65 @@
 #include "t2_common.h"
 
-ESOS_USER_TASK(light_loop) {
+ESOS_USER_TASK(light_loop)
+{
     ESOS_TASK_BEGIN();
-    while(1) {
+    while (1)
+    {
         LIGHT_GREEN(EW);
-        if (SW1_PRESSED) { ESOS_TASK_WAIT_TICKS(30000); }
-        else { ESOS_TASK_WAIT_TICKS(10000); }
+        if (SW1_PRESSED)
+        {
+            ESOS_TASK_WAIT_TICKS(30000);
+        }
+        else
+        {
+            ESOS_TASK_WAIT_TICKS(10000);
+        }
 
         LIGHT_AMBER(EW);
         ESOS_TASK_WAIT_TICKS(3000);
 
         LIGHT_RED(EW);
         LIGHT_RED(NS);
-        if (SW1_PRESSED) {
+        if (SW1_PRESSED)
+        {
             ESOS_TASK_WAIT_TICKS(1000);
         }
 
         LIGHT_GREEN(NS);
-        if (SW1_PRESSED) { ESOS_TASK_WAIT_TICKS(30000); }
-        else { ESOS_TASK_WAIT_TICKS(10000); }
+        if (SW1_PRESSED)
+        {
+            ESOS_TASK_WAIT_TICKS(30000);
+        }
+        else
+        {
+            ESOS_TASK_WAIT_TICKS(10000);
+        }
 
         LIGHT_AMBER(NS);
         ESOS_TASK_WAIT_TICKS(3000);
 
         LIGHT_RED(NS);
         LIGHT_RED(EW);
-        if (SW1_PRESSED) {
+        if (SW1_PRESSED)
+        {
             ESOS_TASK_WAIT_TICKS(1000);
         }
     }
     ESOS_TASK_END();
 }
 
-ESOS_USER_TASK(display_state) {
+ESOS_USER_TASK(display_state)
+{
     ESOS_TASK_BEGIN();
-    while(1) {
-        if(SW3_PRESSED) {
+    while (1)
+    {
+        if (SW3_PRESSED)
+        {
             DISPLAY_STATE(NS);
             ESOS_TASK_WAIT_TICKS(15);
-        } else {
+        }
+        else
+        {
             DISPLAY_STATE(EW);
             ESOS_TASK_WAIT_TICKS(15);
         }
@@ -47,7 +68,8 @@ ESOS_USER_TASK(display_state) {
     ESOS_TASK_END();
 }
 
-void user_init() {
+void user_init()
+{
     LED1_CONFIG();
     LED2_CONFIG();
     LED3_HB_CONFIG();
