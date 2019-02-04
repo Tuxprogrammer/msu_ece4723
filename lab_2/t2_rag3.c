@@ -52,8 +52,8 @@ ESOS_USER_TASK(display_state) {
 }
 
 ESOS_USER_TIMER(left_turn) {
-    if((state[0] == LIGHT_LEFT && SW3_PRESSED) //if NS is LIGHT_LEFT and SW3 is pressed
-    || (state[1] == LIGHT_LEFT && SW3_RELEASED)) {  //if EW is LIGHT_LEFT and SW3 is released
+    if((state[0] == STATE_LEFT && SW3_PRESSED) //if NS is LIGHT_LEFT and SW3 is pressed
+    || (state[1] == STATE_LEFT && SW3_RELEASED)) {  //if EW is LIGHT_LEFT and SW3 is released
         LED1_OFF();
         LED2_OFF();
         LED3_HB_TOGGLE();
