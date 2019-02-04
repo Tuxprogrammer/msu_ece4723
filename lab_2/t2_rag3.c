@@ -51,6 +51,15 @@ ESOS_USER_TASK(display_state) {
     ESOS_TASK_END();
 }
 
+ESOS_USER_TIMER(left_turn) {
+    if((state[0] == LIGHT_LEFT && SW3_PRESSED) //if NS is LIGHT_LEFT and SW3 is pressed
+    || (state[1] == LIGHT_LEFT && SW3_RELEASED)) {  //if EW is LIGHT_LEFT and SW3 is released
+        LED1_OFF();
+        LED2_OFF();
+        LED3_HB_TOGGLE();
+    }
+}
+
 void user_init() {
     LED1_CONFIG();
     LED2_CONFIG();
@@ -62,4 +71,5 @@ void user_init() {
 
     esos_RegisterTask(light_loop);
     esos_RegisterTask(display_state);
+    esos_RegisterTimer(left_turn, 125);
 }
