@@ -6,34 +6,35 @@
 #define STATE_RED 0
 #define STATE_AMBER 1
 #define STATE_GREEN 2
-#define STATE_LEFT 3
+#define STATE_TURN 3
 
 uint8_t state[2]; //Curent light states 0=NS 1=EW
 
-#define NS 0
-#define EW 1
 
-#define LIGHT_GREEN(s)          \
+#define NORTH_SOUTH 0
+#define EAST_WEST 1
+
+#define SET_LIGHT_GREEN(s)          \
     {                           \
         state[s] = STATE_GREEN; \
         state[!s] = STATE_RED;  \
     }
 
-#define LIGHT_AMBER(s)          \
+#define SET_LIGHT_AMBER(s)          \
     {                           \
         state[s] = STATE_AMBER; \
         state[!s] = STATE_RED;  \
     }
 
-#define LIGHT_RED(s)           \
+#define SET_LIGHT_RED(s)           \
     {                          \
         state[s] = STATE_RED;  \
         state[!s] = STATE_RED; \
     }
 
-#define LIGHT_LEFT(s)          \
+#define SET_LIGHT_TURN(s)          \
     {                          \
-        state[s] = STATE_LEFT; \
+        state[s] = STATE_TURN; \
         state[!s] = STATE_RED; \
     }
 
