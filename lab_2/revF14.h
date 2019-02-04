@@ -3,8 +3,6 @@
 
 #include <stdio.h>
 #include "pic24_all.h"
-#include "esos.h"
-#include "esos_pic24.h"
 
 //configure LEDs
 #define LED1_CONFIG()           CONFIG_RF4_AS_DIG_OUTPUT()
@@ -54,49 +52,5 @@
 #define SW3 (_RB15)
 #define SW3_PRESSED (_RB15 == 0)
 #define SW3_RELEASED (_RB15 == 1)
-
-// Traffic program defines
-#define STATE_RED   0
-#define STATE_AMBER 1
-#define STATE_GREEN 2
-#define STATE_LEFT  3
-
-uint8_t state[2]; //Curent light states 0=NS 1=EW
-
-#define NS 0
-#define EW 1
-
-#define LIGHT_GREEN(s) {    \
-    state[s]=STATE_GREEN;    \
-    state[!s]=STATE_RED;     \
-}
-
-#define LIGHT_AMBER(s) {    \
-    state[s]=STATE_AMBER;    \
-    state[!s]=STATE_RED;     \
-}
-
-#define LIGHT_RED(s) {      \
-    state[s]=STATE_RED;      \
-    state[!s]=STATE_RED;     \
-}
-
-#define LIGHT_LEFT(s) {     \
-    state[s]=STATE_LEFT;     \
-    state[!s]=STATE_RED;    \
-}
-
-#define DISPLAY_STATE(s) {  \
-LED1_OFF();                 \
-LED2_OFF();                 \
-LED3_HB_OFF();              \
-if(state[s]==0) {          \
-    LED1_ON();              \
-} else if(state[s]==1) {   \
-    LED2_ON();              \
-} else if(state[s]==2) {   \
-    LED3_HB_ON();           \
-}                           \
-}
 
 #endif

@@ -1,4 +1,4 @@
-#include "revF14.h"
+#include "t2_common.h"
 
 ESOS_USER_TASK(light_loop) {
     ESOS_TASK_BEGIN();
@@ -6,7 +6,7 @@ ESOS_USER_TASK(light_loop) {
         LIGHT_GREEN(EW);
         if (SW1_PRESSED) { ESOS_TASK_WAIT_TICKS(30000); }
         else { ESOS_TASK_WAIT_TICKS(10000); }
-        
+
         LIGHT_AMBER(EW);
         ESOS_TASK_WAIT_TICKS(3000);
 
