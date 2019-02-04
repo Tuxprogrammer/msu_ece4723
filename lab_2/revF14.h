@@ -12,10 +12,10 @@
 #define LED1_HB_TOGGLE() (_LATF4 = !_LATF4)
 
 #define LED2_CONFIG()           CONFIG_RB14_AS_DIG_OUTPUT()
-#define LED2 (_LATF4)
+#define LED2 (_LATB14)
 #define LED2_ON() (_LATB14 = 1)
 #define LED2_OFF() (_LATB14 = 0)
-#define LED2_HB_TOGGLE() (_LATB14 = !_LATB15)
+#define LED2_HB_TOGGLE() (_LATB14 = !_LATB14)
 
 #define LED3_HB_CONFIG()        CONFIG_RB15_AS_DIG_OUTPUT()
 #define LED3_HB (_LATB15)
@@ -50,7 +50,7 @@
 }
 
 #define SW3 (_RB15)
-#define SW3_PRESSED (_RB15 == 0)
-#define SW3_RELEASED (_RB15 == 1)
+#define SW3_PRESSED (_RC15 == 0)
+#define SW3_RELEASED (_RC15 == 1)
 
 #endif

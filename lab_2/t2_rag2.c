@@ -11,6 +11,7 @@ ESOS_USER_TASK(light_loop) {
         ESOS_TASK_WAIT_TICKS(3000);
 
         LIGHT_RED(EW);
+        LIGHT_RED(NS);
         if (SW1_PRESSED) {
             ESOS_TASK_WAIT_TICKS(1000);
         }
@@ -23,6 +24,7 @@ ESOS_USER_TASK(light_loop) {
         ESOS_TASK_WAIT_TICKS(3000);
 
         LIGHT_RED(NS);
+        LIGHT_RED(EW);
         if (SW1_PRESSED) {
             ESOS_TASK_WAIT_TICKS(1000);
         }
