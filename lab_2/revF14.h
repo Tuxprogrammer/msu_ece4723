@@ -25,8 +25,7 @@
 #define LED3_HB_OFF() (_LATB15 = 1)
 #define LED3_HB_TOGGLE() (_LATB15 = !_LATB15)
 
-#define SW1_CONFIG()\
-{\
+#define SW1_CONFIG() {\
     CONFIG_RB13_AS_DIG_INPUT();\
     ENABLE_RB13_PULLUP();\
     DELAY_US(1);\
@@ -36,8 +35,7 @@
 #define SW1_PRESSED (_RB13 == 0)
 #define SW1_RELEASED (_RB13 == 1)
 
-#define SW2_CONFIG()\
-{\
+#define SW2_CONFIG() {\
     CONFIG_RB12_AS_DIG_INPUT();\
     ENABLE_RB12_PULLUP();\
     DELAY_US(1);\
@@ -47,8 +45,7 @@
 #define SW2_PRESSED (_RB12 == 0)
 #define SW2_RELEASED (_RB12 == 1)
 
-#define SW3_CONFIG()\
-{\
+#define SW3_CONFIG() {\
     CONFIG_RC15_AS_DIG_INPUT();\
     ENABLE_RC15_PULLUP();\
     DELAY_US(1);\
@@ -64,40 +61,42 @@
 #define STATE_GREEN 2
 #define STATE_LEFT  3
 
-uint8_t[2] state; //Curent light states 0=NS 1=EW
+uint8_t state[2]; //Curent light states 0=NS 1=EW
 
 #define NS 0
 #define EW 1
 
 #define LIGHT_GREEN(s) {    \
-    state[s]=STATE_GREEN    \
-    state[!s]=STATE_RED     \
+    state[s]=STATE_GREEN;    \
+    state[!s]=STATE_RED;     \
 }
 
 #define LIGHT_AMBER(s) {    \
-    state[s]=STATE_AMBER    \
-    state[!s]=STATE_RED     \
+    state[s]=STATE_AMBER;    \
+    state[!s]=STATE_RED;     \
 }
 
 #define LIGHT_RED(s) {      \
-    state[s]=STATE_RED      \
-    state[!s]=STATE_RED     \
+    state[s]=STATE_RED;      \
+    state[!s]=STATE_RED;     \
 }
 
 #define LIGHT_LEFT(s) {     \
-    state[s]=STATE_LEFT     \
-    state[!s]=STATE_RED     \
+    state[s]=STATE_LEFT;     \
+    state[!s]=STATE_RED;    \
 }
 
 #define DISPLAY_STATE(s) {  \
-LED1_OFF();          \
-LED2_OFF();          \
-LED3_HB_OFF();       \
+LED1_OFF();                 \
+LED2_OFF();                 \
+LED3_HB_OFF();              \
 if(state[s]==0) {          \
-    LED1_ON();       \
+    LED1_ON();              \
 } else if(state[s]==1) {   \
-    LED2_ON();       \
+    LED2_ON();              \
 } else if(state[s]==2) {   \
-    LED3_HB_ON();    \
-}                   \
+    LED3_HB_ON();           \
+}                           \
 }
+
+#endif

@@ -3,12 +3,12 @@
 ESOS_USER_TASK(light_loop) {
     ESOS_TASK_BEGIN();
     while(1) {
-        LIGHT_TURN(EW);
+        LIGHT_LEFT(EW);
         ESOS_TASK_WAIT_TICKS(10000);
 
         LIGHT_GREEN(EW);
-        if (SW1_PRESSED) ESOS_TASK_WAIT_TICKS(30000);
-        else ESOS_TASK_WAIT_TICKS(10000);
+        if (SW1_PRESSED) { ESOS_TASK_WAIT_TICKS(30000); }
+        else { ESOS_TASK_WAIT_TICKS(10000); }
         
         LIGHT_AMBER(EW);
         ESOS_TASK_WAIT_TICKS(3000);
@@ -18,12 +18,12 @@ ESOS_USER_TASK(light_loop) {
             ESOS_TASK_WAIT_TICKS(1000);
         }
 
-        LIGHT_TURN(NS);
+        LIGHT_LEFT(NS);
         ESOS_TASK_WAIT_TICKS(10000);
 
         LIGHT_GREEN(NS);
-        if (SW1_PRESSED) ESOS_TASK_WAIT_TICKS(30000);
-        else ESOS_TASK_WAIT_TICKS(10000);
+        if (SW1_PRESSED) { ESOS_TASK_WAIT_TICKS(30000); }
+        else { ESOS_TASK_WAIT_TICKS(10000); }
 
         LIGHT_AMBER(NS);
         ESOS_TASK_WAIT_TICKS(3000);
@@ -52,13 +52,13 @@ ESOS_USER_TASK(display_state) {
 }
 
 void user_init() {
-    CONFIG_LED1();
-    CONFIG_LED2();
-    CONFIG_LED3_HB();
+    LED1_CONFIG();
+    LED2_CONFIG();
+    LED3_HB_CONFIG();
 
-    CONFIG_SW1();
-    CONFIG_SW2();
-    CONFIG_SW3();
+    SW1_CONFIG();
+    SW2_CONFIG();
+    SW3_CONFIG();
 
     esos_RegisterTask(light_loop);
     esos_RegisterTask(display_state);

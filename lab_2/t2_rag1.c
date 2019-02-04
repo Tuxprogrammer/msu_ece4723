@@ -33,13 +33,13 @@ ESOS_USER_TASK(display_state) {
 }
 
 void user_init() {
-    CONFIG_LED1();
-    CONFIG_LED2();
-    CONFIG_LED3_HB();
+    LED1_CONFIG();
+    LED2_CONFIG();
+    LED3_HB_CONFIG();
 
-    CONFIG_SW1();
-    CONFIG_SW2();
-    CONFIG_SW3();
+    SW1_CONFIG();
+    SW2_CONFIG();
+    SW3_CONFIG();
 
     esos_RegisterTask(light_loop);
     esos_RegisterTask(display_state);
