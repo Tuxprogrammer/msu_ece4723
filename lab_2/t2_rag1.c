@@ -7,10 +7,12 @@ ESOS_USER_TASK(light_loop) {
         ESOS_TASK_WAIT_TICKS(10000);
         LIGHT_AMBER(EW);
         ESOS_TASK_WAIT_TICKS(3000);
+        LIGHT_RED(EW);
         LIGHT_GREEN(NS);
         ESOS_TASK_WAIT_TICKS(10000);
         LIGHT_AMBER(NS);
         ESOS_TASK_WAIT_TICKS(3000);
+        LIGHT_RED(NS);
     }
     ESOS_TASK_END();
 }
