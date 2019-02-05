@@ -3,8 +3,7 @@
 ESOS_USER_TASK(light_loop)
 {
     ESOS_TASK_BEGIN();
-    while (1)
-    {
+    while (1) {
         SET_LIGHT_GREEN(EAST_WEST);
         ESOS_TASK_WAIT_TICKS(10000);
         SET_LIGHT_AMBER(EAST_WEST);
@@ -14,7 +13,7 @@ ESOS_USER_TASK(light_loop)
         ESOS_TASK_WAIT_TICKS(10000);
         SET_LIGHT_AMBER(NORTH_SOUTH);
         ESOS_TASK_WAIT_TICKS(3000);
-        SET_LIGHT_RED(NORTH_SOUTH);
+        s SET_LIGHT_RED(NORTH_SOUTH);
     }
     ESOS_TASK_END();
 }
@@ -22,15 +21,11 @@ ESOS_USER_TASK(light_loop)
 ESOS_USER_TASK(display_state)
 {
     ESOS_TASK_BEGIN();
-    while (1)
-    {
-        if (SW3_PRESSED)
-        {
+    while (1) {
+        if (SW3_PRESSED) {
             DISPLAY_STATE(NORTH_SOUTH);
             ESOS_TASK_WAIT_TICKS(15);
-        }
-        else
-        {
+        } else {
             DISPLAY_STATE(EAST_WEST);
             ESOS_TASK_WAIT_TICKS(15);
         }

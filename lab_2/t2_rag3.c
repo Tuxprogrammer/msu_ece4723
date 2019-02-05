@@ -3,18 +3,14 @@
 ESOS_USER_TASK(light_loop)
 {
     ESOS_TASK_BEGIN();
-    while (1)
-    {
+    while (1) {
         SET_LIGHT_TURN(EAST_WEST);
         ESOS_TASK_WAIT_TICKS(10000);
 
         SET_LIGHT_GREEN(EAST_WEST);
-        if (SW1_PRESSED)
-        {
+        if (SW1_PRESSED) {
             ESOS_TASK_WAIT_TICKS(30000);
-        }
-        else
-        {
+        } else {
             ESOS_TASK_WAIT_TICKS(10000);
         }
 
@@ -22,8 +18,7 @@ ESOS_USER_TASK(light_loop)
         ESOS_TASK_WAIT_TICKS(3000);
 
         SET_LIGHT_RED(EAST_WEST);
-        if (SW1_PRESSED)
-        {
+        if (SW1_PRESSED) {
             ESOS_TASK_WAIT_TICKS(1000);
         }
 
@@ -31,12 +26,9 @@ ESOS_USER_TASK(light_loop)
         ESOS_TASK_WAIT_TICKS(10000);
 
         SET_LIGHT_GREEN(NORTH_SOUTH);
-        if (SW1_PRESSED)
-        {
+        if (SW1_PRESSED) {
             ESOS_TASK_WAIT_TICKS(30000);
-        }
-        else
-        {
+        } else {
             ESOS_TASK_WAIT_TICKS(10000);
         }
 
@@ -44,8 +36,7 @@ ESOS_USER_TASK(light_loop)
         ESOS_TASK_WAIT_TICKS(3000);
 
         SET_LIGHT_RED(NORTH_SOUTH);
-        if (SW1_PRESSED)
-        {
+        if (SW1_PRESSED) {
             ESOS_TASK_WAIT_TICKS(1000);
         }
     }
@@ -55,15 +46,11 @@ ESOS_USER_TASK(light_loop)
 ESOS_USER_TASK(display_state)
 {
     ESOS_TASK_BEGIN();
-    while (1)
-    {
-        if (SW3_PRESSED)
-        {
+    while (1) {
+        if (SW3_PRESSED) {
             DISPLAY_STATE(NORTH_SOUTH);
             ESOS_TASK_WAIT_TICKS(15);
-        }
-        else
-        {
+        } else {
             DISPLAY_STATE(EAST_WEST);
             ESOS_TASK_WAIT_TICKS(15);
         }
@@ -74,9 +61,10 @@ ESOS_USER_TASK(display_state)
 
 ESOS_USER_TIMER(left_turn)
 {
-    if ((state[0] == STATE_TURN && SW3_PRESSED) // if NORTH_SOUTH is STATE_TURN and SW3 is pressed
-        || (state[1] == STATE_TURN && SW3_RELEASED))
-    { // if EAST_WEST is STATE_TURN and SW3 is released
+    if ((state[0] == STATE_TURN &&
+         SW3_PRESSED) // if NORTH_SOUTH is STATE_TURN and SW3 is pressed
+        || (state[1] == STATE_TURN &&
+            SW3_RELEASED)) { // if EAST_WEST is STATE_TURN and SW3 is released
         LED1_OFF();
         LED2_OFF();
         LED3_HB_TOGGLE();

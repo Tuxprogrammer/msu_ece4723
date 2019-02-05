@@ -13,48 +13,43 @@ uint8_t state[2]; //Curent light states 0=NS 1=EW
 #define NORTH_SOUTH 0
 #define EAST_WEST 1
 
-#define SET_LIGHT_GREEN(s)      \
-    {                           \
-        state[s] = STATE_GREEN; \
-        state[!s] = STATE_RED;  \
+#define SET_LIGHT_GREEN(s)                                                     \
+    {                                                                          \
+        state[s] = STATE_GREEN;                                                \
+        state[!s] = STATE_RED;                                                 \
     }
 
-#define SET_LIGHT_AMBER(s)      \
-    {                           \
-        state[s] = STATE_AMBER; \
-        state[!s] = STATE_RED;  \
+#define SET_LIGHT_AMBER(s)                                                     \
+    {                                                                          \
+        state[s] = STATE_AMBER;                                                \
+        state[!s] = STATE_RED;                                                 \
     }
 
-#define SET_LIGHT_RED(s)       \
-    {                          \
-        state[s] = STATE_RED;  \
-        state[!s] = STATE_RED; \
+#define SET_LIGHT_RED(s)                                                       \
+    {                                                                          \
+        state[s] = STATE_RED;                                                  \
+        state[!s] = STATE_RED;                                                 \
     }
 
-#define SET_LIGHT_TURN(s)      \
-    {                          \
-        state[s] = STATE_TURN; \
-        state[!s] = STATE_RED; \
+#define SET_LIGHT_TURN(s)                                                      \
+    {                                                                          \
+        state[s] = STATE_TURN;                                                 \
+        state[!s] = STATE_RED;                                                 \
     }
 
-#define DISPLAY_STATE(s)        \
-    {                           \
-        if (state[s] == 0)      \
-        {                       \
-            LED1_ON();          \
-            LED2_OFF();         \
-            LED3_HB_OFF();      \
-        }                       \
-        else if (state[s] == 1) \
-        {                       \
-            LED1_OFF();         \
-            LED2_ON();          \
-            LED3_HB_OFF();      \
-        }                       \
-        else if (state[s] == 2) \
-        {                       \
-            LED1_OFF();         \
-            LED2_OFF();         \
-            LED3_HB_ON();       \
-        }                       \
+#define DISPLAY_STATE(s)                                                       \
+    {                                                                          \
+        if (state[s] == 0) {                                                   \
+            LED1_ON();                                                         \
+            LED2_OFF();                                                        \
+            LED3_HB_OFF();                                                     \
+        } else if (state[s] == 1) {                                            \
+            LED1_OFF();                                                        \
+            LED2_ON();                                                         \
+            LED3_HB_OFF();                                                     \
+        } else if (state[s] == 2) {                                            \
+            LED1_OFF();                                                        \
+            LED2_OFF();                                                        \
+            LED3_HB_ON();                                                      \
+        }                                                                      \
     }
