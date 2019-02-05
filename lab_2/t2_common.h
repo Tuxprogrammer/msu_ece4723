@@ -18,10 +18,11 @@
 #define STATE_TURN 3
 
 uint8_t state[2]; //Curent light states 0=NS 1=EW
-
 #define NORTH_SOUTH 0
 #define EAST_WEST 1
 
+//Setter defines for changing the state of the lights
+//These work because we only have two states
 #define SET_LIGHT_GREEN(s)                                                                                             \
     {                                                                                                                  \
         state[s] = STATE_GREEN;                                                                                        \
@@ -46,6 +47,7 @@ uint8_t state[2]; //Curent light states 0=NS 1=EW
         state[!s] = STATE_RED;                                                                                         \
     }
 
+//Display a specific state. This could be compacted if the turn-light wasn't a state
 #define DISPLAY_STATE(s)                                                                                               \
     {                                                                                                                  \
         if (state[s] == 0) {                                                                                           \

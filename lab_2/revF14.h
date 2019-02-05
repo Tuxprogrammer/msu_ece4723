@@ -31,6 +31,7 @@
 #define LED3_HB_OFF() (_LATB15 = 1)
 #define LED3_HB_TOGGLE() (_LATB15 = !_LATB15)
 
+//configure switches
 #define SW1_CONFIG()                                                                                                   \
     {                                                                                                                  \
         CONFIG_RB13_AS_DIG_INPUT();                                                                                    \
