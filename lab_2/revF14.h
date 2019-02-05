@@ -1,3 +1,12 @@
+/* Embedded Systems - Spring 2019
+
+ * Christian Bush (cbb330@msstate.edu), Spencer Callicott (sc2257@msstate.edu)
+ * Will Carroll (woc17@msstate.edu), Landon Casey (lec426@msstate.edu)
+ * Jack Fletcher (jdf469@msstate.edu)
+ * 
+ * revF14.h - hardware configuration and control macros using pic24lib
+ */
+
 #ifndef REVF14_H
 #define REVF14_H
 
@@ -23,33 +32,33 @@
 #define LED3_HB_OFF() (_LATB15 = 1)
 #define LED3_HB_TOGGLE() (_LATB15 = !_LATB15)
 
-#define SW1_CONFIG()                                                           \
-    {                                                                          \
-        CONFIG_RB13_AS_DIG_INPUT();                                            \
-        ENABLE_RB13_PULLUP();                                                  \
-        DELAY_US(1);                                                           \
+#define SW1_CONFIG()                                                                                                   \
+    {                                                                                                                  \
+        CONFIG_RB13_AS_DIG_INPUT();                                                                                    \
+        ENABLE_RB13_PULLUP();                                                                                          \
+        DELAY_US(1);                                                                                                   \
     }
 
 #define SW1 (_RB13)
 #define SW1_PRESSED (_RB13 == 0)
 #define SW1_RELEASED (_RB13 == 1)
 
-#define SW2_CONFIG()                                                           \
-    {                                                                          \
-        CONFIG_RB12_AS_DIG_INPUT();                                            \
-        ENABLE_RB12_PULLUP();                                                  \
-        DELAY_US(1);                                                           \
+#define SW2_CONFIG()                                                                                                   \
+    {                                                                                                                  \
+        CONFIG_RB12_AS_DIG_INPUT();                                                                                    \
+        ENABLE_RB12_PULLUP();                                                                                          \
+        DELAY_US(1);                                                                                                   \
     }
 
 #define SW2 (_RB12)
 #define SW2_PRESSED (_RB12 == 0)
 #define SW2_RELEASED (_RB12 == 1)
 
-#define SW3_CONFIG()                                                           \
-    {                                                                          \
-        CONFIG_RC15_AS_DIG_INPUT();                                            \
-        ENABLE_RC15_PULLUP();                                                  \
-        DELAY_US(1);                                                           \
+#define SW3_CONFIG()                                                                                                   \
+    {                                                                                                                  \
+        CONFIG_RC15_AS_DIG_INPUT();                                                                                    \
+        ENABLE_RC15_PULLUP();                                                                                          \
+        DELAY_US(1);                                                                                                   \
     }
 
 #define SW3 (_RB15)

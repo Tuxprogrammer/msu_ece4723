@@ -1,3 +1,12 @@
+/* Embedded Systems - Spring 2019
+
+ * Christian Bush (cbb330@msstate.edu), Spencer Callicott (sc2257@msstate.edu)
+ * Will Carroll (woc17@msstate.edu), Landon Casey (lec426@msstate.edu)
+ * Jack Fletcher (jdf469@msstate.edu)
+ * 
+ * t2_rag3.c - embedded systems Lab 02, Task 03 solution
+ */
+
 #include "t2_common.h"
 
 ESOS_USER_TASK(light_loop)
@@ -61,10 +70,8 @@ ESOS_USER_TASK(display_state)
 
 ESOS_USER_TIMER(left_turn)
 {
-    if ((state[0] == STATE_TURN &&
-         SW3_PRESSED) // if NORTH_SOUTH is STATE_TURN and SW3 is pressed
-        || (state[1] == STATE_TURN &&
-            SW3_RELEASED)) { // if EAST_WEST is STATE_TURN and SW3 is released
+    if ((state[0] == STATE_TURN && SW3_PRESSED) // if NORTH_SOUTH is STATE_TURN and SW3 is pressed
+        || (state[1] == STATE_TURN && SW3_RELEASED)) { // if EAST_WEST is STATE_TURN and SW3 is released
         LED1_OFF();
         LED2_OFF();
         LED3_HB_TOGGLE();

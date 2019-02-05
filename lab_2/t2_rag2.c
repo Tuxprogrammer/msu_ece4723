@@ -1,3 +1,12 @@
+/* Embedded Systems - Spring 2019
+
+ * Christian Bush (cbb330@msstate.edu), Spencer Callicott (sc2257@msstate.edu)
+ * Will Carroll (woc17@msstate.edu), Landon Casey (lec426@msstate.edu)
+ * Jack Fletcher (jdf469@msstate.edu)
+ * 
+ * t2_rag2.c - embedded systems Lab 02, Task 02 solution
+ */
+
 #include "t2_common.h"
 
 ESOS_USER_TASK(light_loop)
