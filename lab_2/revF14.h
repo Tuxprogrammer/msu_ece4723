@@ -10,7 +10,6 @@
 #ifndef REVF14_H
 #define REVF14_H
 
-#include <stdio.h>
 #include "pic24_all.h"
 
 //configure LEDs
