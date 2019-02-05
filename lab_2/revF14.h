@@ -3,7 +3,7 @@
  * Christian Bush (cbb330@msstate.edu), Spencer Callicott (sc2257@msstate.edu)
  * Will Carroll (woc17@msstate.edu), Landon Casey (lec426@msstate.edu)
  * Jack Fletcher (jdf469@msstate.edu)
- * 
+ *
  * revF14.h - hardware configuration and control macros using pic24lib
  */
 
@@ -12,7 +12,7 @@
 
 #include "pic24_all.h"
 
-//configure LEDs
+// configure LEDs
 #define LED1_CONFIG() CONFIG_RF4_AS_DIG_OUTPUT()
 #define LED1 (_LATF4)
 #define LED1_ON() (_LATF4 = 1)
@@ -31,7 +31,7 @@
 #define LED3_HB_OFF() (_LATB15 = 1)
 #define LED3_HB_TOGGLE() (_LATB15 = !_LATB15)
 
-//configure switches
+// configure switches
 #define SW1_CONFIG()                                                                                                   \
     {                                                                                                                  \
         CONFIG_RB13_AS_DIG_INPUT();                                                                                    \

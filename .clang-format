@@ -53,7 +53,7 @@ BreakConstructorInitializersBeforeComma: false
 BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: false
 ColumnLimit: 120
-CommentPragmas: '^ IWYU pragma:'
+#CommentPragmas: '^ IWYU pragma:'
 #CompactNamespaces: false # Unknown to clang-format-4.0
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 4
@@ -445,7 +445,7 @@ PenaltyExcessCharacter: 100
 PenaltyReturnTypeOnItsOwnLine: 60
 
 PointerAlignment: Right
-ReflowComments: false
+ReflowComments: true
 SortIncludes: false
 #SortUsingDeclarations: false # Unknown to clang-format-4.0
 SpaceAfterCStyleCast: false
