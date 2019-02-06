@@ -66,7 +66,7 @@ ESOS_USER_TASK(display_state)
 {
     ESOS_TASK_BEGIN();
     while (1) {
-        if (SW3_PRESSED) {
+        if (SW3_RELEASED) {
             DISPLAY_STATE(NORTH_SOUTH);
             ESOS_TASK_WAIT_TICKS(15);
         } else {
@@ -80,8 +80,8 @@ ESOS_USER_TASK(display_state)
 
 ESOS_USER_TIMER(left_turn)
 {
-    if ((state[0] == STATE_TURN && SW3_PRESSED) // if NORTH_SOUTH is STATE_TURN and SW3 is pressed
-        || (state[1] == STATE_TURN && SW3_RELEASED)) { // if EAST_WEST is STATE_TURN and SW3 is released
+    if ((state[0] == STATE_TURN && SW3_RELEASED) // if NORTH_SOUTH is STATE_TURN and SW3 is pressed
+        || (state[1] == STATE_TURN && SW3_PRESSED)) { // if EAST_WEST is STATE_TURN and SW3 is released
         LED1_OFF();
         LED2_OFF();
         LED3_HB_TOGGLE();

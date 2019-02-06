@@ -39,7 +39,7 @@ ESOS_USER_TASK(display_state)
     // loop always
     while (1) {
         // if SW3, show the N-S lights
-        if (SW3_PRESSED) {
+        if (SW3_RELEASED) {
             DISPLAY_STATE(NORTH_SOUTH);
             ESOS_TASK_WAIT_TICKS(15);
         } else {
