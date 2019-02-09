@@ -14,9 +14,12 @@ ESOS_USER_TASK(light_loop)
 {
     ESOS_TASK_BEGIN();
     while (1) {
-        // Set East-West to turn and N-S to red for 10 seconds
-        SET_LIGHT_TURN(EAST_WEST);
-        ESOS_TASK_WAIT_TICKS(10000);
+        // Only enabled turn signals if SW2 is pressed
+        if (SW2_PRESSED) {
+            // Set East-West to turn and N-S to red for 10 seconds
+            SET_LIGHT_TURN(EAST_WEST);
+            ESOS_TASK_WAIT_TICKS(10000);
+        }
 
         // Set East-West to green and N-S to red for 10 seconds, unless its rush-hour which changes delay to 30 sec
         SET_LIGHT_GREEN(EAST_WEST);
@@ -36,9 +39,12 @@ ESOS_USER_TASK(light_loop)
             ESOS_TASK_WAIT_TICKS(1000);
         }
 
-        // Set East-West to red and N-S to turn for 10 seconds
-        SET_LIGHT_TURN(NORTH_SOUTH);
-        ESOS_TASK_WAIT_TICKS(10000);
+        // Only enabled turn signals if SW2 is pressed
+        if (SW2_PRESSED) {
+            // Set East-West to red and N-S to turn for 10 seconds
+            SET_LIGHT_TURN(NORTH_SOUTH);
+            ESOS_TASK_WAIT_TICKS(10000);
+        }
 
         // Set East-West to red and N-S to green for 10 seconds, unless its rush-hour which changes delay to 30 sec
         SET_LIGHT_GREEN(NORTH_SOUTH);
