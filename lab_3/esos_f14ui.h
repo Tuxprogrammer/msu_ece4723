@@ -107,24 +107,24 @@ int16_t esos_uiF14_getRPGVelocity_i16 (void);
                             ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();           /
                             ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();          /
                           } while (0) 
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW1_DOUBLE_PRESSED()       // not yet implemented
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW1_DOUBLE_PRESSED()       // not yet implemented - christian
 
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED()              // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED()             // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED_AND_RELEASED() // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_DOUBLE_PRESSED()       // not yet implemented
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED()              // not yet implemented - jack
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED()             // not yet implemented - jack
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED_AND_RELEASED() // not yet implemented - jack
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_DOUBLE_PRESSED()       // not yet implemented - christian
 
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED()              // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED()             // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED_AND_RELEASED() // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_DOUBLE_PRESSED()       // not yet implemented
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED()              // not yet implemented - jack
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED()             // not yet implemented - jack
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED_AND_RELEASED() // not yet implemented - jack
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_DOUBLE_PRESSED()       // not yet implemented - christian
 
-#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_UNTIL_TURNS()          // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_UNTIL_TURNS_CW()       // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_UNTIL_TURNS_CCW()      // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_MEDIUM()         // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_MEDIUM_CW()      // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_MEDIUM_CCW()     // not yet implemented
+#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_UNTIL_TURNS()          // not yet implemented - spencer
+#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_UNTIL_TURNS_CW()       // not yet implemented - spencer
+#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_UNTIL_TURNS_CCW()      // not yet implemented - spencer
+#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_MEDIUM()         // not yet implemented - will
+#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_MEDIUM_CW()      // not yet implemented - will
+#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_MEDIUM_CCW()     // not yet implemented - will
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_FAST()           // not yet implemented
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_FAST_CW()        // not yet implemented
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_FAST_CCW()       // not yet implemented
