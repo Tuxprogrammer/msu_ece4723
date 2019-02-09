@@ -355,14 +355,61 @@ ESOS_USER_TASK(__esos_uiF14_task)
  	static int16_t _i16_LED2FlashTicksRemaining = 0;
  	static int16_t _i16_LED3FlashTicksRemaining = 0;
  
-     esos_uiF14_setSWDoublePressedPeriod(1000);
+    esos_uiF14_setSWDoublePressedPeriod(1000);
  
-     esos_uiF14_setRPGSlowThreshold(200);
-     esos_uiF14_setRPGMediumThreshold(100);
-     esos_uiF14_setRPGFastThreshold(10);
+    esos_uiF14_setRPGSlowThreshold(200);
+    esos_uiF14_setRPGMediumThreshold(100);
+    esos_uiF14_setRPGFastThreshold(10);
  
-     ESOS_TASK_BEGIN();
+    ESOS_TASK_BEGIN();
  
+    while (TRUE) {
+        // do your UI stuff here
+ 
+        // LEDs
+		if (_st_esos_uiF14Data.u16_LED1FlashPeriod > 0) {
+             _i16_LED1FlashTicksRemaining = _i16_LED1FlashTicksRemaining - __ESOS_UIF14_UI_PERIOD_MS;
+             if (_i16_LED1FlashTicksRemaining <= 0) {
+                 _i16_LED1FlashTicksRemaining = _st_esos_uiF14Data.u16_LED1FlashPeriod;
+                 esos_uiF14_toggleLED1();
+             }
+ 		}
+ 
+ 		if (_st_esos_uiF14Data.u16_LED2FlashPeriod > 0) {
+             _i16_LED2FlashTicksRemaining = _i16_LED2FlashTicksRemaining - __ESOS_UIF14_UI_PERIOD_MS;
+             if (_i16_LED2FlashTicksRemaining <= 0) {
+                 _i16_LED2FlashTicksRemaining = _st_esos_uiF14Data.u16_LED2FlashPeriod;
+                 esos_uiF14_toggleLED2();
+             }
+ 		}
+ 
+ 		if (_st_esos_uiF14Data.u16_LED3FlashPeriod > 0) {
+             _i16_LED3FlashTicksRemaining = _i16_LED3FlashTicksRemaining - __ESOS_UIF14_UI_PERIOD_MS;
+             if (_i16_LED3FlashTicksRemaining <= 0) {
+                 _i16_LED3FlashTicksRemaining = _st_esos_uiF14Data.u16_LED3FlashPeriod;
+                 esos_uiF14_toggleLED3();
+             }
+ 		}
+ 
+         // Switches
+         if (SW1_PRESSED) {
+             _st_esos_uiF14Data.b_SW1Pressed = TRUE;
+         }
+         else {
+             _st_esos_uiF14Data.b_SW1Pressed = FALSE;
+         }
+ 
+         if (SW2_PRESSED) {
+             _st_esos_uiF14Data.b_SW2Pressed = TRUE;
+         }
+         else {
+             _st_esos_uiF14Data.b_SW2Pressed = FALSE;
+         }
+ 
+         if (SW3_PRESSED) {
+             _st_esos_uiF14Data.b_SW3Pressed = TRUE;
+         }
+         else {
              _st_esos_uiF14Data.b_SW3Pressed = FALSE;
          }
  
