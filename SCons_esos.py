@@ -33,7 +33,7 @@ Import('env bin2hex linker_side_effect')
 SConscript('templates/SConscript.py', 'env')
 
 ## Walk through each source file and build it
-for sourceFile in Glob('lab_2/*.c', True, True, True):
+for sourceFile in Glob('lab_3/*.c', True, True, True):
     # Compile the ESOS application.
     p = env.Program(
       [ sourceFile,
