@@ -105,12 +105,9 @@ int16_t esos_uiF14_getRPGVelocity_i16(void);
 #define ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isSW1Released())
 #define ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED_AND_RELEASED()                                                          \
     do {                                                                                                               \
-    /
-ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();
-/ ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();
-/
-}
-while (0)
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();                                                                      \
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();                                                                     \
+    } while (0)
 #define ESOS_TASK_WAIT_UNTIL_UIF14_SW1_DOUBLE_PRESSED() // not yet implemented - christian
 
 #define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED() // not yet implemented - jack
@@ -127,11 +124,7 @@ while (0)
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_UNTIL_TURNS_CW() // not yet implemented - spencer
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_UNTIL_TURNS_CCW() // not yet implemented - spencer
 
-#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_MEDIUM()                                                                  \
-    {                                                                                                                  \
-        ESOS_TASK_WAIT_UNTIL(esos_uiF14_isRPGTurningMedium());                                                         \
-    }
-
+#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_MEDIUM() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isRPGTurningMedium());
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_MEDIUM_CW()                                                               \
     {                                                                                                                  \
         ESOS_TASK_WAIT_UNTIL(esos_uiF14_isRPGTurningMedium() && esos_uiF14_isRPGTurningCW());                          \
@@ -142,11 +135,7 @@ while (0)
         ESOS_TASK_WAIT_UNTIL(esos_uiF14_isRPGTurningMedium() && esos_uiF14_isRPGTurningCCW());                         \
     }
 
-#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_FAST()                                                                    \
-    {                                                                                                                  \
-        ESOS_TASK_WAIT_UNTIL(esos_uiF14_isRPGTurningFast());                                                           \
-    }
-
+#define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_FAST() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isRPGTurningFast());
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_TURNS_FAST_CW()                                                                 \
     {                                                                                                                  \
         ESOS_TASK_WAIT_UNTIL(esos_uiF14_isRPGTurningFast() && esos_uiF14_isRPGTurningCW());                            \
