@@ -334,17 +334,46 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg_velocity)
 
 void config_esos_uiF14()
 {
-    // setup your UI implementation
+	// setup your UI implementation
+	// configure LEDs
+	LED1_CONFIG();
+	LED2_CONFIG();
+	LED3_HB_CONFIG();
+
+	// configure Switches
+	SW1_CONFIG();
+	SW2_CONFIG();
+	SW3_CONFIG();
+	
     esos_RegisterTask(__esos_uiF14_task);
 }
 
 // UIF14 task to manage user-interface
 ESOS_USER_TASK(__esos_uiF14_task)
 {
-    ESOS_TASK_BEGIN();
-    while (TRUE) {
-        // do your UI stuff here
-        ESOS_TASK_WAIT_TICKS(__ESOS_UIF14_UI_PERIOD);
-    }
-    ESOS_TASK_END();
+    static int16_t _i16_LED1FlashTicksRemaining = 0;
+ 	static int16_t _i16_LED2FlashTicksRemaining = 0;
+ 	static int16_t _i16_LED3FlashTicksRemaining = 0;
+ 
+     esos_uiF14_setSWDoublePressedPeriod(1000);
+ 
+     esos_uiF14_setRPGSlowThreshold(200);
+     esos_uiF14_setRPGMediumThreshold(100);
+     esos_uiF14_setRPGFastThreshold(10);
+ 
+     ESOS_TASK_BEGIN();
+ 
+             _st_esos_uiF14Data.b_SW3Pressed = FALSE;
+         }
+ 
+         if (RPGA_HIGH) {
+             _st_esos_uiF14Data.b_RPGAHigh = TRUE;
+         }
+         else {
+             _st_esos_uiF14Data.b_RPGAHigh = FALSE;
+         }
+ 
+         ESOS_TASK_WAIT_TICKS(__ESOS_UIF14_UI_PERIOD_MS);
+     }
+     ESOS_TASK_END();
 }
