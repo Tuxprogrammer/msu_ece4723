@@ -6,8 +6,11 @@
  * 
  * ****************************************************************/
 
-#ifndef   ESOS_UIF14_H
+#ifndef ESOS_UIF14_H
 #define ESOS_UIF14_H
+
+#include "esos.h"
+#include "esos_pic24.h"
 
 // STRUCTURES
 
