@@ -108,8 +108,23 @@ int16_t esos_uiF14_getRpgVelocity_i16(void) {
 // UIF14 INITIALIZATION FUNCTION
 
 void config_esos_uiF14() {
+<<<<<<< working copy
     // setup your UI implementation
     esos_RegisterTask(__uiF14_task);
+=======
+  // setup your UI implementation
+  // Configure LEDs
+  LED1_CONFIG();
+  LED2_CONFIG();
+  LED3_HB_CONFIG();
+
+  // Configure Switches
+  SW1_CONFIG();
+  SW2_CONFIG();
+  SW3_CONFIG();
+
+  esos_RegisterTask( __uiF14_task );
+>>>>>>> merge rev
 }
 
 
