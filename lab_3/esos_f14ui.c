@@ -45,7 +45,16 @@ inline BOOL esos_uiF14_isSW1Released(void)
 
 inline BOOL esos_uiF14_isSW1DoublePressed(void)
 {
-    return (_st_esos_uiF14Data.b_SW1DoublePressed == TRUE);
+    if (_st_esos_uiF14Data.b_SW1DoublePressed == TRUE) {
+        _st_esos_uiF14Data.b_SW1DoublePressed = FALSE;
+        return TRUE;
+    } else
+        return FALSE;
+}
+
+inline void esos_uiF14_setSW1DoublePressed(void)
+{
+    _st_esos_uiF14Data.b_SW1DoublePressed = TRUE;
 }
 
 inline uint16_t esos_uiF14_getSW1DoublePressedPeriod(void)
@@ -70,7 +79,16 @@ inline BOOL esos_uiF14_isSW2Released(void)
 
 inline BOOL esos_uiF14_isSW2DoublePressed(void)
 {
-    return (_st_esos_uiF14Data.b_SW2DoublePressed == TRUE);
+    if (_st_esos_uiF14Data.b_SW2DoublePressed == TRUE) {
+        _st_esos_uiF14Data.b_SW2DoublePressed = FALSE;
+        return TRUE;
+    } else
+        return FALSE;
+}
+
+inline void esos_uiF14_setSW2DoublePressed(void)
+{
+    _st_esos_uiF14Data.b_SW2DoublePressed = TRUE;
 }
 
 inline uint16_t esos_uiF14_getSW2DoublePressedPeriod(void)
@@ -99,6 +117,15 @@ inline BOOL esos_uiF14_isSW3DoublePressed(void)
 }
 
 // PUBLIC LED FUNCTIONS
+
+inline BOOL esos_uiF14_getRPGA(void)
+{
+    return (_st_esos_uiF14Data.b_RPGAHigh);
+}
+inline BOOL esos_uiF14_getRPGB(void)
+{
+    return (_st_esos_uiF14Data.b_RPGBHigh);
+}
 
 // LED 1
 inline BOOL esos_uiF14_isLED1On(void)
@@ -343,8 +370,55 @@ inline BOOL esos_uiF14_isRPGTurningCCW(void)
 
 ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
 {
-    _st_esos_uiF14Data.i16_RPGVelocity = _st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter;
+    _esos_uiF14_setRPGCounter(_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter);
     _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
+}
+
+ESOS_USER_TASK(__esos_uiF14_SW1_double_pressed)
+{
+    static uint32_t start = 0, stop = 0;
+    ESOS_TASK_BEGIN();
+    while (TRUE) {
+        start = esos_GetSystemTick();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();
+        stop = esos_GetSystemTick();
+        if (stop - start < esos_uiF14_getSW1DoublePressedPeriod()) {
+            esos_uiF14_setSW1DoublePressed();
+        }
+    }
+    ESOS_TASK_END();
+}
+
+ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed)
+{
+    static uint32_t start = 0, stop = 0;
+    ESOS_TASK_BEGIN();
+    while (TRUE) {
+        start = esos_GetSystemTick();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED();
+        stop = esos_GetSystemTick();
+        if (stop - start < esos_uiF14_getSW2DoublePressedPeriod()) {
+            esos_uiF14_setSW2DoublePressed();
+        }
+    }
+    ESOS_TASK_END();
+}
+
+ESOS_USER_TASK(__esos_uiF14_update_rpg)
+{
+    ESOS_TASK_BEGIN();
+    while (TRUE) {
+        ESOS_TASK_WAIT_UNTIL_RPGA_LOW();
+        if (esos_uiF14_getRPGA()) {
+            _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() + 1);
+        } else {
+            _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() - 1);
+        }
+        ESOS_TASK_WAIT_UNTIL_RPGA_HIGH();
+    }
+    ESOS_TASK_END();
 }
 
 // UIF14 INITIALIZATION FUNCTION
@@ -362,8 +436,16 @@ void config_esos_uiF14()
     SW2_CONFIG();
     SW3_CONFIG();
 
+    // zero out the RPG counter
+    _esos_uiF14_setRPGCounter(0);
+    _esos_uiF14_setLastRPGCounter(0);
+
+    // Register and start tasks/timers
     esos_RegisterTask(__esos_uiF14_task);
     esos_RegisterTimer(__esos_uiF14_update_rpg_velocity, __ESOS_UIF14_RPG_PERIOD);
+    esos_RegisterTask(__esos_uiF14_SW1_double_pressed);
+    esos_RegisterTask(__esos_uiF14_SW2_double_pressed);
+    esos_RegisterTask(__esos_uiF14_update_rpg);
 }
 
 // UIF14 task to manage user-interface
