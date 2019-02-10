@@ -35,6 +35,7 @@ inline uint16_t _esos_uiF14_getLastRPGCounter(void)
 // PUBLIC SWITCH FUNCTIONS
 inline BOOL esos_uiF14_isSW1Pressed(void)
 {
+    if(_st_esos_uiF14Data.b_SW1DoublePressed) _st_esos_uiF14Data.b_SW1DoublePressed = FALSE;
     return (_st_esos_uiF14Data.b_SW1Pressed == TRUE);
 }
 
@@ -69,6 +70,7 @@ inline void esos_uiF14_setSW1DoublePressedPeriod(uint16_t period)
 // SWITCH 2
 inline BOOL esos_uiF14_isSW2Pressed(void)
 {
+        if(_st_esos_uiF14Data.b_SW2DoublePressed) _st_esos_uiF14Data.b_SW2DoublePressed = FALSE;
     return (_st_esos_uiF14Data.b_SW2Pressed == TRUE);
 }
 
@@ -103,6 +105,7 @@ inline void esos_uiF14_setSW2DoublePressedPeriod(uint16_t period)
 // SWITCH 3
 inline BOOL esos_uiF14_isSW3Pressed(void)
 {
+    if(_st_esos_uiF14Data.b_SW3DoublePressed) _st_esos_uiF14Data.b_SW3DoublePressed = FALSE;
     return (_st_esos_uiF14Data.b_SW3Pressed == TRUE);
 }
 
@@ -379,13 +382,13 @@ ESOS_USER_TASK(__esos_uiF14_SW1_double_pressed)
     static uint32_t start = 0, stop = 0;
     ESOS_TASK_BEGIN();
     while (TRUE) {
-        start = esos_GetSystemTick();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();
         stop = esos_GetSystemTick();
         if (stop - start < esos_uiF14_getSW1DoublePressedPeriod()) {
             esos_uiF14_setSW1DoublePressed();
         }
+        start = esos_GetSystemTick();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();
     }
     ESOS_TASK_END();
 }
@@ -395,13 +398,13 @@ ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed)
     static uint32_t start = 0, stop = 0;
     ESOS_TASK_BEGIN();
     while (TRUE) {
-        start = esos_GetSystemTick();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED();
         stop = esos_GetSystemTick();
         if (stop - start < esos_uiF14_getSW2DoublePressedPeriod()) {
             esos_uiF14_setSW2DoublePressed();
         }
+        start = esos_GetSystemTick();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED();
     }
     ESOS_TASK_END();
 }
