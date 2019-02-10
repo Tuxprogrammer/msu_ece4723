@@ -5,7 +5,9 @@
  *    requires the EMBEDDED SYSTEMS taris rev. F14
  *
  * ****************************************************************/
-#include "esos_f14ui.h";
+#include "esos_f14ui.h"
+
+volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
 
 // PRIVATE FUNCTIONS
 inline void _esos_uiF14_setRPGCounter(uint16_t newValue)
@@ -46,6 +48,15 @@ inline BOOL esos_uiF14_isSW1DoublePressed(void)
     return (_st_esos_uiF14Data.b_SW1DoublePressed == TRUE);
 }
 
+inline uint16_t esos_uiF14_getSW1DoublePressedPeriod(void)
+{
+    return _st_esos_uiF14Data.u16_SW1DoublePressedPeriod;
+}
+inline void esos_uiF14_setSW1DoublePressedPeriod(uint16_t period)
+{
+    _st_esos_uiF14Data.u16_SW1DoublePressedPeriod = period;
+}
+
 // SWITCH 2
 inline BOOL esos_uiF14_isSW2Pressed(void)
 {
@@ -60,6 +71,15 @@ inline BOOL esos_uiF14_isSW2Released(void)
 inline BOOL esos_uiF14_isSW2DoublePressed(void)
 {
     return (_st_esos_uiF14Data.b_SW2DoublePressed == TRUE);
+}
+
+inline uint16_t esos_uiF14_getSW2DoublePressedPeriod(void)
+{
+    return _st_esos_uiF14Data.u16_SW2DoublePressedPeriod;
+}
+inline void esos_uiF14_setSW2DoublePressedPeriod(uint16_t period)
+{
+    _st_esos_uiF14Data.u16_SW2DoublePressedPeriod = period;
 }
 
 // SWITCH 3
@@ -170,14 +190,14 @@ inline BOOL esos_uiF14_isLED3Off(void)
 inline void esos_uiF14_turnLED3On(void)
 {
     _st_esos_uiF14Data.b_LED3On = TRUE;
-    LED3_ON();
+    LED3_HB_ON();
     return;
 }
 
 inline void esos_uiF14_turnLED3Off(void)
 {
     _st_esos_uiF14Data.b_LED3On = FALSE;
-    LED3_OFF();
+    LED3_HB_OFF();
     return;
 }
 
@@ -228,14 +248,14 @@ inline void esos_uiF14_turnYellowLEDOff(void)
 inline void esos_uiF14_turnGreenLEDOn(void)
 {
     _st_esos_uiF14Data.b_LED3On = TRUE;
-    LED3_ON();
+    LED3_HB_ON();
     return;
 }
 
 inline void esos_uiF14_turnGreenLEDOff(void)
 {
     _st_esos_uiF14Data.b_LED3On = FALSE;
-    LED3_OFF();
+    LED3_HB_OFF();
     return;
 }
 
@@ -258,17 +278,17 @@ inline BOOL esos_uiF14_isRPGTurning(void)
 inline BOOL esos_uiF14_isRPGTurningSlow(void)
 {
     int16_t v = esos_uiF14_getRPGVelocity_i16();
-    BOOL res = (v > 0) && (v < esos_uiF14_getRPGSlowThreshold());
-    res = res || (v < 0 && v > -(esos_uiF14_getRPGSlowThreshold()));
+    BOOL res = (v > 0) && (v < (int16_t)esos_uiF14_getRPGSlowThreshold());
+    res = res || (v < 0 && v > -((int16_t)esos_uiF14_getRPGSlowThreshold()));
     return res;
 }
 
-inline uin16_t esos_uiF14_getRPGSlowThreshold(void)
+inline uint16_t esos_uiF14_getRPGSlowThreshold(void)
 {
     return _st_esos_uiF14Data.u16_RPGSlowThreshold;
 }
 
-inline BOOL esos_uiF14_setRPGSlowThreshold(uint16_t threshold)
+inline void esos_uiF14_setRPGSlowThreshold(uint16_t threshold)
 {
     _st_esos_uiF14Data.u16_RPGSlowThreshold = threshold;
 }
@@ -276,17 +296,18 @@ inline BOOL esos_uiF14_setRPGSlowThreshold(uint16_t threshold)
 inline BOOL esos_uiF14_isRPGTurningMedium(void)
 {
     int16_t v = esos_uiF14_getRPGVelocity_i16();
-    BOOL res = (v > esos_uiF14_getRPGSlowThreshold()) && (v < esos_uif14_getRPGMediumThreshold());
-    res = res || (v < -(esos_uiF14_getRPGSlowThreshold()) && v > -(esos_uif14_getRPGMediumThreshold()));
+    BOOL res = (v > (int16_t)esos_uiF14_getRPGSlowThreshold()) && (v < (int16_t)esos_uiF14_getRPGMediumThreshold());
+    res =
+        res || (v < -((int16_t)esos_uiF14_getRPGSlowThreshold()) && v > -((int16_t)esos_uiF14_getRPGMediumThreshold()));
     return res;
 }
 
-inline uin16_t esos_uiF14_getRPGMediumThreshold(void)
+inline uint16_t esos_uiF14_getRPGMediumThreshold(void)
 {
-    _st_esos_uiF14Data.u16_RPGMediumThreshold = threshold;
+    return _st_esos_uiF14Data.u16_RPGMediumThreshold;
 }
 
-inline BOOL esos_uiF14_setRPGMediumThreshold(uint16_t threshold)
+inline void esos_uiF14_setRPGMediumThreshold(uint16_t threshold)
 {
     _st_esos_uiF14Data.u16_RPGMediumThreshold = threshold;
 }
@@ -294,17 +315,18 @@ inline BOOL esos_uiF14_setRPGMediumThreshold(uint16_t threshold)
 inline BOOL esos_uiF14_isRPGTurningFast(void)
 {
     int16_t v = esos_uiF14_getRPGVelocity_i16();
-    BOOL res = (v > esos_uiF14_getRPGMediumThreshold()) && (v < esos_uif14_getRPGFastThreshold());
-    res = res || (v < -(esos_uiF14_getRPGMediumThreshold()) && v > -(esos_uif14_getRPGFastThreshold()));
+    BOOL res = (v > (int16_t)esos_uiF14_getRPGMediumThreshold()) && (v < (int16_t)esos_uiF14_getRPGFastThreshold());
+    res =
+        res || (v < -((int16_t)esos_uiF14_getRPGMediumThreshold()) && v > -((int16_t)esos_uiF14_getRPGFastThreshold()));
     return res;
 }
 
-inline uin16_t esos_uiF14_getRPGFastThreshold(void)
+inline uint16_t esos_uiF14_getRPGFastThreshold(void)
 {
-    _st_esos_uiF14Data.u16_RPGFastThreshold = threshold;
+    return _st_esos_uiF14Data.u16_RPGFastThreshold;
 }
 
-inline BOOL esos_uiF14_setRPGFastThreshold(uint16_t threshold)
+inline void esos_uiF14_setRPGFastThreshold(uint16_t threshold)
 {
     _st_esos_uiF14Data.u16_RPGFastThreshold = threshold;
 }
@@ -319,15 +341,10 @@ inline BOOL esos_uiF14_isRPGTurningCCW(void)
     return !(esos_uiF14_isRPGTurningCW());
 }
 
-int16_t esos_uiF14_getRPGVelocity_i16(void)
-{
-    return _st_esos_uiF14Data.i16_RPGVelocity;
-}
-
-ESOS_USER_TASK(__esos_uiF14_update_rpg_velocity)
+ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
 {
     _st_esos_uiF14Data.i16_RPGVelocity = _st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter;
-    _esos_uiF14_setLastRPGCounter(esos_uiF14_getRPGCounter());
+    _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
 }
 
 // UIF14 INITIALIZATION FUNCTION
@@ -346,6 +363,7 @@ void config_esos_uiF14()
     SW3_CONFIG();
 
     esos_RegisterTask(__esos_uiF14_task);
+    esos_RegisterTimer(__esos_uiF14_update_rpg_velocity, __ESOS_UIF14_RPG_PERIOD);
 }
 
 // UIF14 task to manage user-interface
@@ -355,7 +373,8 @@ ESOS_USER_TASK(__esos_uiF14_task)
     static int16_t _i16_LED2FlashTicksRemaining = 0;
     static int16_t _i16_LED3FlashTicksRemaining = 0;
 
-    esos_uiF14_setSWDoublePressedPeriod(1000);
+    esos_uiF14_setSW1DoublePressedPeriod(1000);
+    esos_uiF14_setSW2DoublePressedPeriod(1000);
 
     esos_uiF14_setRPGSlowThreshold(200);
     esos_uiF14_setRPGMediumThreshold(100);

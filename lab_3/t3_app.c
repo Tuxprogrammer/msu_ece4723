@@ -1,6 +1,6 @@
-#include "esos_f14ui.h"
 #include "esos.h"
 #include "esos_pic24.h"
+#include "esos_f14ui.h"
 
 ESOS_USER_TIMER(heartbeat)
 {
@@ -11,12 +11,9 @@ ESOS_USER_TASK(rpg_interface)
 {
     ESOS_TASK_BEGIN();
     while (TRUE) {
-        if
-            !(esos_uiF14_isRPGTurning())
-            {
-                esos_uiF14_turnLED2Off();
-            }
-        else if (esos_uiF14_isRPGTurningSlow()) {
+        if (!(esos_uiF14_isRPGTurning())) {
+            esos_uiF14_turnLED2Off();
+        } else if (esos_uiF14_isRPGTurningSlow()) {
             esos_uiF14_turnLED2On();
             esos_uiF14_flashLED2(0);
         } else if (esos_uiF14_isRPGTurningMedium()) {
@@ -57,8 +54,18 @@ ESOS_USER_TASK(switch_interface)
     }
     ESOS_TASK_END();
 };
-ESOS_USER_TASK(feedback);
-ESOS_USER_TASK(menu);
+ESOS_USER_TASK(feedback)
+{
+    ESOS_TASK_BEGIN();
+    ESOS_TASK_YIELD();
+    ESOS_TASK_END();
+}
+ESOS_USER_TASK(menu)
+{
+    ESOS_TASK_BEGIN();
+    ESOS_TASK_YIELD();
+    ESOS_TASK_END();
+}
 
 void user_init()
 {
