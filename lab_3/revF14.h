@@ -67,14 +67,14 @@
 
 // configure RPG
 #define CONFIG_RPG()                                                                                                   \
-    do {                                                                                                               \
+    {                                                                                                                  \
         CONFIG_RB8_AS_DIG_INPUT();                                                                                     \
         CONFIG_RB9_AS_DIG_INPUT();                                                                                     \
         ENABLE_RB8_PULLUP();                                                                                           \
         ENABLE_RB9_PULLUP();                                                                                           \
         CONFIG_INT1_TO_RP(40);                                                                                         \
         DELAY_US(1);                                                                                                   \
-    } while (0)
+    }
 
 #define RPGA (_RB8)
 #define RPGB (_RB9)
