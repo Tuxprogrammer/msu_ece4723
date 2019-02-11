@@ -65,4 +65,22 @@
 #define SW3_PRESSED (_RC15 == 0)
 #define SW3_RELEASED (_RC15 == 1)
 
+// configure RPG
+#define CONFIG_RPG()                                                                                                   \
+    {                                                                                                                  \
+        CONFIG_RB8_AS_DIG_INPUT();                                                                                     \
+        CONFIG_RB9_AS_DIG_INPUT();                                                                                     \
+        ENABLE_RB8_PULLUP();                                                                                           \
+        ENABLE_RB9_PULLUP();                                                                                           \
+        CONFIG_INT1_TO_RP(40);                                                                                         \
+        DELAY_US(1);                                                                                                   \
+    }
+
+#define RPGA (_RB8)
+#define RPGB (_RB9)
+#define RPGA_HIGH (_RB8 == 1)
+#define RPGA_LOW (_RB8 == 0)
+#define RPGB_HIGH (_RB9 == 1)
+#define RPGB_LOW (_RB9 == 0)
+
 #endif
