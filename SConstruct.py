@@ -80,7 +80,7 @@ import psutil
 # The Environment below depends on opts, so this must go here instead of with
 # the rest of the `Command-line options`_.
 opts = Variables()
-opts.Add(EnumVariable('BOOTLDR', 'Determines bootloader type', 'none',
+opts.Add(EnumVariable('BOOTLDR', 'Determines bootloader type', 'msu',
                     allowed_values=('msu', 'none')))
 
 # Create the environment.
@@ -102,7 +102,7 @@ env = Environment(
         # The warnings provide some lint-like checking. Omitted options: -Wstrict-prototypes -Wold-style-definition complains about void foo(), which should be void foo(void), but isn't worth the work to change.
         CCFLAGS = '-mcpu=${MCU} -O1 -msmart-io=1 -omf=elf -Wall -Wextra -Wdeclaration-after-statement -Wlong-long -fdiagnostics-show-option',
         LINKFLAGS = '-mcpu=${MCU} -omf=elf -Wl,--heap=100,--script="$LINKERSCRIPT",--stack=16,--check-sections,--data-init,--pack-data,--handles,--isr,--no-gc-sections,--fill-upper=0,--stackguard=16,--no-force-link,--smart-io',
-        LINKERSCRIPT = 'lib/lkr/p${MCU}_bootldr.gld',
+        LINKERSCRIPT = '../../../pic24lib_all/lib/lkr/p${MCU}_bootldr.gld',
         ARFLAGS = 'rcs',
         ARSTR = 'Create static library: $TARGET',
         OBJSUFFIX = '.o',

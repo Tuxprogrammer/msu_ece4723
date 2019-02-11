@@ -33,7 +33,7 @@ Import('env bin2hex linker_side_effect')
 SConscript('templates/SConscript.py', 'env')
 
 ## Walk through each source file and build it
-for sourceFile in Glob('lab_3/*.c', True, True, True):
+for sourceFile in Glob('lab_3/t3_app.c', True, True, True):
     # Compile the ESOS application.
     p = env.Program(
       [ sourceFile,
@@ -43,6 +43,7 @@ for sourceFile in Glob('lab_3/*.c', True, True, True):
         '../../../pic24lib_all/lib/src/pic24_util.c',
         '../../../pic24lib_all/lib/src/pic24_serial.c',
         '../../../pic24lib_all/lib/src/pic24_uart.c',
+        '../../lab_3/esos_f14ui.c',
         '../../../pic24lib_all/esos/src/esos.c',
         '../../../pic24lib_all/esos/src/esos_comm.c',
         '../../../pic24lib_all/esos/src/esos_cb.c',
