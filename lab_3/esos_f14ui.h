@@ -1,10 +1,11 @@
-/*******************************************************************
+/* Embedded Systems - Spring 2019
+
+ * Christian Bush (cbb330@msstate.edu), Spencer Callicott (sc2257@msstate.edu)
+ * Will Carroll (woc17@msstate.edu), Landon Casey (lec426@msstate.edu)
+ * Jack Fletcher (jdf469@msstate.edu)
  *
- * C header file for ESOS user-interface (UI) service
- *
- *    requires the EMBEDDED SYSTEMS target rev. F14
- *
- * ****************************************************************/
+ * esos_f14ui.h - C header file for ESOS user-interface (UI) service
+ */
 
 #ifndef ESOS_UIF14_H
 #define ESOS_UIF14_H

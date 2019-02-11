@@ -1,10 +1,12 @@
-/*******************************************************************
+/* Embedded Systems - Spring 2019
+
+ * Christian Bush (cbb330@msstate.edu), Spencer Callicott (sc2257@msstate.edu)
+ * Will Carroll (woc17@msstate.edu), Landon Casey (lec426@msstate.edu)
+ * Jack Fletcher (jdf469@msstate.edu)
  *
- * C code framework for ESOS user-interface (UI) service
- *
- *    requires the EMBEDDED SYSTEMS taris rev. F14
- *
- * ****************************************************************/
+ * esos_f14ui.h - C code framework for ESOS user-interface (UI) service
+ */
+
 #include "esos_f14ui.h"
 
 volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
