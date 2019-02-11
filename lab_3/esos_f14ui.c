@@ -36,12 +36,12 @@ inline uint16_t _esos_uiF14_getLastRPGCounter(void)
 #pragma region SWITCH 1
 inline BOOL esos_uiF14_isSW1Pressed(void)
 {
-    return (_st_esos_uiF14Data.b_SW1Pressed == TRUE);
+    return _st_esos_uiF14Data.b_SW1Pressed;
 }
 
 inline BOOL esos_uiF14_isSW1Released(void)
 {
-    return (_st_esos_uiF14Data.b_SW1Pressed == FALSE);
+    return _st_esos_uiF14Data.b_SW1Pressed == FALSE;
 }
 
 inline BOOL esos_uiF14_isSW1DoublePressed(void)
@@ -283,16 +283,20 @@ inline void esos_uiF14_turnGreenLEDOff(void)
 
 #pragma region PUBLIC RPG FUNCTIONS
 
-inline BOOL esos_uiF14_getRPGA(void){
+inline BOOL esos_uiF14_getRPGA(void)
+{
     return _st_esos_uiF14Data.b_RPGAHigh;
 }
-inline void esos_uiF14_setRPGA(BOOL rpg){
+inline void esos_uiF14_setRPGA(BOOL rpg)
+{
     _st_esos_uiF14Data.b_RPGAHigh = rpg;
 }
-inline BOOL esos_uiF14_getRPGB(void){
+inline BOOL esos_uiF14_getRPGB(void)
+{
     return _st_esos_uiF14Data.b_RPGBHigh;
 }
-inline void esos_uiF14_setRPGB(BOOL rpg){
+inline void esos_uiF14_setRPGB(BOOL rpg)
+{
     _st_esos_uiF14Data.b_RPGBHigh = rpg;
 }
 
@@ -332,8 +336,7 @@ inline BOOL esos_uiF14_isRPGTurningMedium(void)
 {
     int16_t v = esos_uiF14_getRPGVelocity();
     BOOL res = (v > esos_uiF14_getRPGSlowThreshold()) && (v < esos_uiF14_getRPGMediumThreshold());
-    res =
-        res || (v < -(esos_uiF14_getRPGSlowThreshold()) && v > -(esos_uiF14_getRPGMediumThreshold()));
+    res = res || (v < -(esos_uiF14_getRPGSlowThreshold()) && v > -(esos_uiF14_getRPGMediumThreshold()));
     return res;
 }
 
@@ -351,8 +354,7 @@ inline BOOL esos_uiF14_isRPGTurningFast(void)
 {
     int16_t v = esos_uiF14_getRPGVelocity();
     BOOL res = (v > esos_uiF14_getRPGMediumThreshold()) && (v < esos_uiF14_getRPGFastThreshold());
-    res =
-        res || (v < -(esos_uiF14_getRPGMediumThreshold()) && v > -(esos_uiF14_getRPGFastThreshold()));
+    res = res || (v < -(esos_uiF14_getRPGMediumThreshold()) && v > -(esos_uiF14_getRPGFastThreshold()));
     return res;
 }
 
@@ -373,14 +375,14 @@ inline BOOL esos_uiF14_isRPGTurningCW(void)
 
 inline BOOL esos_uiF14_isRPGTurningCCW(void)
 {
-    return !(esos_uiF14_isRPGTurningCW());
+    return esos_uiF14_getRPGVelocity() != 0 && !(esos_uiF14_isRPGTurningCW());
 }
 #pragma endregion
 
 #pragma region USER TASKS
 ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
 {
-    esos_uiF14_setRPGVelocity(_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter);
+    esos_uiF14_setRPGVelocity((_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter)/__ESOS_UIF14_RPG_PERIOD);
     _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
 }
 
@@ -426,6 +428,7 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg)
         } else {
             _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() - 1);
         }
+        ESOS_TASK_WAIT_TICKS(30);
         ESOS_TASK_WAIT_UNTIL_RPGA_HIGH();
     }
     ESOS_TASK_END();
@@ -475,8 +478,6 @@ ESOS_USER_TASK(__esos_uiF14_task)
 
     esos_uiF14_setSW1DoublePressedPeriod(1000);
     esos_uiF14_setSW2DoublePressedPeriod(1000);
-
-    
 
     ESOS_TASK_BEGIN();
 

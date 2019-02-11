@@ -48,7 +48,7 @@ typedef struct {
 #define __ESOS_MS_TO_TICKS(x) (x * 1)
 #define __ESOS_UIF14_UI_PERIOD_MS 10
 #define __ESOS_UIF14_RPG_TURNS_PER_REV 12
-#define __ESOS_UIF14_RPG_PERIOD 500
+#define __ESOS_UIF14_RPG_PERIOD 1000
 
 // PRIVATE DATA
 
