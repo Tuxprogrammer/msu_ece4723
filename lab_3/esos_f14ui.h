@@ -1,10 +1,11 @@
-/*******************************************************************
+/* Embedded Systems - Spring 2019
+
+ * Christian Bush (cbb330@msstate.edu), Spencer Callicott (sc2257@msstate.edu)
+ * Will Carroll (woc17@msstate.edu), Landon Casey (lec426@msstate.edu)
+ * Jack Fletcher (jdf469@msstate.edu)
  *
- * C header file for ESOS user-interface (UI) service
- *
- *    requires the EMBEDDED SYSTEMS target rev. F14
- *
- * ****************************************************************/
+ * esos_f14ui.h - C header file for ESOS user-interface (UI) service
+ */
 
 #ifndef ESOS_UIF14_H
 #define ESOS_UIF14_H
@@ -38,9 +39,9 @@ typedef struct {
     int16_t i16_RPGVelocity;
     uint16_t u16_RPGCounter;
     uint16_t u16_lastRPGCounter;
-    uint16_t u16_RPGSlowThreshold;
-    uint16_t u16_RPGMediumThreshold;
-    uint16_t u16_RPGFastThreshold;
+    int16_t u16_RPGSlowThreshold;
+    int16_t u16_RPGMediumThreshold;
+    int16_t u16_RPGFastThreshold;
 } _st_esos_uiF14Data_t;
 
 // DEFINEs and CONSTANTs
@@ -82,16 +83,24 @@ inline BOOL esos_uiF14_isSW3Pressed(void);
 inline BOOL esos_uiF14_isSW3Released(void);
 inline BOOL esos_uiF14_isSW3DoublePressed(void);
 
+inline BOOL esos_uiF14_getRPGA(void);
+inline void esos_uiF14_setRPGA(BOOL rpg);
+inline BOOL esos_uiF14_getRPGB(void);
+inline void esos_uiF14_setRPGB(BOOL rpg);
+
+inline BOOL esos_uiF14_isLED1On(void);
 inline void esos_uiF14_turnLED1On(void);
 inline void esos_uiF14_turnLED1Off(void);
 inline void esos_uiF14_toggleLED1(void);
 inline void esos_uiF14_flashLED1(uint16_t);
 
+inline BOOL esos_uiF14_isLED2On(void);
 inline void esos_uiF14_turnLED2On(void);
 inline void esos_uiF14_turnLED2Off(void);
 inline void esos_uiF14_toggleLED2(void);
 inline void esos_uiF14_flashLED2(uint16_t);
 
+inline BOOL esos_uiF14_isLED3On(void);
 inline void esos_uiF14_turnLED3On(void);
 inline void esos_uiF14_turnLED3Off(void);
 inline void esos_uiF14_toggleLED3(void);
@@ -104,20 +113,26 @@ inline void esos_uiF14_turnGreenLEDOff(void);
 inline void esos_uiF14_turnYellowLEDOn(void);
 inline void esos_uiF14_turnYellowLEDOff(void);
 
-inline int16_t esos_uiF14_getRPGVelocity_i16(void);
-inline uint16_t esos_uiF14_getRPGValue_u16(void);
+inline int16_t esos_uiF14_getRPGVelocity(void);
+inline void esos_uiF14_setRPGVelocity(int16_t v);
 inline BOOL esos_uiF14_isRPGTurning(void);
 inline BOOL esos_uiF14_isRPGTurningSlow(void);
-inline uint16_t esos_uiF14_getRPGSlowThreshold(void);
-inline void esos_uiF14_setRPGSlowThreshold(uint16_t threshold);
+inline int16_t esos_uiF14_getRPGSlowThreshold(void);
+inline void esos_uiF14_setRPGSlowThreshold(int16_t threshold);
 inline BOOL esos_uiF14_isRPGTurningMedium(void);
-inline uint16_t esos_uiF14_getRPGMediumThreshold(void);
-inline void esos_uiF14_setRPGMediumThreshold(uint16_t threshold);
+inline int16_t esos_uiF14_getRPGMediumThreshold(void);
+inline void esos_uiF14_setRPGMediumThreshold(int16_t threshold);
 inline BOOL esos_uiF14_isRPGTurningFast(void);
-inline uint16_t esos_uiF14_getRPGFastThreshold(void);
-inline void esos_uiF14_setRPGFastThreshold(uint16_t threshold);
+inline int16_t esos_uiF14_getRPGFastThreshold(void);
+inline void esos_uiF14_setRPGFastThreshold(int16_t threshold);
 inline BOOL esos_uiF14_isRPGTurningCW(void);
 inline BOOL esos_uiF14_isRPGTurningCCW(void);
+
+ESOS_USER_TASK(__esos_uiF14_task);
+ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity);
+ESOS_USER_TASK(__esos_uiF14_SW1_double_pressed);
+ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed);
+ESOS_USER_TASK(__esos_uiF14_update_rpg);
 
 void config_esos_uiF14();
 
@@ -130,18 +145,22 @@ void config_esos_uiF14();
         ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();                                                                      \
         ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();                                                                     \
     }
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW1_DOUBLE_PRESSED() // not yet implemented
-
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED() // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED() // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED_AND_RELEASED() // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_DOUBLE_PRESSED() // not yet implemented
-
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED() // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED() // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED_AND_RELEASED() // not yet implemented
-#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_DOUBLE_PRESSED() // not yet implemented
-
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW1_DOUBLE_PRESSED() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isSW2DoublePressed());
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isSW2Pressed());
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isSW2Released());
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED_AND_RELEASED()                                                          \
+    {                                                                                                                  \
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED();                                                                      \
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED();                                                                     \
+    }
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW2_DOUBLE_PRESSED() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isSW2DoublePressed());
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isSW3Pressed());
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isSW3Released());
+#define ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED_AND_RELEASED()                                                          \
+    {                                                                                                                  \
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED();                                                                      \
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED();                                                                     \
+    }
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_UNTIL_TURNS()                                                                   \
     {                                                                                                                  \
         ESOS_TASK_WAIT_UNTIL(esos_uiF14_isRPGTurning());                                                               \
@@ -197,5 +216,9 @@ void config_esos_uiF14();
         ESOS_TASK_WAIT_UNTIL(_esos_uiF14_getRPGCounter() ==                                                            \
                              _esos_uiF14_getLastRPGCounter() - (y * __ESOS_UIF14_RPG_TURNS_PER_REV));                  \
     }
+#define ESOS_TASK_WAIT_UNTIL_RPGA_LOW() ESOS_TASK_WAIT_UNTIL(!esos_uiF14_getRPGA());
+#define ESOS_TASK_WAIT_UNTIL_RPGA_HIGH() ESOS_TASK_WAIT_UNTIL(esos_uiF14_getRPGA());
+#define ESOS_TASK_WAIT_UNTIL_RPGB_LOW() ESOS_TASK_WAIT_UNTIL(!esos_uiF14_getRPGB());
+#define ESOS_TASK_WAIT_UNTIL_RPGB_HIGH() ESOS_TASK_WAIT_UNTIL(esos_uiF14_getRPGB());
 
 #endif // ESOS_UIF14_H

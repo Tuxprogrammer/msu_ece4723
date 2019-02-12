@@ -44,6 +44,7 @@ for sourceFile in Glob('lab_3/t3_app.c', True, True, True):
         '../../../pic24lib_all/lib/src/pic24_serial.c',
         '../../../pic24lib_all/lib/src/pic24_uart.c',
         '../../lab_3/esos_f14ui.c',
+        '../../lab_3/t3_app_menu.c',
         '../../../pic24lib_all/esos/src/esos.c',
         '../../../pic24lib_all/esos/src/esos_comm.c',
         '../../../pic24lib_all/esos/src/esos_cb.c',
