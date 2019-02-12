@@ -7,6 +7,9 @@
  * t3_strings.h - strings used by t3_app menu and event notifications
  */
 
+#ifndef T3_STRINGS
+#define T3_STRINGS
+
 #pragma region Notifications
 static char str_e_SW1_PRESSED[]        = "SW1 Pressed\n";
 static char str_e_SW2_PRESSED[]        = "SW2 Pressed\n";
@@ -67,4 +70,10 @@ static char str_m_INSTR[]              = "Make a Selection: ";
 static char str_m_BACK[]               = "ESC: Back\n";
 static char str_m_SEPARATOR[]          = "------------------------------\n";
 
+// Key Bindings
+#define ESC_KEY 0x1B
+#define PLUS_KEY 0x2B
+#define MINUS_KEY 0x2D
 #pragma endregion
+
+#endif

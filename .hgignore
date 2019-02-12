@@ -1,4 +1,5 @@
 build/
 .sconsign.dblite
 .vscode/
-\*.o
+.*\.o$
+

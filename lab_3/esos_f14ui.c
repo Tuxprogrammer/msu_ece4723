@@ -475,12 +475,10 @@ ESOS_USER_TASK(__esos_uiF14_task)
     static int16_t _i16_LED2FlashTicksRemaining = 0;
     static int16_t _i16_LED3FlashTicksRemaining = 0;
 
+    ESOS_TASK_BEGIN();
+
     esos_uiF14_setSW1DoublePressedPeriod(1000);
     esos_uiF14_setSW2DoublePressedPeriod(1000);
-
-    
-
-    ESOS_TASK_BEGIN();
 
     while (TRUE) {
         // do your UI stuff here
