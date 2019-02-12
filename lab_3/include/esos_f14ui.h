@@ -135,6 +135,14 @@ ESOS_USER_TASK(__esos_uiF14_SW1_double_pressed);
 ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed);
 ESOS_USER_TASK(__esos_uiF14_update_rpg);
 
+// // Debouncing state machine
+// enum DEBOUNCE_STATE {
+//     RPG_LOW_1,
+//     RPG_LOW_2,
+//     RPG_HIGH_1,
+//     RPG_HIGH_2
+// };
+
 void config_esos_uiF14();
 
 // PUBLIC API ESOS TASK MACROS

@@ -1,4 +1,6 @@
 # .. "Copyright (c) 2008 Robert B. Reese, Bryan A. Jones, J. W. Bruce ("AUTHORS")"
+#                   2019 Christian Bush, Spencer Callicott, Will Carroll,
+#                   Landon Casey, Jack Fletcher ("AUTHORS")
 #    All rights reserved.
 #    (R. Reese, reese_AT_ece.msstate.edu, Mississippi State University)
 #    (B. A. Jones, bjones_AT_ece.msstate.edu, Mississippi State University)

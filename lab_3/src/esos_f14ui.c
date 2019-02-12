@@ -7,11 +7,9 @@
  * esos_f14ui.h - C code framework for ESOS user-interface (UI) service
  */
 
-
 #include "esos.h"
 #include "esos_pic24.h"
 #include "esos_f14ui.h"
-
 
 volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
 
@@ -483,6 +481,9 @@ ESOS_USER_TASK(__esos_uiF14_task)
     static int16_t _i16_LED2FlashTicksRemaining = 0;
     static int16_t _i16_LED3FlashTicksRemaining = 0;
 
+    static DEBOUNCE_STATE rpga_db_state = RPG_LOW;
+    static DEBOUNCE_STATE rpgb_db_state = RPG_LOW;
+
     ESOS_TASK_BEGIN();
 
     esos_uiF14_setSW1DoublePressedPeriod(1000);
@@ -546,6 +547,44 @@ ESOS_USER_TASK(__esos_uiF14_task)
         } else {
             _st_esos_uiF14Data.b_RPGBHigh = FALSE;
         }
+
+        // switch (rpga_db_state) {
+        // case RPG_LOW_1:
+        //     _st_esos_uiF14Data.b_RPGAHigh = FALSE;
+        //     rpga_db_state = (RPGA_HIGH) ? RPG_LOW_2 : RPG_LOW_1;
+        //     break;
+        // case RPG_LOW_2:
+        //     _st_esos_uiF14Data.b_RPGAHigh = FALSE;
+        //     rpga_db_state = (RPGA_HIGH) ? RPG_HIGH_1 : RPG_LOW_1;
+        //     break;
+        // case RPG_HIGH_1:
+        //     _st_esos_uiF14Data.b_RPGAHigh = TRUE;
+        //     rpga_db_state = (RPGA_HIGH) ? RPG_HIGH_2 : RPG_LOW_2;
+        //     break;
+        // case RPG_HIGH_2:
+        //     _st_esos_uiF14Data.b_RPGAHigh = TRUE;
+        //     rpga_db_state = (RPGA_HIGH) ? RPG_HIGH_2 : RPG_HIGH_1;
+        //     break;
+        // }
+
+        // switch (rpgb_db_state) {
+        // case RPG_LOW_1:
+        //     _st_esos_uiF14Data.b_RPGBHigh = FALSE;
+        //     rpgb_db_state = (RPGB_HIGH) ? RPG_LOW_2 : RPG_LOW_1;
+        //     break;
+        // case RPG_LOW_2:
+        //     _st_esos_uiF14Data.b_RPGBHigh = FALSE;
+        //     rpgb_db_state = (RPGB_HIGH) ? RPG_HIGH_1 : RPG_LOW_1;
+        //     break;
+        // case RPG_HIGH_1:
+        //     _st_esos_uiF14Data.b_RPGBHigh = TRUE;
+        //     rpgb_db_state = (RPGB_HIGH) ? RPG_HIGH_2 : RPG_LOW_2;
+        //     break;
+        // case RPG_HIGH_2:
+        //     _st_esos_uiF14Data.b_RPGBHigh = TRUE;
+        //     rpgb_db_state = (RPGB_HIGH) ? RPG_HIGH_2 : RPG_HIGH_1;
+        //     break;
+        // }
 
         ESOS_TASK_WAIT_TICKS(__ESOS_UIF14_UI_PERIOD_MS);
     }

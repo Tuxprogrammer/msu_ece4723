@@ -39,19 +39,6 @@ static char str_e_RPG_VELOCITY[] = "RPG VELOCITY\n";
 
 #pragma region Menu
 
-// Menu States
-enum MENU_STATE {
-    TOP_MENU,
-    DBL_PRESS_SETTINGS,
-    RPG_THRESH_SETTINGS,
-    SW1_PERIOD,
-    SW2_PERIOD,
-    SW3_PERIOD,
-    RPG_SLOW,
-    RPG_MED,
-    RPG_FAST
-};
-
 // Top Level Menu Items
 static char str_m_DBL_PRESS_SETTINGS[] = "1: Double Press Settings\n";
 static char str_m_RPG_THRESH_SETTINGS[] = "2: RPG Threshold Settings\n";
@@ -77,14 +64,8 @@ static char str_rpgm_CUR_VALUE[] = "RPG Medium Threshold (+/-): ";
 static char str_rpgf_CUR_VALUE[] = "RPG Fast Threshold (+/-): ";
 
 // Menu Common
-#define ESC_KEY 0x1B
 static char str_m_BACK[] = "ESC: Back\n";
 static char str_m_SEPARATOR[] = "------------------------------\n";
-
-// Key Bindings
-#define ESC_KEY 0x1B
-#define PLUS_KEY 0x2B
-#define MINUS_KEY 0x2D
 
 #pragma endregion
 
