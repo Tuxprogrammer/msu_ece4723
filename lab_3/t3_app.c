@@ -70,17 +70,14 @@ ESOS_USER_TASK(feedback)
     static BOOL e_RPG_TURNING;
     static BOOL e_RPG_CW;
     static BOOL e_RPG_CCW;
+    static BOOL e_RPG_SLOW;
+    static BOOL e_RPG_MEDIUM;
+    static BOOL e_RPG_FAST;
     static uint16_t e_RPG_COUNTER;
     static int16_t e_RPG_VELOCITY;
 
     ESOS_TASK_BEGIN();
     while (TRUE) {
-        ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-        e_RPG_COUNTER = _esos_uiF14_getRPGCounter();
-        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(e_RPG_COUNTER);
-        ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
-        ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-
         if (e_SW1_PRESSED != esos_uiF14_isSW1Pressed()) {
             e_SW1_PRESSED = esos_uiF14_isSW1Pressed();
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
@@ -155,9 +152,28 @@ ESOS_USER_TASK(feedback)
                 // do nothing
             }
             e_RPG_VELOCITY = esos_uiF14_getRPGVelocity();
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
             ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_VELOCITY);
             ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(e_RPG_VELOCITY);
             ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        }
+        if (e_RPG_SLOW != esos_uiF14_isRPGTurningSlow()) {
+            e_RPG_SLOW = esos_uiF14_isRPGTurningSlow();
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_SLOW);
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        }
+        if (e_RPG_MEDIUM != esos_uiF14_isRPGTurningMedium()) {
+            e_RPG_MEDIUM = esos_uiF14_isRPGTurningMedium();
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_MEDIUM);
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        }
+        if (e_RPG_FAST != esos_uiF14_isRPGTurningFast()) {
+            e_RPG_FAST = esos_uiF14_isRPGTurningFast();
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_FAST);
             ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
         }
         ESOS_TASK_YIELD();

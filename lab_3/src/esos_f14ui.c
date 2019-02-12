@@ -430,12 +430,13 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg)
     ESOS_TASK_BEGIN();
     while (TRUE) {
         ESOS_TASK_WAIT_UNTIL_RPGA_LOW();
+        ESOS_TASK_WAIT_TICKS(2); //value from 1-10ms for debouncing input
         if (esos_uiF14_getRPGB()) {
             _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() + 1);
         } else {
             _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() - 1);
         }
-        ESOS_TASK_WAIT_TICKS(30);
+        ESOS_TASK_WAIT_TICKS(2); //value from 1-10ms for debouncing input
         ESOS_TASK_WAIT_UNTIL_RPGA_HIGH();
     }
     ESOS_TASK_END();
