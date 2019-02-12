@@ -206,7 +206,7 @@ ESOS_USER_TASK(menu)
             }
         } else if (menu_state == RPG_SLOW) {
             // Print current value
-            static uint16_t i16_rpg_slow_val;
+            static int16_t i16_rpg_slow_val;
             i16_rpg_slow_val = esos_uiF14_getRPGSlowThreshold();
 
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
@@ -240,7 +240,7 @@ ESOS_USER_TASK(menu)
             }
         } else if (menu_state == RPG_MED) {
             // Print current value
-            static uint16_t i16_rpg_med_val;
+            static int16_t i16_rpg_med_val;
             i16_rpg_med_val = esos_uiF14_getRPGMediumThreshold();
 
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
@@ -274,7 +274,7 @@ ESOS_USER_TASK(menu)
             }
         } else if (menu_state == RPG_FAST) {
             // Print current value
-            static uint16_t i16_rpg_fast_val;
+            static int16_t i16_rpg_fast_val;
             i16_rpg_fast_val = esos_uiF14_getRPGFastThreshold();
 
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
