@@ -34,39 +34,40 @@ static char str_e_RPG_VELOCITY[]       = "RPG VELOCITY\n";
 // Menu States
 enum MENU_STATE { TOP_MENU, 
                   DBL_PRESS_SETTINGS, 
-                  LED_FLASH_SETTINGS, 
                   RPG_THRESH_SETTINGS,
                   SW1_PERIOD,
                   SW2_PERIOD,
-                  SW3_PERIOD };
+                  SW3_PERIOD,
+                  RPG_SLOW,
+                  RPG_MED,
+                  RPG_FAST };
 
 // Top Level Menu Items
-static char str_m_DBL_PRESS_SETTINGS[] = "1: Double Press Settings\n";
-static char str_m_LED_FLASH_SETTINGS[] = "2: LED Flash Settings\n";
-static char str_m_RPG_THRESH_SETTINGS[] = "3: RPG Threshold Settings\n";
+static char str_m_DBL_PRESS_SETTINGS[] =  "1: Double Press Settings\n";
+static char str_m_RPG_THRESH_SETTINGS[] = "2: RPG Threshold Settings\n";
 
 // Double Press Settings Menu Items
-static char str_mdp_SW1_PERIOD[]       = "1: SW1 Period\n";
-static char str_mdp_SW2_PERIOD[]       = "2: SW2 Period\n";
-static char str_mdp_SW3_PERIOD[]       = "3: SW3 Period\n";
+static char str_mdp_SW1_PERIOD[]       = "1: SW1 Double Press Period\n";
+static char str_mdp_SW2_PERIOD[]       = "2: SW2 Double Press Period\n";
+static char str_mdp_SW3_PERIOD[]       = "3: SW3 Double Press Period\n";
 
-// LED Flash Settings Menu Items
-static char str_mled_LED1_PERIOD[]     = "1: LED1 Flash Period\n";
-static char str_mled_LED2_PERIOD[]     = "2: LED2 Flash Period\n";
-static char str_mled_LED3_PERIOD[]     = "3: LED3 Flash Period\n";
-
-// RPG Threshold Settings
+// RPG Threshold Settings Menu Items
 static char str_mrpg_RPG_SLOW[]        = "1: RPG Slow Threshold\n";
-static char str_mrpg_RPG_MED[]         = "2: RPG Med Threshold\n";
+static char str_mrpg_RPG_MED[]         = "2: RPG Medium Threshold\n";
 static char str_mrpg_RPG_FAST[]        = "3: RPG Fast Threshold\n";
 
-// SW1 Period Settings
+// SW Period Settings
 static char str_sw1p_CUR_VALUE[]       = "SW1 Double Press Period (+/-): ";
-static char str_sw1p_NEW_VALUE[]       = "(ESC to go back)\n";
+static char str_sw2p_CUR_VALUE[]       = "SW2 Double Press Period (+/-): ";
+static char str_sw3p_CUR_VALUE[]       = "SW3 Double Press Period (+/-): ";
+
+// RPG Threshold Settings
+static char str_rpgs_CUR_VALUE[]       = "RPG Slow Threshold (+/-): ";
+static char str_rpgm_CUR_VALUE[]       = "RPG Medium Threshold (+/-): ";
+static char str_rpgf_CUR_VALUE[]       = "RPG Fast Threshold (+/-): ";
 
 // Menu Common
 #define ESC_KEY 0x1B
-static char str_m_INSTR[]              = "Make a Selection: ";
 static char str_m_BACK[]               = "ESC: Back\n";
 static char str_m_SEPARATOR[]          = "------------------------------\n";
 
