@@ -1,8 +1,8 @@
 #include "esos_f14ui.h"
 #include "esos.h"
 #include "esos_pic24.h"
-#include "t3_strings.h"
 
+#include "t3_strings.h"
 #include "t3_app_menu.h"
 
 ESOS_USER_TIMER(heartbeat)
