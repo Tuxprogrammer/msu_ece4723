@@ -50,15 +50,17 @@ ESOS_LIB_FILES = [
 
 # External Libraries
 # Combines all pic24/esos files into their own libraries, prevents duplicate env warnings
-env.StaticLibrary("esos", ESOS_LIB_FILES)   # this has to go first for some reason
+# this has to go first for some reason
+env.StaticLibrary("esos", ESOS_LIB_FILES)
 env.StaticLibrary("pic24", PIC24_LIB_FILES)
 
-# Internal Shared Libraries 
+# Internal Shared Libraries
 SHARED_SRC_FILES = Glob("./lib/src/*.c", True, True, True)
 env.Prepend(CPPPATH=["./lib/include"])
 env.StaticLibrary("embedded", SHARED_SRC_FILES)
 
-labDirs = [labDir for labDir in os.listdir("../../") if str.startswith(labDir, "lab_")]
+labDirs = [labDir for labDir in os.listdir(
+    "../../") if str.startswith(labDir, "lab_")]
 for labDir in labDirs:
     # Enumerate local library files
     INTERNAL_SRC_FILES = Glob(labDir + "/src/*.c", True, True, True)
@@ -69,6 +71,7 @@ for labDir in labDirs:
 
     # Build each individual application file
     for sourceFile in Glob(labDir + "/*.c", True, True, True):
-        prog = labEnv.Program([sourceFile] + INTERNAL_SRC_FILES, LIBS=["esos", "pic24", "embedded"])
+        prog = labEnv.Program(
+            [sourceFile] + INTERNAL_SRC_FILES, LIBS=["esos", "pic24", "embedded"])
         linker_side_effect(labEnv, prog)
         bin2hex(sourceFile, labEnv, "esos")
