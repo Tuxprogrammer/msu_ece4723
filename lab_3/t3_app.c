@@ -1,7 +1,9 @@
 #include "esos_f14ui.h"
 #include "esos.h"
 #include "esos_pic24.h"
+
 #include "t3_strings.h"
+#include "t3_app_menu.h"
 
 ESOS_USER_TIMER(heartbeat)
 {
@@ -65,14 +67,9 @@ ESOS_USER_TASK(feedback)
     static BOOL e_SW3_PRESSED;
     static BOOL e_LED1_ON;
     static BOOL e_LED2_ON;
-    static BOOL e_LED3_ON;
     static BOOL e_RPG_TURNING;
     static BOOL e_RPG_CW;
     static BOOL e_RPG_CCW;
-    static BOOL e_RPG_SLOW;
-    static BOOL e_RPG_MEDIUM;
-    static BOOL e_RPG_FAST;
-    static uint16_t e_LAST_RPG_COUNTER;
     static uint16_t e_RPG_COUNTER;
     static int16_t e_RPG_VELOCITY;
 
@@ -144,18 +141,18 @@ ESOS_USER_TASK(feedback)
             }
             ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
         }*/
-        if(e_RPG_TURNING != esos_uiF14_isRPGTurning()) {
+        if (e_RPG_TURNING != esos_uiF14_isRPGTurning()) {
             e_RPG_TURNING = esos_uiF14_isRPGTurning();
             e_RPG_CW = esos_uiF14_isRPGTurningCW();
             e_RPG_CCW = esos_uiF14_isRPGTurningCCW();
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
             ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_TURNING);
-            if(e_RPG_CW) {
+            if (e_RPG_CW) {
                 ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_CW);
             } else if (e_RPG_CCW) {
                 ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_CCW);
             } else {
-                //do nothing
+                // do nothing
             }
             e_RPG_VELOCITY = esos_uiF14_getRPGVelocity();
             ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_VELOCITY);
@@ -163,15 +160,8 @@ ESOS_USER_TASK(feedback)
             ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
             ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
         }
-
         ESOS_TASK_YIELD();
     }
-    ESOS_TASK_END();
-}
-ESOS_USER_TASK(menu)
-{
-    ESOS_TASK_BEGIN();
-    ESOS_TASK_YIELD();
     ESOS_TASK_END();
 }
 
@@ -182,6 +172,6 @@ void user_init()
     esos_RegisterTimer(heartbeat, 500);
     esos_RegisterTask(rpg_interface);
     esos_RegisterTask(switch_interface);
-    esos_RegisterTask(feedback);
+    // esos_RegisterTask(feedback);
     esos_RegisterTask(menu);
 }

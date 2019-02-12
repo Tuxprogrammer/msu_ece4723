@@ -1,11 +1,17 @@
-/*******************************************************************
+/* Embedded Systems - Spring 2019
+
+ * Christian Bush (cbb330@msstate.edu), Spencer Callicott (sc2257@msstate.edu)
+ * Will Carroll (woc17@msstate.edu), Landon Casey (lec426@msstate.edu)
+ * Jack Fletcher (jdf469@msstate.edu)
  *
- * C code framework for ESOS user-interface (UI) service
- *
- *    requires the EMBEDDED SYSTEMS taris rev. F14
- *
- * ****************************************************************/
+ * esos_f14ui.h - C code framework for ESOS user-interface (UI) service
+ */
+
+
+#include "esos.h"
+#include "esos_pic24.h"
 #include "esos_f14ui.h"
+
 
 volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
 
@@ -382,7 +388,8 @@ inline BOOL esos_uiF14_isRPGTurningCCW(void)
 #pragma region USER TASKS
 ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
 {
-    esos_uiF14_setRPGVelocity((_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter)/__ESOS_UIF14_RPG_PERIOD);
+    esos_uiF14_setRPGVelocity((_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter) /
+                              __ESOS_UIF14_RPG_PERIOD);
     _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
 }
 
@@ -451,7 +458,7 @@ void config_esos_uiF14()
     SW3_CONFIG();
 
     // configure RPG
-    CONFIG_RPG();
+    RPG_CONFIG();
 
     // zero out the RPG counter
     _esos_uiF14_setRPGCounter(0);
@@ -476,10 +483,10 @@ ESOS_USER_TASK(__esos_uiF14_task)
     static int16_t _i16_LED2FlashTicksRemaining = 0;
     static int16_t _i16_LED3FlashTicksRemaining = 0;
 
+    ESOS_TASK_BEGIN();
+
     esos_uiF14_setSW1DoublePressedPeriod(1000);
     esos_uiF14_setSW2DoublePressedPeriod(1000);
-
-    ESOS_TASK_BEGIN();
 
     while (TRUE) {
         // do your UI stuff here

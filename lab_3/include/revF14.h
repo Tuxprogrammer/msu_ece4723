@@ -69,7 +69,7 @@
 #define SW3_RELEASED (_RC15 == 1)
 
 // configure RPG
-#define CONFIG_RPG()                                                                                                   \
+#define RPG_CONFIG()                                                                                                   \
     {                                                                                                                  \
         CONFIG_RB8_AS_DIG_INPUT();                                                                                     \
         CONFIG_RB9_AS_DIG_INPUT();                                                                                     \
