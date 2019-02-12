@@ -27,7 +27,37 @@
 # SCons_esos.py - Build ESOS EMBEDDED_F14 Applications
 # **************************************************
 import os
+import shutil
 Import("env bin2hex linker_side_effect")
+
+# List of copy operations to perform to setup the shared library
+# Format: (src, dest)
+SHARED_LIB_COPY = [
+    ("../../lab_3/include/revF14.h", "../../lib/include/revF14.h"),
+    ("../../lab_3/include/esos_f14ui.h", "../../lib/include/esos_f14ui.h"),
+    ("../../lab_3/src/esos_f14ui.c", "../../lib/src/esos_f14ui.c")
+]
+
+SHARED_LIB_NOTE = \
+"""/************************************************************
+ * WARNING: DO NOT MODIFY THE CONTENTS OF THIS FILE
+ * This file is automatically overwritten on each build.
+ *
+ * To change the contents of this file, copy it to the
+ * current lab directory and update SCons_esos.py, or change
+ * the file located in: {}.
+ ***********************************************************/
+
+"""
+
+# Copy files adding note
+for src, dest in SHARED_LIB_COPY:
+    if not os.path.exists(os.path.dirname(dest)):
+        os.makedirs(os.path.dirname(dest))
+    
+    note = SHARED_LIB_NOTE.format(src)
+    with open(src, "r") as original: data = original.read()
+    with open(dest, "w") as modified: modified.write(note + data)
 
 PIC24_LIB_FILES = [
     "../../../pic24lib_all/lib/src/pic24_clockfreq.c",
@@ -48,6 +78,8 @@ ESOS_LIB_FILES = [
     "../../../pic24lib_all/esos/src/pic24/esos_pic24_spi.c",
     "../../../pic24lib_all/esos/src/pic24/esos_pic24_tick.c"]
 
+SHARED_LIB_FILES = Glob("./lib/src/*.c", True, True, True)
+
 # External Libraries
 # Combines all pic24/esos files into their own libraries, prevents duplicate env warnings
 # this has to go first for some reason
@@ -55,9 +87,8 @@ env.StaticLibrary("esos", ESOS_LIB_FILES)
 env.StaticLibrary("pic24", PIC24_LIB_FILES)
 
 # Internal Shared Libraries
-SHARED_SRC_FILES = Glob("./lib/src/*.c", True, True, True)
 env.Prepend(CPPPATH=["./lib/include"])
-env.StaticLibrary("embedded", SHARED_SRC_FILES)
+env.StaticLibrary("embedded", SHARED_LIB_FILES)
 
 labDirs = [labDir for labDir in os.listdir(
     "../../") if str.startswith(labDir, "lab_")]
