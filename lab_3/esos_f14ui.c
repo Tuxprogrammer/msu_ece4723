@@ -285,16 +285,20 @@ inline void esos_uiF14_turnGreenLEDOff(void)
 
 #pragma region PUBLIC RPG FUNCTIONS
 
-inline BOOL esos_uiF14_getRPGA(void){
+inline BOOL esos_uiF14_getRPGA(void)
+{
     return _st_esos_uiF14Data.b_RPGAHigh;
 }
-inline void esos_uiF14_setRPGA(BOOL rpg){
+inline void esos_uiF14_setRPGA(BOOL rpg)
+{
     _st_esos_uiF14Data.b_RPGAHigh = rpg;
 }
-inline BOOL esos_uiF14_getRPGB(void){
+inline BOOL esos_uiF14_getRPGB(void)
+{
     return _st_esos_uiF14Data.b_RPGBHigh;
 }
-inline void esos_uiF14_setRPGB(BOOL rpg){
+inline void esos_uiF14_setRPGB(BOOL rpg)
+{
     _st_esos_uiF14Data.b_RPGBHigh = rpg;
 }
 
@@ -334,8 +338,7 @@ inline BOOL esos_uiF14_isRPGTurningMedium(void)
 {
     int16_t v = esos_uiF14_getRPGVelocity();
     BOOL res = (v > esos_uiF14_getRPGSlowThreshold()) && (v < esos_uiF14_getRPGMediumThreshold());
-    res =
-        res || (v < -(esos_uiF14_getRPGSlowThreshold()) && v > -(esos_uiF14_getRPGMediumThreshold()));
+    res = res || (v < -(esos_uiF14_getRPGSlowThreshold()) && v > -(esos_uiF14_getRPGMediumThreshold()));
     return res;
 }
 
@@ -353,8 +356,7 @@ inline BOOL esos_uiF14_isRPGTurningFast(void)
 {
     int16_t v = esos_uiF14_getRPGVelocity();
     BOOL res = (v > esos_uiF14_getRPGMediumThreshold()) && (v < esos_uiF14_getRPGFastThreshold());
-    res =
-        res || (v < -(esos_uiF14_getRPGMediumThreshold()) && v > -(esos_uiF14_getRPGFastThreshold()));
+    res = res || (v < -(esos_uiF14_getRPGMediumThreshold()) && v > -(esos_uiF14_getRPGFastThreshold()));
     return res;
 }
 

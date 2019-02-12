@@ -182,6 +182,6 @@ void user_init()
     esos_RegisterTask(rpg_interface);
     esos_RegisterTask(switch_interface);
     esos_RegisterTask(feedback);
-    
+
     config_ui_menu();
 }
