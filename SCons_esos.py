@@ -24,36 +24,51 @@
 #    these files.
 #
 # **************************************************
-# SCons_esos.py - Build ESOS chapter 14 applications
+# SCons_esos.py - Build ESOS EMBEDDED_F14 Applications
 # **************************************************
 import os
-Import('env bin2hex linker_side_effect')
+Import("env bin2hex linker_side_effect")
 
-## Inform SCons about the dependencies in the template-based files
-SConscript('templates/SConscript.py', 'env')
+PIC24_LIB_FILES = [
+    "../../../pic24lib_all/lib/src/pic24_clockfreq.c",
+    "../../../pic24lib_all/lib/src/pic24_configbits.c",
+    "../../../pic24lib_all/lib/src/pic24_timer.c",
+    "../../../pic24lib_all/lib/src/pic24_util.c",
+    "../../../pic24lib_all/lib/src/pic24_serial.c",
+    "../../../pic24lib_all/lib/src/pic24_uart.c"]
 
-## Walk through each source file and build it
-for sourceFile in Glob('lab_3/t3_app.c', True, True, True):
-    # Compile the ESOS application.
-    p = env.Program(
-      [ sourceFile,
-        '../../../pic24lib_all/lib/src/pic24_clockfreq.c',
-        '../../../pic24lib_all/lib/src/pic24_configbits.c',
-        '../../../pic24lib_all/lib/src/pic24_timer.c',
-        '../../../pic24lib_all/lib/src/pic24_util.c',
-        '../../../pic24lib_all/lib/src/pic24_serial.c',
-        '../../../pic24lib_all/lib/src/pic24_uart.c',
-        '../../lab_3/esos_f14ui.c',
-        '../../lab_3/t3_app_menu.c',
-        '../../../pic24lib_all/esos/src/esos.c',
-        '../../../pic24lib_all/esos/src/esos_comm.c',
-        '../../../pic24lib_all/esos/src/esos_cb.c',
-        '../../../pic24lib_all/esos/src/esos_mail.c',
-        '../../../pic24lib_all/esos/src/pic24/esos_pic24_i2c.c',
-        '../../../pic24lib_all/esos/src/pic24/esos_pic24_irq.c',
-        '../../../pic24lib_all/esos/src/pic24/esos_pic24_rs232.c',
-        '../../../pic24lib_all/esos/src/pic24/esos_pic24_spi.c',
-        '../../../pic24lib_all/esos/src/pic24/esos_pic24_tick.c', ])
-    linker_side_effect(env, p)
-    # Convert it to a .hex
-    bin2hex(sourceFile, env, 'esos')
+ESOS_LIB_FILES = [
+    "../../../pic24lib_all/esos/src/esos.c",
+    "../../../pic24lib_all/esos/src/esos_comm.c",
+    "../../../pic24lib_all/esos/src/esos_cb.c",
+    "../../../pic24lib_all/esos/src/esos_mail.c",
+    "../../../pic24lib_all/esos/src/pic24/esos_pic24_i2c.c",
+    "../../../pic24lib_all/esos/src/pic24/esos_pic24_irq.c",
+    "../../../pic24lib_all/esos/src/pic24/esos_pic24_rs232.c",
+    "../../../pic24lib_all/esos/src/pic24/esos_pic24_spi.c",
+    "../../../pic24lib_all/esos/src/pic24/esos_pic24_tick.c"]
+
+# External Libraries
+# Combines all pic24/esos files into their own libraries, prevents duplicate env warnings
+env.StaticLibrary("esos", ESOS_LIB_FILES)   # this has to go first for some reason
+env.StaticLibrary("pic24", PIC24_LIB_FILES)
+
+# Internal Shared Libraries 
+SHARED_SRC_FILES = Glob("./src/*.c", True, True, True)
+env.Prepend(CPPPATH=["../../include"])
+env.StaticLibrary("embedded", SHARED_SRC_FILES)
+
+labDirs = [labDir for labDir in os.listdir("../../") if str.startswith(labDir, "lab_")]
+for labDir in labDirs:
+    # Enumerate local library files
+    INTERNAL_SRC_FILES = Glob(labDir + "/src/*.c", True, True, True)
+
+    # Create env clone for each lab
+    labEnv = env.Clone()
+    labEnv.Prepend(CPPPATH=[labDir + "/include"])
+
+    # Build each individual application file
+    for sourceFile in Glob(labDir + "/*.c", True, True, True):
+        prog = labEnv.Program([sourceFile] + INTERNAL_SRC_FILES, LIBS=["esos", "pic24", "embedded"])
+        linker_side_effect(labEnv, prog)
+        bin2hex(sourceFile, labEnv, "esos")

@@ -10,9 +10,10 @@
 #ifndef ESOS_UIF14_H
 #define ESOS_UIF14_H
 
-#include "revF14.h"
 #include "esos.h"
 #include "esos_pic24.h"
+
+#include "revF14.h"
 
 // STRUCTURES
 
