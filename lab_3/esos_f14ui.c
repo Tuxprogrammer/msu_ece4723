@@ -38,12 +38,12 @@ inline uint16_t _esos_uiF14_getLastRPGCounter(void)
 #pragma region SWITCH 1
 inline BOOL esos_uiF14_isSW1Pressed(void)
 {
-    return (_st_esos_uiF14Data.b_SW1Pressed == TRUE);
+    return _st_esos_uiF14Data.b_SW1Pressed;
 }
 
 inline BOOL esos_uiF14_isSW1Released(void)
 {
-    return (_st_esos_uiF14Data.b_SW1Pressed == FALSE);
+    return _st_esos_uiF14Data.b_SW1Pressed == FALSE;
 }
 
 inline BOOL esos_uiF14_isSW1DoublePressed(void)
@@ -377,14 +377,15 @@ inline BOOL esos_uiF14_isRPGTurningCW(void)
 
 inline BOOL esos_uiF14_isRPGTurningCCW(void)
 {
-    return !(esos_uiF14_isRPGTurningCW());
+    return esos_uiF14_getRPGVelocity() != 0 && !(esos_uiF14_isRPGTurningCW());
 }
 #pragma endregion
 
 #pragma region USER TASKS
 ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
 {
-    esos_uiF14_setRPGVelocity(_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter);
+    esos_uiF14_setRPGVelocity((_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter) /
+                              __ESOS_UIF14_RPG_PERIOD);
     _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
 }
 
@@ -430,6 +431,7 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg)
         } else {
             _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() - 1);
         }
+        ESOS_TASK_WAIT_TICKS(30);
         ESOS_TASK_WAIT_UNTIL_RPGA_HIGH();
     }
     ESOS_TASK_END();
