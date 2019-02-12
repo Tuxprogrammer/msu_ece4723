@@ -1,8 +1,8 @@
 #include "esos_f14ui.h"
 #include "esos.h"
 #include "esos_pic24.h"
-#include "t3_strings.h"
 
+#include "t3_strings.h"
 #include "t3_app_menu.h"
 
 ESOS_USER_TIMER(heartbeat)
@@ -67,14 +67,9 @@ ESOS_USER_TASK(feedback)
     static BOOL e_SW3_PRESSED;
     static BOOL e_LED1_ON;
     static BOOL e_LED2_ON;
-    static BOOL e_LED3_ON;
     static BOOL e_RPG_TURNING;
     static BOOL e_RPG_CW;
     static BOOL e_RPG_CCW;
-    static BOOL e_RPG_SLOW;
-    static BOOL e_RPG_MEDIUM;
-    static BOOL e_RPG_FAST;
-    static uint16_t e_LAST_RPG_COUNTER;
     static uint16_t e_RPG_COUNTER;
     static int16_t e_RPG_VELOCITY;
 
@@ -178,6 +173,5 @@ void user_init()
     esos_RegisterTask(rpg_interface);
     esos_RegisterTask(switch_interface);
     // esos_RegisterTask(feedback);
-
-    config_ui_menu();
+    esos_RegisterTask(menu);
 }

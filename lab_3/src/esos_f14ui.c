@@ -7,7 +7,11 @@
  * esos_f14ui.h - C code framework for ESOS user-interface (UI) service
  */
 
+
+#include "esos.h"
+#include "esos_pic24.h"
 #include "esos_f14ui.h"
+
 
 volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
 
@@ -454,7 +458,7 @@ void config_esos_uiF14()
     SW3_CONFIG();
 
     // configure RPG
-    CONFIG_RPG();
+    RPG_CONFIG();
 
     // zero out the RPG counter
     _esos_uiF14_setRPGCounter(0);
