@@ -54,8 +54,8 @@ env.StaticLibrary("esos", ESOS_LIB_FILES)   # this has to go first for some reas
 env.StaticLibrary("pic24", PIC24_LIB_FILES)
 
 # Internal Shared Libraries 
-SHARED_SRC_FILES = Glob("./src/*.c", True, True, True)
-env.Prepend(CPPPATH=["../../include"])
+SHARED_SRC_FILES = Glob("./lib/src/*.c", True, True, True)
+env.Prepend(CPPPATH=["./lib/include"])
 env.StaticLibrary("embedded", SHARED_SRC_FILES)
 
 labDirs = [labDir for labDir in os.listdir("../../") if str.startswith(labDir, "lab_")]
