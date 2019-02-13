@@ -78,6 +78,12 @@ ESOS_USER_TASK(feedback)
 
     ESOS_TASK_BEGIN();
     while (TRUE) {
+        ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+        //ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_COUNTER);
+        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(e_RPG_COUNTER);
+        ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+        ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
         if (e_SW1_PRESSED != esos_uiF14_isSW1Pressed()) {
             e_SW1_PRESSED = esos_uiF14_isSW1Pressed();
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
@@ -152,9 +158,12 @@ ESOS_USER_TASK(feedback)
                 // do nothing
             }
             e_RPG_VELOCITY = esos_uiF14_getRPGVelocity();
-            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            e_RPG_COUNTER = _esos_uiF14_getRPGCounter();
             ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_VELOCITY);
             ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(e_RPG_VELOCITY);
+            ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_COUNTER);
+            ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(e_RPG_COUNTER);
             ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
             ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
         }
@@ -188,6 +197,6 @@ void user_init()
     esos_RegisterTimer(heartbeat, 500);
     esos_RegisterTask(rpg_interface);
     esos_RegisterTask(switch_interface);
-    // esos_RegisterTask(feedback);
+    esos_RegisterTask(feedback);
     esos_RegisterTask(menu);
 }

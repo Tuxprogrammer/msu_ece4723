@@ -44,7 +44,8 @@ volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
  * these files.
  */
 
-uint16_t processRotaryData(volatile uint16_t u16_curr, volatile uint16_t u16_last, volatile uint16_t *cntr, volatile uint16_t max)
+uint16_t processRotaryData(volatile uint16_t u16_curr, volatile uint16_t u16_last, volatile uint16_t *cntr,
+                           volatile uint16_t max)
 {
     int8_t delta = 0;
     // states listed in Gray code order for clarity
@@ -86,8 +87,8 @@ uint16_t processRotaryData(volatile uint16_t u16_curr, volatile uint16_t u16_las
 }
 
 // switch these if its backwards
-#define GET_ROT_STATE() ((RPGA << 1) | RPGB)
-#define ROT_MAX 12 // arbitrary limit
+#define GET_ROT_STATE() ((RPGB << 1) | RPGA)
+#define ROT_MAX 0xFFFF // arbitrary limit
 
 volatile uint16_t u16_valueROT = 0;
 volatile uint16_t u16_lastvalueROT = 0;
@@ -95,18 +96,19 @@ volatile uint16_t u16_errROT = 0;
 volatile uint16_t u16_cntrROT = 0;
 
 // Interrupt Service Routine for Timer3
-ESOS_USER_TIMER(__esos_uiF14_T3)
-{
-    u16_valueROT = GET_ROT_STATE(); // a value between 0 & 3
-    if (u16_lastvalueROT != u16_valueROT) {
-        u16_errROT = processRotaryData(u16_valueROT, u16_lastvalueROT, &u16_cntrROT, ROT_MAX);
-        _st_esos_uiF14Data.u16_lastRPGCounter = u16_lastvalueROT;
-        _st_esos_uiF14Data.u16_RPGCounter = u16_valueROT;
-        u16_lastvalueROT = u16_valueROT;
-    }
-}
+// See below
+// ESOS_USER_TIMER(__esos_uiF14_T3)
+// {
+//     u16_valueROT = GET_ROT_STATE(); // a value between 0 & 3
+//     if (u16_lastvalueROT != u16_valueROT) {
+//         u16_errROT = processRotaryData(u16_valueROT, u16_lastvalueROT, &u16_cntrROT, ROT_MAX);
+//         _st_esos_uiF14Data.u16_lastRPGCounter = u16_lastvalueROT;
+//         _st_esos_uiF14Data.u16_RPGCounter = u16_cntrROT;
+//         u16_lastvalueROT = u16_valueROT;
+//     }
+// }
 
-#define ISR_PERIOD 15 // in ms
+//#define ISR_PERIOD 5 // in ms
 // END OF REFERENCED CODE
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -482,9 +484,8 @@ inline BOOL esos_uiF14_isRPGTurningCCW(void)
 #pragma region USER TASKS
 ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
 {
-    esos_uiF14_setRPGVelocity(
-        (_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter) /
-        __ESOS_UIF14_RPG_PERIOD);
+    esos_uiF14_setRPGVelocity((_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter) /
+                              __ESOS_UIF14_RPG_PERIOD);
     _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
 }
 
@@ -567,7 +568,6 @@ void config_esos_uiF14()
     // Register and start tasks/timers
     esos_RegisterTask(__esos_uiF14_task);
     esos_RegisterTimer(__esos_uiF14_update_rpg_velocity, __ESOS_UIF14_RPG_PERIOD);
-    esos_RegisterTimer(__esos_uiF14_T3, ISR_PERIOD);
     esos_RegisterTask(__esos_uiF14_SW1_double_pressed);
     esos_RegisterTask(__esos_uiF14_SW2_double_pressed);
     // esos_RegisterTask(__esos_uiF14_update_rpg);
@@ -642,6 +642,14 @@ ESOS_USER_TASK(__esos_uiF14_task)
             _st_esos_uiF14Data.b_RPGBHigh = TRUE;
         } else {
             _st_esos_uiF14Data.b_RPGBHigh = FALSE;
+        }
+
+        u16_valueROT = GET_ROT_STATE(); // a value between 0 & 3
+        if (u16_lastvalueROT != u16_valueROT) {
+            u16_errROT = processRotaryData(u16_valueROT, u16_lastvalueROT, &u16_cntrROT, ROT_MAX);
+            _st_esos_uiF14Data.u16_lastRPGCounter = u16_lastvalueROT;
+            _st_esos_uiF14Data.u16_RPGCounter = u16_cntrROT;
+            u16_lastvalueROT = u16_valueROT;
         }
 
         ESOS_TASK_WAIT_TICKS(__ESOS_UIF14_UI_PERIOD_MS);
