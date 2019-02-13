@@ -7,15 +7,109 @@
  * esos_f14ui.h - C code framework for ESOS user-interface (UI) service
  */
 
-
 #include "esos.h"
 #include "esos_pic24.h"
 #include "esos_f14ui.h"
-
+#include "revF14.h"
 
 volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
 
 #pragma region PRIVATE RPG FUNCTIONS
+
+/////////////////////////////////////////////////////////////////////////////////
+/* The following code comes from Microcontrollers, Second Edition
+ * "Copyright (c) 2008 Robert B. Reese, Bryan A. Jones, J. W. Bruce ("AUTHORS")"
+ * All rights reserved.
+ * (R. Reese, reese_AT_ece.msstate.edu, Mississippi State University)
+ * (B. A. Jones, bjones_AT_ece.msstate.edu, Mississippi State University)
+ * (J. W. Bruce, jwbruce_AT_ece.msstate.edu, Mississippi State University)
+ *
+ * Permission to use, copy, modify, and distribute this software and its
+ * documentation for any purpose, without fee, and without written agreement is
+ * hereby granted, provided that the above copyright notice, the following
+ * two paragraphs and the authors appear in all copies of this software.
+ *
+ * IN NO EVENT SHALL THE "AUTHORS" BE LIABLE TO ANY PARTY FOR
+ * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT
+ * OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF THE "AUTHORS"
+ * HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * THE "AUTHORS" SPECIFICALLY DISCLAIMS ANY WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ * ON AN "AS IS" BASIS, AND THE "AUTHORS" HAS NO OBLIGATION TO
+ * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS."
+ *
+ * Please maintain this header in its entirety when copying/modifying
+ * these files.
+ */
+
+uint16_t processRotaryData(volatile uint16_t u16_curr, volatile uint16_t u16_last, volatile uint16_t *cntr, volatile uint16_t max)
+{
+    int8_t delta = 0;
+    // states listed in Gray code order for clarity
+    switch (u16_curr) {
+    case 0:
+        if (u16_last == 1)
+            delta = 1;
+        else if (u16_last == 2)
+            delta = -1;
+        break;
+    case 1:
+        if (u16_last == 3)
+            delta = 1;
+        else if (u16_last == 0)
+            delta = -1;
+        break;
+    case 3:
+        if (u16_last == 2)
+            delta = 1;
+        else if (u16_last == 1)
+            delta = -1;
+        break;
+    case 2:
+        if (u16_last == 0)
+            delta = 1;
+        else if (u16_last == 3)
+            delta = -1;
+        break;
+    default:
+        break;
+    }
+    if (delta == 0)
+        return (1); // error, illegal state
+    // clip and update.
+    if ((*cntr == 0 && delta == -1) || (*cntr == max && delta == 1))
+        return 0; // at limit
+    (*cntr) = (*cntr) + delta;
+    return 0;
+}
+
+// switch these if its backwards
+#define GET_ROT_STATE() ((RPGA << 1) | RPGB)
+#define ROT_MAX 12 // arbitrary limit
+
+volatile uint16_t u16_valueROT = 0;
+volatile uint16_t u16_lastvalueROT = 0;
+volatile uint16_t u16_errROT = 0;
+volatile uint16_t u16_cntrROT = 0;
+
+// Interrupt Service Routine for Timer3
+ESOS_USER_TIMER(__esos_uiF14_T3)
+{
+    u16_valueROT = GET_ROT_STATE(); // a value between 0 & 3
+    if (u16_lastvalueROT != u16_valueROT) {
+        u16_errROT = processRotaryData(u16_valueROT, u16_lastvalueROT, &u16_cntrROT, ROT_MAX);
+        _st_esos_uiF14Data.u16_lastRPGCounter = u16_lastvalueROT;
+        _st_esos_uiF14Data.u16_RPGCounter = u16_valueROT;
+        u16_lastvalueROT = u16_valueROT;
+    }
+}
+
+#define ISR_PERIOD 15 // in ms
+// END OF REFERENCED CODE
+/////////////////////////////////////////////////////////////////////////////////
+
 inline void _esos_uiF14_setRPGCounter(uint16_t newValue)
 {
     _st_esos_uiF14Data.u16_RPGCounter = newValue;
@@ -388,8 +482,9 @@ inline BOOL esos_uiF14_isRPGTurningCCW(void)
 #pragma region USER TASKS
 ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
 {
-    esos_uiF14_setRPGVelocity((_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter) /
-                              __ESOS_UIF14_RPG_PERIOD);
+    esos_uiF14_setRPGVelocity(
+        (_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter) /
+        __ESOS_UIF14_RPG_PERIOD);
     _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
 }
 
@@ -430,13 +525,13 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg)
     ESOS_TASK_BEGIN();
     while (TRUE) {
         ESOS_TASK_WAIT_UNTIL_RPGA_LOW();
-        ESOS_TASK_WAIT_TICKS(2); //value from 1-10ms for debouncing input
+        ESOS_TASK_WAIT_TICKS(2); // value from 1-10ms for debouncing input
         if (esos_uiF14_getRPGB()) {
             _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() + 1);
         } else {
             _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() - 1);
         }
-        ESOS_TASK_WAIT_TICKS(2); //value from 1-10ms for debouncing input
+        ESOS_TASK_WAIT_TICKS(2); // value from 1-10ms for debouncing input
         ESOS_TASK_WAIT_UNTIL_RPGA_HIGH();
     }
     ESOS_TASK_END();
@@ -472,9 +567,10 @@ void config_esos_uiF14()
     // Register and start tasks/timers
     esos_RegisterTask(__esos_uiF14_task);
     esos_RegisterTimer(__esos_uiF14_update_rpg_velocity, __ESOS_UIF14_RPG_PERIOD);
+    esos_RegisterTimer(__esos_uiF14_T3, ISR_PERIOD);
     esos_RegisterTask(__esos_uiF14_SW1_double_pressed);
     esos_RegisterTask(__esos_uiF14_SW2_double_pressed);
-    esos_RegisterTask(__esos_uiF14_update_rpg);
+    // esos_RegisterTask(__esos_uiF14_update_rpg);
 }
 
 // UIF14 task to manage user-interface
