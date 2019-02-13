@@ -9,6 +9,9 @@
 
 #ifndef REVF14_H
 #define REVF14_H
+#ifndef __dsPIC33EP512GP806__
+#define __dsPIC33EP512GP806__
+#endif
 
 #include "pic24_all.h"
 
@@ -66,15 +69,15 @@
 #define SW3_RELEASED (_RC15 == 1)
 
 // configure RPG
-#define CONFIG_RPG()                                                                                                   \
-    do {                                                                                                               \
+#define RPG_CONFIG()                                                                                                   \
+    {                                                                                                                  \
         CONFIG_RB8_AS_DIG_INPUT();                                                                                     \
         CONFIG_RB9_AS_DIG_INPUT();                                                                                     \
         ENABLE_RB8_PULLUP();                                                                                           \
         ENABLE_RB9_PULLUP();                                                                                           \
         CONFIG_INT1_TO_RP(40);                                                                                         \
         DELAY_US(1);                                                                                                   \
-    } while (0)
+    }
 
 #define RPGA (_RB8)
 #define RPGB (_RB9)
