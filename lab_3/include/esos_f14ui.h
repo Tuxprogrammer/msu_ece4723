@@ -26,6 +26,7 @@ typedef struct {
     uint16_t u16_SW2DoublePressedPeriod;
     BOOL b_SW3Pressed;
     BOOL b_SW3DoublePressed;
+    uint16_t u16_SW3DoublePressedPeriod;
 
     BOOL b_RPGAHigh;
     BOOL b_RPGBHigh;
@@ -83,6 +84,8 @@ inline void esos_uiF14_setSW2DoublePressedPeriod(uint16_t period);
 inline BOOL esos_uiF14_isSW3Pressed(void);
 inline BOOL esos_uiF14_isSW3Released(void);
 inline BOOL esos_uiF14_isSW3DoublePressed(void);
+inline uint16_t esos_uiF14_getSW3DoublePressedPeriod(void);
+inline void esos_uiF14_setSW3DoublePressedPeriod(uint16_t period);
 
 inline BOOL esos_uiF14_getRPGA(void);
 inline void esos_uiF14_setRPGA(BOOL rpg);
@@ -133,6 +136,7 @@ ESOS_USER_TASK(__esos_uiF14_task);
 ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity);
 ESOS_USER_TASK(__esos_uiF14_SW1_double_pressed);
 ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed);
+ESOS_USER_TASK(__esos_uiF14_SW3_double_pressed);
 ESOS_USER_TASK(__esos_uiF14_update_rpg);
 
 void config_esos_uiF14();
