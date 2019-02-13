@@ -68,6 +68,7 @@ inline uint16_t esos_uiF14_getSW1DoublePressedPeriod(void)
 {
     return _st_esos_uiF14Data.u16_SW1DoublePressedPeriod;
 }
+
 inline void esos_uiF14_setSW1DoublePressedPeriod(uint16_t period)
 {
     _st_esos_uiF14Data.u16_SW1DoublePressedPeriod = period;
@@ -102,6 +103,7 @@ inline uint16_t esos_uiF14_getSW2DoublePressedPeriod(void)
 {
     return _st_esos_uiF14Data.u16_SW2DoublePressedPeriod;
 }
+
 inline void esos_uiF14_setSW2DoublePressedPeriod(uint16_t period)
 {
     _st_esos_uiF14Data.u16_SW2DoublePressedPeriod = period;
@@ -120,7 +122,26 @@ inline BOOL esos_uiF14_isSW3Released(void)
 
 inline BOOL esos_uiF14_isSW3DoublePressed(void)
 {
-    return (_st_esos_uiF14Data.b_SW3DoublePressed == TRUE);
+    if (_st_esos_uiF14Data.b_SW3DoublePressed == TRUE) {
+        _st_esos_uiF14Data.b_SW3DoublePressed = FALSE;
+        return TRUE;
+    } else
+        return FALSE;
+}
+
+inline void esos_uiF14_setSW3DoublePressed(void)
+{
+    _st_esos_uiF14Data.b_SW3DoublePressed = TRUE;
+}
+
+inline uint16_t esos_uiF14_getSW3DoublePressedPeriod(void)
+{
+    return _st_esos_uiF14Data.u16_SW3DoublePressedPeriod;
+}
+
+inline void esos_uiF14_setSW3DoublePressedPeriod(uint16_t period)
+{
+    _st_esos_uiF14Data.u16_SW3DoublePressedPeriod = period;
 }
 #pragma endregion
 
@@ -425,6 +446,22 @@ ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed)
     ESOS_TASK_END();
 }
 
+ESOS_USER_TASK(__esos_uiF14_SW3_double_pressed)
+{
+    static uint32_t start = 0, stop = 0;
+    ESOS_TASK_BEGIN();
+    while (TRUE) {
+        stop = esos_GetSystemTick();
+        if (stop - start < esos_uiF14_getSW3DoublePressedPeriod()) {
+            esos_uiF14_setSW3DoublePressed();
+        }
+        start = esos_GetSystemTick();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED();
+    }
+    ESOS_TASK_END();
+}
+
 ESOS_USER_TASK(__esos_uiF14_update_rpg)
 {
     ESOS_TASK_BEGIN();
@@ -473,6 +510,7 @@ void config_esos_uiF14()
     esos_RegisterTimer(__esos_uiF14_update_rpg_velocity, __ESOS_UIF14_RPG_PERIOD);
     esos_RegisterTask(__esos_uiF14_SW1_double_pressed);
     esos_RegisterTask(__esos_uiF14_SW2_double_pressed);
+    esos_RegisterTask(__esos_uiF14_SW3_double_pressed);
     esos_RegisterTask(__esos_uiF14_update_rpg);
 }
 
@@ -487,6 +525,7 @@ ESOS_USER_TASK(__esos_uiF14_task)
 
     esos_uiF14_setSW1DoublePressedPeriod(1000);
     esos_uiF14_setSW2DoublePressedPeriod(1000);
+    esos_uiF14_setSW3DoublePressedPeriod(1000);
 
     while (TRUE) {
         // do your UI stuff here
