@@ -4,5 +4,5 @@
  * Will Carroll (woc17@msstate.edu), Landon Casey (lec426@msstate.edu)
  * Jack Fletcher (jdf469@msstate.edu)
  *
- * esos_pic24_sensor.c - ESOS Sensor Application 2
+ * t4_sensor2.c - ESOS Sensor Application 2
  */
