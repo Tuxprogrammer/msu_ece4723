@@ -18,6 +18,6 @@ ESOS_USER_TIMER(heartbeat)
 
 void user_init()
 {
-    esos_RegisterTask(heartbeat);
-    
+    esos_RegisterTimer(heartbeat, 250);
+
 }
