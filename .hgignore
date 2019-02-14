@@ -1,3 +1,7 @@
 build/
+lib/
 .sconsign.dblite
 .vscode/
+.*\.o$
+
+
