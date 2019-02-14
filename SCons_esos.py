@@ -33,9 +33,11 @@ Import("env bin2hex linker_side_effect")
 # List of copy operations to perform to setup the shared library
 # Format: (src, dest)
 SHARED_LIB_COPY = [
-    ("../../lab_3/include/revF14.h", "../../lib/include/revF14.h"),
     ("../../lab_3/include/esos_f14ui.h", "../../lib/include/esos_f14ui.h"),
-    ("../../lab_3/src/esos_f14ui.c", "../../lib/src/esos_f14ui.c")
+    ("../../lab_3/src/esos_f14ui.c", "../../lib/src/esos_f14ui.c"),
+    ("../../lab_4/include/revF14.h", "../../lib/include/revF14.h"),
+    ("../../lab_4/include/esos_pic24_sensor.h", "../../lib/include/esos_pic24_sensor.h"),
+    ("../../lab_4/src/esos_pic24_sensor.c", "../../lib/src/esos_pic24_sensor.c")
 ]
 
 SHARED_LIB_NOTE = \
