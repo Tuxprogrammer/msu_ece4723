@@ -6,3 +6,18 @@
  *
  * t4_sensor1.c - ESOS Sensor Application 1
  */
+
+#include "revF14.h"
+#include "esos.h"
+#include "esos_pic24.h"
+
+ESOS_USER_TIMER(heartbeat)
+{
+    esos_uiF14_toggleLED3();
+}
+
+void user_init()
+{
+    esos_RegisterTask(heartbeat);
+    
+}
