@@ -173,7 +173,7 @@ ESOS_USER_TASK(menu)
         } else if (menu_state == SW3_PERIOD) {
             // Print current value
             static uint16_t u16_sw3_period_val;
-            // u16_sw3_period_val = esos_uiF14_getSW3DoublePressedPeriod(); TODO
+            u16_sw3_period_val = esos_uiF14_getSW3DoublePressedPeriod();
 
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
             ESOS_TASK_WAIT_ON_SEND_STRING(str_sw3p_CUR_VALUE);
@@ -190,12 +190,12 @@ ESOS_USER_TASK(menu)
             // Perform correct action based on selection
             switch (u8_input) {
             case PLUS_KEY:
-                // u16_sw3_period_val = esos_uiF14_getSW3DoublePressedPeriod(); TODO
-                // esos_uiF14_setSW3DoublePressedPeriod(u16_sw3_period_val + 1); TODO
+                u16_sw3_period_val = esos_uiF14_getSW3DoublePressedPeriod();
+                esos_uiF14_setSW3DoublePressedPeriod(u16_sw3_period_val + 1);
                 break;
             case MINUS_KEY:
-                // u16_sw3_period_val = esos_uiF14_getSW3DoublePressedPeriod(); TODO
-                // esos_uiF14_setSW3DoublePressedPeriod(u16_sw3_period_val - 1); TODO
+                u16_sw3_period_val = esos_uiF14_getSW3DoublePressedPeriod();
+                esos_uiF14_setSW3DoublePressedPeriod(u16_sw3_period_val - 1);
                 break;
             case ESC_KEY:
                 menu_state = DBL_PRESS_SETTINGS;
