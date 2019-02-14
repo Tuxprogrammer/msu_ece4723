@@ -7,11 +7,9 @@
  * esos_f14ui.h - C code framework for ESOS user-interface (UI) service
  */
 
-
 #include "esos.h"
 #include "esos_pic24.h"
 #include "esos_f14ui.h"
-
 
 volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
 
@@ -409,8 +407,8 @@ inline BOOL esos_uiF14_isRPGTurningCCW(void)
 #pragma region USER TASKS
 ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
 {
-    esos_uiF14_setRPGVelocity((_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter) /
-                              __ESOS_UIF14_RPG_PERIOD);
+    esos_uiF14_setRPGVelocity((_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter)
+                              /*/ __ESOS_UIF14_RPG_PERIOD*/);
     _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
 }
 
@@ -419,13 +417,13 @@ ESOS_USER_TASK(__esos_uiF14_SW1_double_pressed)
     static uint32_t start = 0, stop = 0;
     ESOS_TASK_BEGIN();
     while (TRUE) {
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();
         stop = esos_GetSystemTick();
         if (stop - start < esos_uiF14_getSW1DoublePressedPeriod()) {
             esos_uiF14_setSW1DoublePressed();
         }
         start = esos_GetSystemTick();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();
     }
     ESOS_TASK_END();
 }
@@ -435,13 +433,13 @@ ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed)
     static uint32_t start = 0, stop = 0;
     ESOS_TASK_BEGIN();
     while (TRUE) {
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED();
         stop = esos_GetSystemTick();
         if (stop - start < esos_uiF14_getSW2DoublePressedPeriod()) {
             esos_uiF14_setSW2DoublePressed();
         }
         start = esos_GetSystemTick();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED();
     }
     ESOS_TASK_END();
 }
@@ -451,13 +449,13 @@ ESOS_USER_TASK(__esos_uiF14_SW3_double_pressed)
     static uint32_t start = 0, stop = 0;
     ESOS_TASK_BEGIN();
     while (TRUE) {
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED();
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED();
         stop = esos_GetSystemTick();
         if (stop - start < esos_uiF14_getSW3DoublePressedPeriod()) {
             esos_uiF14_setSW3DoublePressed();
         }
         start = esos_GetSystemTick();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED();
     }
     ESOS_TASK_END();
 }
@@ -467,13 +465,15 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg)
     ESOS_TASK_BEGIN();
     while (TRUE) {
         ESOS_TASK_WAIT_UNTIL_RPGA_LOW();
+        // ESOS_TASK_WAIT_TICKS(2); // simple debounce 1-5ms
         if (esos_uiF14_getRPGB()) {
             _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() + 1);
         } else {
-            _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() - 1);
+            _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() + 1); // change this to a minus -- VERY BAD HAX
         }
-        ESOS_TASK_WAIT_TICKS(30);
+        // ESOS_TASK_WAIT_TICKS(2); // simple debounce 1-5ms
         ESOS_TASK_WAIT_UNTIL_RPGA_HIGH();
+        // ESOS_TASK_WAIT_TICKS(2); // simple debounce 1-5ms
     }
     ESOS_TASK_END();
 }
@@ -501,9 +501,9 @@ void config_esos_uiF14()
     _esos_uiF14_setRPGCounter(0);
     _esos_uiF14_setLastRPGCounter(0);
 
-    esos_uiF14_setRPGSlowThreshold(150);
-    esos_uiF14_setRPGMediumThreshold(100);
-    esos_uiF14_setRPGFastThreshold(10);
+    esos_uiF14_setRPGSlowThreshold(5);
+    esos_uiF14_setRPGMediumThreshold(15);
+    esos_uiF14_setRPGFastThreshold(30);
 
     // Register and start tasks/timers
     esos_RegisterTask(__esos_uiF14_task);

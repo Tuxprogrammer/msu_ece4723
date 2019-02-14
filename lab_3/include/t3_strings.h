@@ -13,10 +13,13 @@
 #pragma region Notifications
 
 static char str_e_SW1_PRESSED[] = "SW1 Pressed\n";
+static char str_e_SW1_DPRESSED[] = "SW1 Double Pressed\n";
 static char str_e_SW1_RELEASED[] = "SW1 Released\n";
 static char str_e_SW2_PRESSED[] = "SW2 Pressed\n";
+static char str_e_SW2_DPRESSED[] = "SW2 Double Pressed\n";
 static char str_e_SW2_RELEASED[] = "SW2 Released\n";
 static char str_e_SW3_PRESSED[] = "SW3 Pressed\n";
+static char str_e_SW3_DPRESSED[] = "SW3 Double Pressed\n";
 static char str_e_SW3_RELEASED[] = "SW3 Released\n";
 static char str_e_LED1_ON[] = "LED1 ON\n";
 static char str_e_LED1_OFF[] = "LED1 OFF\n";
