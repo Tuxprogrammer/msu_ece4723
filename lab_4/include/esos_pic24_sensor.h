@@ -27,8 +27,8 @@
  *
  */
 
-#ifndef ESOS_hwxxx_SENSOR_H
-#define ESOS_hwxxx_SENSOR_H
+#ifndef ESOS_PIC24_SENSOR_H
+#define ESOS_PIC24_SENSOR_H
 
 /**
  * \addtogroup ESOS_Task_Sensor_Service
@@ -41,7 +41,7 @@
  */
 
 /* I N C L U D E S **********************************************************/
-#include <esos_hwxxx.h>
+#include <esos_pic24_sensor.h>
 #include <esos_sensor.h>
 
 /* P U B L I C  P R O T O T Y P E S *****************************************/
