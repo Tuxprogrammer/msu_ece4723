@@ -14,4 +14,5 @@ pipelines:
     '{default, lab4, pipeline-testing}':
       - step:
           script:
+            - cd $BUILD_DIR
             - /usr/bin/env python3 $(which scons)
