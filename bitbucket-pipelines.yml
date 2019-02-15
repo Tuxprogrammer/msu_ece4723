@@ -11,7 +11,7 @@ image: tuxprogrammer/scons-xc:xc16
 
 pipelines:
   branches: 
-    '{default, lab4, lab4-pipeline}':
+    '{default, lab4, pipeline-testing}':
       - step:
           script:
             - /usr/bin/env python3 $(which scons)
