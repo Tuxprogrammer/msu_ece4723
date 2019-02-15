@@ -22,10 +22,10 @@ ESOS_USER_TASK(rpg_interface)
             esos_uiF14_flashLED2(0);
         } else if (esos_uiF14_isRPGTurningMedium()) {
             esos_uiF14_turnLED2On();
-            esos_uiF14_flashLED2(250);
+            esos_uiF14_flashLED2(500);
         } else if (esos_uiF14_isRPGTurningFast()) {
             esos_uiF14_turnLED2On();
-            esos_uiF14_flashLED2(100);
+            esos_uiF14_flashLED2(250);
         }
         ESOS_TASK_WAIT_TICKS(1000);
     }

@@ -7,6 +7,11 @@
  * esos_f14ui.h - C header file for ESOS user-interface (UI) service
  */
 
+/* HARDWARE SYSTEM RESOURCES CONSUMED BY THIS SERVICE:
+ *
+ *
+ */
+
 #ifndef ESOS_UIF14_H
 #define ESOS_UIF14_H
 
@@ -15,8 +20,7 @@
 
 #include "revF14.h"
 
-// STRUCTURES
-
+#pragma region UI Structure
 typedef struct {
     BOOL b_SW1Pressed;
     BOOL b_SW1DoublePressed;
@@ -45,6 +49,7 @@ typedef struct {
     int16_t u16_RPGMediumThreshold;
     int16_t u16_RPGFastThreshold;
 } _st_esos_uiF14Data_t;
+#pragma endregion
 
 // DEFINEs and CONSTANTs
 #define __ESOS_TICKS_TO_MS(x) (x / 1)
@@ -54,11 +59,9 @@ typedef struct {
 #define __ESOS_UIF14_RPG_PERIOD 2000
 
 // PRIVATE DATA
-
 extern volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
 
 // PRIVATE FUNCTION PROTOTYPES
-
 uint16_t _esos_uiF14_getRPGCounter(void);
 void _esos_ui_setRPGCounter(uint16_t);
 
@@ -68,7 +71,6 @@ void _esos_ui_setLastRPGCounter(uint16_t);
 ESOS_USER_TASK(__esos_uiF14_task);
 
 // PUBLIC API FUNCTION PROTOTYPES
-
 inline BOOL esos_uiF14_isSW1Pressed(void);
 inline BOOL esos_uiF14_isSW1Released(void);
 inline BOOL esos_uiF14_isSW1DoublePressed(void);
@@ -142,7 +144,6 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
 void config_esos_uiF14();
 
 // PUBLIC API ESOS TASK MACROS
-
 #define ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isSW1Pressed());
 #define ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED() ESOS_TASK_WAIT_UNTIL(esos_uiF14_isSW1Released());
 #define ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED_AND_RELEASED()                                                          \
