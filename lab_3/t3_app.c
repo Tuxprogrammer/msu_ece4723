@@ -5,11 +5,6 @@
 #include "t3_strings.h"
 #include "t3_app_menu.h"
 
-ESOS_USER_TIMER(heartbeat)
-{
-    esos_uiF14_toggleLED3();
-}
-
 ESOS_USER_TASK(rpg_interface)
 {
     ESOS_TASK_BEGIN();
@@ -25,7 +20,7 @@ ESOS_USER_TASK(rpg_interface)
             esos_uiF14_flashLED2(500);
         } else if (esos_uiF14_isRPGTurningFast()) {
             esos_uiF14_turnLED2On();
-            esos_uiF14_flashLED2(250);
+            esos_uiF14_flashLED2(100);
         }
         ESOS_TASK_WAIT_TICKS(1000);
     }
@@ -50,10 +45,8 @@ ESOS_USER_TASK(switch_interface)
             static uint8_t count;
             esos_uiF14_turnLED1Off();
 
-            for (count = 0; count < 6; count++) {
-                esos_uiF14_toggleLED1();
-                ESOS_TASK_WAIT_TICKS(100);
-            }
+            esos_uiF14_flashLED1(250); // Flash LED1 3 times
+            ESOS_TASK_WAIT_TICKS(750);
         }
         ESOS_TASK_YIELD();
     }
@@ -168,8 +161,8 @@ ESOS_USER_TASK(feedback)
 void user_init()
 {
     config_esos_uiF14();
+    esos_uiF14_flashLED3(500);
 
-    esos_RegisterTimer(heartbeat, 500);
     esos_RegisterTask(rpg_interface);
     esos_RegisterTask(switch_interface);
     esos_RegisterTask(feedback);

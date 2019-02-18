@@ -7,15 +7,32 @@
  * revF14.h - hardware configuration and control macros using pic24lib
  */
 
+/* HARDWARE SYSTEM RESOURCES USED BY THIS CONFIGURATION:
+ * Pin RF4  [RP100] (LED1)
+ * Pin RB14 [RPI46] (LED2)
+ * Pin RB15 [RPI47] (LED3_HB)
+ * Pin RB13 [RPI45] (SW1)
+ * Pin RB12 [RPI44] (SW2)
+ * Pin RC15         (SW3)
+ * Pin RB8  [RPI40] (RPGA)
+ * Pin RB9  [RPI41] (RPGB)
+ * 
+ * Configuration Not Required:
+ * Pin RB10 [RPI43] (ICSP RX)
+ * Pin RF0  [RP96]  (ICSP TX)
+ * Pin RB11 [RPI43] (N/C)
+ */
+
 #ifndef REVF14_H
 #define REVF14_H
+
 #ifndef __dsPIC33EP512GP806__
 #define __dsPIC33EP512GP806__
 #endif
 
 #include "pic24_all.h"
 
-// configure LEDs
+// Configure LEDs
 #define LED1_CONFIG() CONFIG_RF4_AS_DIG_OUTPUT()
 #define LED1 (_LATF4)
 #define LED1_ON() (_LATF4 = 1)
@@ -34,7 +51,7 @@
 #define LED3_HB_OFF() (_LATB15 = 1)
 #define LED3_HB_TOGGLE() (_LATB15 = !_LATB15)
 
-// configure switches
+// Configure Switches
 #define SW1_CONFIG()                                                                                                   \
     {                                                                                                                  \
         CONFIG_RB13_AS_DIG_INPUT();                                                                                    \
@@ -68,7 +85,7 @@
 #define SW3_PRESSED (_RC15 == 0)
 #define SW3_RELEASED (_RC15 == 1)
 
-// configure RPG
+// Configure RPG
 #define RPG_CONFIG()                                                                                                   \
     {                                                                                                                  \
         CONFIG_RB8_AS_DIG_INPUT();                                                                                     \

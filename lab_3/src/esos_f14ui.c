@@ -12,63 +12,27 @@
 #include "esos_pic24.h"
 #include "esos_f14ui.h"
 
-#if defined(_RPOUT_OC6) || defined(__DOXYGEN__)
-#define CONFIG_OC6_TO_RP(Rxy_RP) _CONFIG_OC6_TO_RP(Rxy_RP)
-#define _CONFIG_OC6_TO_RP(Rxy_RP) (_RP##Rxy_RP##R = _RPOUT_OC6)
-#endif
+ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC1) // TODO: Eliminate
+{
+    ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_IC1);
+    (_RF1) ? LED1_ON() : LED1_OFF();
+}
 
-// Note: uses RF1 as intermediate pin because of RPI pins
-#define LED1_UI_CONFIG()                                                                                               \
-    {                                                                                                                  \
-        LED1_CONFIG();                                                                                                 \
-        CONFIG_RF1_AS_DIG_OUTPUT();                                                                                    \
-        CONFIG_OC2_TO_RP(RF1_RP);                                                                                      \
-        OC1CON1 = OC2CON1 = 0x1C08;                                                                                    \
-        OC1CON2 = 0x013F;                                                                                              \
-        OC2CON2 = 0x011F;                                                                                              \
-        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC1, ESOS_USER_IRQ_LEVEL2, _IC1Interrupt);                   \
-        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC1);                                                          \
-        CONFIG_IC1_TO_RP(RF1_RP);                                                                                      \
-        IC1CON1 = 0x1C01;                                                                                              \
-        IC1CON2 = 0x001F;                                                                                              \
-    }
-
-// Note: uses RF2 as intermediate pin because of RPI pins
-#define LED2_UI_CONFIG()                                                                                               \
-    {                                                                                                                  \
-        LED2_CONFIG();                                                                                                 \
-        CONFIG_RF2_AS_DIG_OUTPUT();                                                                                    \
-        CONFIG_OC4_TO_RP(RF2_RP);                                                                                      \
-        OC3CON1 = OC4CON1 = 0x1C08;                                                                                    \
-        OC3CON2 = 0x013F;                                                                                              \
-        OC4CON2 = 0x011F;                                                                                              \
-        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC2, ESOS_USER_IRQ_LEVEL2, _IC2Interrupt);                   \
-        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC2);                                                          \
-        CONFIG_IC2_TO_RP(RF2_RP);                                                                                      \
-        IC2CON1 = 0x1C01;                                                                                              \
-        IC2CON2 = 0x001F;                                                                                              \
-    }
-
-// Note: uses RF3 as intermediate pin because of RPI pins
-#define LED3_UI_CONFIG()                                                                                               \
-    {                                                                                                                  \
-        LED3_HB_CONFIG();                                                                                              \
-        CONFIG_RF3_AS_DIG_OUTPUT();                                                                                    \
-        CONFIG_OC6_TO_RP(RF3_RP);                                                                                      \
-        OC5CON1 = OC6CON1 = 0x1C08;                                                                                    \
-        OC5CON2 = 0x013F;                                                                                              \
-        OC6CON2 = 0x011F;                                                                                              \
-        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC3, ESOS_USER_IRQ_LEVEL2, _IC3Interrupt);                   \
-        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC3);                                                          \
-        CONFIG_IC3_TO_RP(RF3_RP);                                                                                      \
-        IC3CON1 = 0x1C01;                                                                                              \
-        IC3CON2 = 0x001F;                                                                                              \
-    }
-
-ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC2)
+ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC2) // TODO: Eliminate
 {
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_IC2);
     (_RF2) ? LED2_ON() : LED2_OFF();
+}
+
+ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC3) // TODO: Eliminate
+{
+    ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_IC3);
+    (_RF3) ? LED3_HB_ON() : LED3_HB_OFF();
+}
+
+ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_CN)
+{
+    // TODO
 }
 
 volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
@@ -220,8 +184,8 @@ inline void esos_uiF14_turnLED1On(void)
 {
     // Disable flashing and set the LED on
     _st_esos_uiF14Data.u16_LED1FlashPeriod = 0;
-    OC2CON1bits.OCM = OC_OFF;
-    OC1CON1bits.OCM = OC_OFF;
+    OC12CON1bits.OCM = OC_OFF;
+    OC11CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED1On = TRUE;
     LED1_ON();
     return;
@@ -231,8 +195,8 @@ inline void esos_uiF14_turnLED1Off(void)
 {
     // Disable flashing and set the LED off
     _st_esos_uiF14Data.u16_LED1FlashPeriod = 0;
-    OC2CON1bits.OCM = OC_OFF;
-    OC1CON1bits.OCM = OC_OFF;
+    OC12CON1bits.OCM = OC_OFF;
+    OC11CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED1On = FALSE;
     LED1_OFF();
     return;
@@ -242,8 +206,8 @@ inline void esos_uiF14_toggleLED1(void)
 {
     // Disable flashing and invert the LED state
     _st_esos_uiF14Data.u16_LED1FlashPeriod = 0;
-    OC2CON1bits.OCM = OC_OFF;
-    OC1CON1bits.OCM = OC_OFF;
+    OC12CON1bits.OCM = OC_OFF;
+    OC11CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED1On ^= 1;
     LED1_HB_TOGGLE();
     return;
@@ -256,18 +220,18 @@ inline void esos_uiF14_flashLED1(uint16_t u16_period)
 
     // If the period is zero, turn off the flasher and return
     if (u16_period == 0) {
-        OC2CON1bits.OCM = OC_OFF;
-        OC1CON1bits.OCM = OC_OFF;
+        OC12CON1bits.OCM = OC_OFF;
+        OC11CON1bits.OCM = OC_OFF;
         return;
     }
 
     // Enable the hardware flasher OC1/2
-    OC1R = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC2R = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC1RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC2RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC2CON1bits.OCM = OC_TOGGLE_PULSE;
-    OC1CON1bits.OCM = OC_TOGGLE_PULSE; // OC2 must be enabled first
+    OC11R = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
+    OC12R = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
+    OC11RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
+    OC12RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
+    OC12CON1bits.OCM = OC_TOGGLE_PULSE;
+    OC11CON1bits.OCM = OC_TOGGLE_PULSE; // OC2 must be enabled first
     return;
 }
 #pragma endregion
@@ -288,8 +252,8 @@ inline void esos_uiF14_turnLED2On(void)
 {
     // Disable flashing and set the LED on
     _st_esos_uiF14Data.u16_LED2FlashPeriod = 0;
-    OC4CON1bits.OCM = OC_OFF;
-    OC3CON1bits.OCM = OC_OFF;
+    OC14CON1bits.OCM = OC_OFF;
+    OC13CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED2On = TRUE;
     LED2_ON();
     return;
@@ -299,8 +263,8 @@ inline void esos_uiF14_turnLED2Off(void)
 {
     // Disable flashing and set the LED off
     _st_esos_uiF14Data.u16_LED2FlashPeriod = 0;
-    OC4CON1bits.OCM = OC_OFF;
-    OC3CON1bits.OCM = OC_OFF;
+    OC14CON1bits.OCM = OC_OFF;
+    OC13CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED2On = FALSE;
     LED2_OFF();
     return;
@@ -310,8 +274,8 @@ inline void esos_uiF14_toggleLED2(void)
 {
     // Disable flashing and invert the LED state
     _st_esos_uiF14Data.u16_LED2FlashPeriod = 0;
-    OC4CON1bits.OCM = OC_OFF;
-    OC3CON1bits.OCM = OC_OFF;
+    OC14CON1bits.OCM = OC_OFF;
+    OC13CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED2On ^= 1;
     LED2_HB_TOGGLE();
     return;
@@ -324,18 +288,18 @@ inline void esos_uiF14_flashLED2(uint16_t u16_period)
 
     // If the period is zero, turn off the flasher and return
     if (u16_period == 0) {
-        OC4CON1bits.OCM = OC_OFF;
-        OC3CON1bits.OCM = OC_OFF;
+        OC14CON1bits.OCM = OC_OFF;
+        OC13CON1bits.OCM = OC_OFF;
         return;
     }
 
     // Enable the hardware flasher OC3/4
-    OC3R = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC4R = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC3RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC4RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC4CON1bits.OCM = OC_TOGGLE_PULSE;
-    OC3CON1bits.OCM = OC_TOGGLE_PULSE; // OC4 must be enabled first
+    OC13R = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
+    OC14R = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
+    OC13RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
+    OC14RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
+    OC14CON1bits.OCM = OC_TOGGLE_PULSE;
+    OC13CON1bits.OCM = OC_TOGGLE_PULSE; // OC4 must be enabled first
     return;
 }
 #pragma endregion
@@ -356,8 +320,8 @@ inline void esos_uiF14_turnLED3On(void)
 {
     // Disable flashing and set the LED on
     _st_esos_uiF14Data.u16_LED3FlashPeriod = 0;
-    OC6CON1bits.OCM = OC_OFF;
-    OC5CON1bits.OCM = OC_OFF;
+    OC16CON1bits.OCM = OC_OFF;
+    OC15CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED3On = TRUE;
     LED3_HB_ON();
     return;
@@ -367,8 +331,8 @@ inline void esos_uiF14_turnLED3Off(void)
 {
     // Disable flashing and set the LED off
     _st_esos_uiF14Data.u16_LED3FlashPeriod = 0;
-    OC6CON1bits.OCM = OC_OFF;
-    OC5CON1bits.OCM = OC_OFF;
+    OC16CON1bits.OCM = OC_OFF;
+    OC15CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED3On = FALSE;
     LED3_HB_OFF();
     return;
@@ -378,8 +342,8 @@ inline void esos_uiF14_toggleLED3(void)
 {
     // Disable flashing and invert the LED state
     _st_esos_uiF14Data.u16_LED3FlashPeriod = 0;
-    OC6CON1bits.OCM = OC_OFF;
-    OC5CON1bits.OCM = OC_OFF;
+    OC16CON1bits.OCM = OC_OFF;
+    OC15CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED3On ^= 1;
     LED3_HB_TOGGLE();
     return;
@@ -392,18 +356,18 @@ inline void esos_uiF14_flashLED3(uint16_t u16_period)
 
     // If the period is zero, turn off the flasher and return
     if (u16_period == 0) {
-        OC6CON1bits.OCM = OC_OFF;
-        OC5CON1bits.OCM = OC_OFF;
+        OC16CON1bits.OCM = OC_OFF;
+        OC15CON1bits.OCM = OC_OFF;
         return;
     }
 
     // Enable the hardware flasher OC5/6
-    OC5R = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC6R = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC5RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC6RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC6CON1bits.OCM = OC_TOGGLE_PULSE;
-    OC5CON1bits.OCM = OC_TOGGLE_PULSE; // OC6 must be enabled first
+    OC15R = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
+    OC16R = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
+    OC15RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
+    OC16RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
+    OC16CON1bits.OCM = OC_TOGGLE_PULSE;
+    OC15CON1bits.OCM = OC_TOGGLE_PULSE; // OC16 must be enabled first
     return;
 }
 #pragma endregion
@@ -639,9 +603,12 @@ void config_esos_uiF14()
     _esos_uiF14_setRPGCounter(0);
     _esos_uiF14_setLastRPGCounter(0);
 
-    esos_uiF14_setRPGSlowThreshold(5);
-    esos_uiF14_setRPGMediumThreshold(15);
-    esos_uiF14_setRPGFastThreshold(30);
+    esos_uiF14_setSW1DoublePressedPeriod(__ESOS_UIF14_DEFAULT_SWDP_PERIOD);
+    esos_uiF14_setSW2DoublePressedPeriod(__ESOS_UIF14_DEFAULT_SWDP_PERIOD);
+    esos_uiF14_setSW3DoublePressedPeriod(__ESOS_UIF14_DEFAULT_SWDP_PERIOD);
+    esos_uiF14_setRPGSlowThreshold(__ESOS_UIF14_DEFAULT_RPGS_PERIOD);
+    esos_uiF14_setRPGMediumThreshold(__ESOS_UIF14_DEFAULT_RPGM_PERIOD);
+    esos_uiF14_setRPGFastThreshold(__ESOS_UIF14_DEFAULT_RPGF_PERIOD);
 
     // Register and start tasks/timers
     esos_RegisterTask(__esos_uiF14_task);
@@ -656,9 +623,6 @@ void config_esos_uiF14()
 ESOS_USER_TASK(__esos_uiF14_task)
 {
     ESOS_TASK_BEGIN();
-    esos_uiF14_setSW1DoublePressedPeriod(1000);
-    esos_uiF14_setSW2DoublePressedPeriod(1000);
-    esos_uiF14_setSW3DoublePressedPeriod(1000);
 
     while (TRUE) {
         // Switches
