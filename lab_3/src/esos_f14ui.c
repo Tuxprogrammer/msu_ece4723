@@ -15,9 +15,9 @@
 
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_CN)
 {
-    (LED1_IMDT_PIN) ? LED1_ON() : LED1_OFF();
-    (LED2_IMDT_PIN) ? LED2_ON() : LED2_OFF();
-    (LED3_IMDT_PIN) ? LED3_HB_ON() : LED3_HB_OFF();
+    (__LED1_IMDT_PIN) ? LED1_ON() : LED1_OFF();
+    (__LED2_IMDT_PIN) ? LED2_ON() : LED2_OFF();
+    (__LED3_IMDT_PIN) ? LED3_HB_ON() : LED3_HB_OFF();
 
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_CN);
 }
@@ -170,9 +170,8 @@ inline BOOL esos_uiF14_isLED1Off(void)
 inline void esos_uiF14_turnLED1On(void)
 {
     // Disable flashing and set the LED on
+    OC11CON1bits.OCM = OC12CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.u16_LED1FlashPeriod = 0;
-    OC12CON1bits.OCM = OC_OFF;
-    OC11CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED1On = TRUE;
     LED1_ON();
     return;
@@ -181,9 +180,8 @@ inline void esos_uiF14_turnLED1On(void)
 inline void esos_uiF14_turnLED1Off(void)
 {
     // Disable flashing and set the LED off
+    OC11CON1bits.OCM = OC12CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.u16_LED1FlashPeriod = 0;
-    OC12CON1bits.OCM = OC_OFF;
-    OC11CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED1On = FALSE;
     LED1_OFF();
     return;
@@ -192,9 +190,8 @@ inline void esos_uiF14_turnLED1Off(void)
 inline void esos_uiF14_toggleLED1(void)
 {
     // Disable flashing and invert the LED state
+    OC11CON1bits.OCM = OC12CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.u16_LED1FlashPeriod = 0;
-    OC12CON1bits.OCM = OC_OFF;
-    OC11CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED1On ^= 1;
     LED1_HB_TOGGLE();
     return;
@@ -207,22 +204,18 @@ inline void esos_uiF14_flashLED1(uint16_t u16_period)
 
     // If the period is zero, turn off the flasher and return
     if (u16_period == 0) {
-        OC12CON1bits.OCM = OC_OFF;
-        OC11CON1bits.OCM = OC_OFF;
+        OC11CON1bits.OCM = OC12CON1bits.OCM = OC_OFF;
         return;
     }
 
     // Enable the hardware flasher OC1/2
-    OC11R = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC12R = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC11RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC12RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC12CON1bits.OCM = OC_TOGGLE_PULSE;
-    OC11CON1bits.OCM = OC_TOGGLE_PULSE; // OC2 must be enabled first
+    OC11R = OC11RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
+    OC12R = OC12RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
+    OC11CON1bits.OCM = OC12CON1bits.OCM = OC_TOGGLE_PULSE; // OC12 must be enabled first
     return;
 }
 #pragma endregion
-#pragma region LED 2
+#pragma region LED2
 inline BOOL esos_uiF14_isLED2On(void)
 {
     // Return true if the LED is solid or flashing
@@ -238,9 +231,8 @@ inline BOOL esos_uiF14_isLED2Off(void)
 inline void esos_uiF14_turnLED2On(void)
 {
     // Disable flashing and set the LED on
+    OC13CON1bits.OCM = OC14CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.u16_LED2FlashPeriod = 0;
-    OC14CON1bits.OCM = OC_OFF;
-    OC13CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED2On = TRUE;
     LED2_ON();
     return;
@@ -249,9 +241,8 @@ inline void esos_uiF14_turnLED2On(void)
 inline void esos_uiF14_turnLED2Off(void)
 {
     // Disable flashing and set the LED off
+    OC13CON1bits.OCM = OC14CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.u16_LED2FlashPeriod = 0;
-    OC14CON1bits.OCM = OC_OFF;
-    OC13CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED2On = FALSE;
     LED2_OFF();
     return;
@@ -260,9 +251,8 @@ inline void esos_uiF14_turnLED2Off(void)
 inline void esos_uiF14_toggleLED2(void)
 {
     // Disable flashing and invert the LED state
+    OC13CON1bits.OCM = OC14CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.u16_LED2FlashPeriod = 0;
-    OC14CON1bits.OCM = OC_OFF;
-    OC13CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED2On ^= 1;
     LED2_HB_TOGGLE();
     return;
@@ -275,22 +265,18 @@ inline void esos_uiF14_flashLED2(uint16_t u16_period)
 
     // If the period is zero, turn off the flasher and return
     if (u16_period == 0) {
-        OC14CON1bits.OCM = OC_OFF;
-        OC13CON1bits.OCM = OC_OFF;
+        OC13CON1bits.OCM = OC14CON1bits.OCM = OC_OFF;
         return;
     }
 
     // Enable the hardware flasher OC3/4
-    OC13R = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC14R = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC13RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC14RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC14CON1bits.OCM = OC_TOGGLE_PULSE;
-    OC13CON1bits.OCM = OC_TOGGLE_PULSE; // OC4 must be enabled first
+    OC13R = OC13RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
+    OC14R = OC14RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
+    OC13CON1bits.OCM = OC14CON1bits.OCM = OC_TOGGLE_PULSE; // OC14 must be enabled first
     return;
 }
 #pragma endregion
-#pragma region LED 3
+#pragma region LED3
 inline BOOL esos_uiF14_isLED3On(void)
 {
     // Return true if the LED is solid or flashing
@@ -306,9 +292,8 @@ inline BOOL esos_uiF14_isLED3Off(void)
 inline void esos_uiF14_turnLED3On(void)
 {
     // Disable flashing and set the LED on
+    OC15CON1bits.OCM = OC16CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.u16_LED3FlashPeriod = 0;
-    OC16CON1bits.OCM = OC_OFF;
-    OC15CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED3On = TRUE;
     LED3_HB_ON();
     return;
@@ -317,9 +302,8 @@ inline void esos_uiF14_turnLED3On(void)
 inline void esos_uiF14_turnLED3Off(void)
 {
     // Disable flashing and set the LED off
+    OC15CON1bits.OCM = OC16CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.u16_LED3FlashPeriod = 0;
-    OC16CON1bits.OCM = OC_OFF;
-    OC15CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED3On = FALSE;
     LED3_HB_OFF();
     return;
@@ -328,9 +312,8 @@ inline void esos_uiF14_turnLED3Off(void)
 inline void esos_uiF14_toggleLED3(void)
 {
     // Disable flashing and invert the LED state
+    OC15CON1bits.OCM = OC16CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.u16_LED3FlashPeriod = 0;
-    OC16CON1bits.OCM = OC_OFF;
-    OC15CON1bits.OCM = OC_OFF;
     _st_esos_uiF14Data.b_LED3On ^= 1;
     LED3_HB_TOGGLE();
     return;
@@ -343,18 +326,14 @@ inline void esos_uiF14_flashLED3(uint16_t u16_period)
 
     // If the period is zero, turn off the flasher and return
     if (u16_period == 0) {
-        OC16CON1bits.OCM = OC_OFF;
-        OC15CON1bits.OCM = OC_OFF;
+        OC15CON1bits.OCM = OC16CON1bits.OCM = OC_OFF;
         return;
     }
 
     // Enable the hardware flasher OC5/6
-    OC15R = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC16R = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC15RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
-    OC16RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
-    OC16CON1bits.OCM = OC_TOGGLE_PULSE;
-    OC15CON1bits.OCM = OC_TOGGLE_PULSE; // OC16 must be enabled first
+    OC15R = OC15RS = ((u16_period * CYCLES_PER_MS) / 2) & 0x00FF;
+    OC16R = OC16RS = ((u16_period * CYCLES_PER_MS) / 2) >> 16;
+    OC15CON1bits.OCM = OC16CON1bits.OCM = OC_TOGGLE_PULSE; // OC16 must be enabled first
     return;
 }
 #pragma endregion
@@ -502,53 +481,53 @@ ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
     _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
 }
 
-ESOS_USER_TASK(__esos_uiF14_SW1_double_pressed)
-{
-    static uint32_t start = 0, stop = 0;
-    ESOS_TASK_BEGIN();
-    while (TRUE) {
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();
-        stop = esos_GetSystemTick();
-        if (stop - start < esos_uiF14_getSW1DoublePressedPeriod()) {
-            esos_uiF14_setSW1DoublePressed();
-        }
-        start = esos_GetSystemTick();
-    }
-    ESOS_TASK_END();
-}
+// ESOS_USER_TASK(__esos_uiF14_SW1_double_pressed)
+// {
+//     static uint32_t start = 0, stop = 0;
+//     ESOS_TASK_BEGIN();
+//     while (TRUE) {
+//         ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();
+//         ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();
+//         stop = esos_GetSystemTick();
+//         if (stop - start < esos_uiF14_getSW1DoublePressedPeriod()) {
+//             esos_uiF14_setSW1DoublePressed();
+//         }
+//         start = esos_GetSystemTick();
+//     }
+//     ESOS_TASK_END();
+// }
 
-ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed)
-{
-    static uint32_t start = 0, stop = 0;
-    ESOS_TASK_BEGIN();
-    while (TRUE) {
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED();
-        stop = esos_GetSystemTick();
-        if (stop - start < esos_uiF14_getSW2DoublePressedPeriod()) {
-            esos_uiF14_setSW2DoublePressed();
-        }
-        start = esos_GetSystemTick();
-    }
-    ESOS_TASK_END();
-}
+// ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed)
+// {
+//     static uint32_t start = 0, stop = 0;
+//     ESOS_TASK_BEGIN();
+//     while (TRUE) {
+//         ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED();
+//         ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED();
+//         stop = esos_GetSystemTick();
+//         if (stop - start < esos_uiF14_getSW2DoublePressedPeriod()) {
+//             esos_uiF14_setSW2DoublePressed();
+//         }
+//         start = esos_GetSystemTick();
+//     }
+//     ESOS_TASK_END();
+// }
 
-ESOS_USER_TASK(__esos_uiF14_SW3_double_pressed)
-{
-    static uint32_t start = 0, stop = 0;
-    ESOS_TASK_BEGIN();
-    while (TRUE) {
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED();
-        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED();
-        stop = esos_GetSystemTick();
-        if (stop - start < esos_uiF14_getSW3DoublePressedPeriod()) {
-            esos_uiF14_setSW3DoublePressed();
-        }
-        start = esos_GetSystemTick();
-    }
-    ESOS_TASK_END();
-}
+// ESOS_USER_TASK(__esos_uiF14_SW3_double_pressed)
+// {
+//     static uint32_t start = 0, stop = 0;
+//     ESOS_TASK_BEGIN();
+//     while (TRUE) {
+//         ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED();
+//         ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED();
+//         stop = esos_GetSystemTick();
+//         if (stop - start < esos_uiF14_getSW3DoublePressedPeriod()) {
+//             esos_uiF14_setSW3DoublePressed();
+//         }
+//         start = esos_GetSystemTick();
+//     }
+//     ESOS_TASK_END();
+// }
 
 ESOS_USER_TASK(__esos_uiF14_update_rpg)
 {
@@ -574,9 +553,9 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg)
 void config_esos_uiF14()
 {
     // Configure LEDs/OCs and Intermediate Pin RF1/2/3 ICs/Interrupts
-    LED1_UI_CONFIG();
-    LED2_UI_CONFIG();
-    LED3_UI_CONFIG();
+    __LED1_UI_CONFIG();
+    __LED2_UI_CONFIG();
+    __LED3_UI_CONFIG();
 
     // configure Switches
     SW1_CONFIG();
@@ -600,9 +579,9 @@ void config_esos_uiF14()
     // Register and start tasks/timers
     esos_RegisterTask(__esos_uiF14_task);
     esos_RegisterTimer(__esos_uiF14_update_rpg_velocity, __ESOS_UIF14_RPG_PERIOD);
-    esos_RegisterTask(__esos_uiF14_SW1_double_pressed);
-    esos_RegisterTask(__esos_uiF14_SW2_double_pressed);
-    esos_RegisterTask(__esos_uiF14_SW3_double_pressed);
+    // esos_RegisterTask(__esos_uiF14_SW1_double_pressed);
+    // esos_RegisterTask(__esos_uiF14_SW2_double_pressed);
+    // esos_RegisterTask(__esos_uiF14_SW3_double_pressed);
     esos_RegisterTask(__esos_uiF14_update_rpg);
 }
 
@@ -612,24 +591,24 @@ ESOS_USER_TASK(__esos_uiF14_task)
     ESOS_TASK_BEGIN();
 
     while (TRUE) {
-        // Switches
-        if (SW1_PRESSED) {
-            _st_esos_uiF14Data.b_SW1Pressed = TRUE;
-        } else {
-            _st_esos_uiF14Data.b_SW1Pressed = FALSE;
-        }
+        // // Switches
+        // if (SW1_PRESSED) {
+        //     _st_esos_uiF14Data.b_SW1Pressed = TRUE;
+        // } else {
+        //     _st_esos_uiF14Data.b_SW1Pressed = FALSE;
+        // }
 
-        if (SW2_PRESSED) {
-            _st_esos_uiF14Data.b_SW2Pressed = TRUE;
-        } else {
-            _st_esos_uiF14Data.b_SW2Pressed = FALSE;
-        }
+        // if (SW2_PRESSED) {
+        //     _st_esos_uiF14Data.b_SW2Pressed = TRUE;
+        // } else {
+        //     _st_esos_uiF14Data.b_SW2Pressed = FALSE;
+        // }
 
-        if (SW3_PRESSED) {
-            _st_esos_uiF14Data.b_SW3Pressed = TRUE;
-        } else {
-            _st_esos_uiF14Data.b_SW3Pressed = FALSE;
-        }
+        // if (SW3_PRESSED) {
+        //     _st_esos_uiF14Data.b_SW3Pressed = TRUE;
+        // } else {
+        //     _st_esos_uiF14Data.b_SW3Pressed = FALSE;
+        // }
 
         if (RPGA_HIGH) {
             _st_esos_uiF14Data.b_RPGAHigh = TRUE;

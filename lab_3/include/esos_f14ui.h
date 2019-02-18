@@ -78,9 +78,6 @@ void _esos_ui_setLastRPGCounter(uint16_t);
 
 ESOS_USER_TASK(__esos_uiF14_task);
 ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity);
-ESOS_USER_TASK(__esos_uiF14_SW1_double_pressed);
-ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed);
-ESOS_USER_TASK(__esos_uiF14_SW3_double_pressed);
 ESOS_USER_TASK(__esos_uiF14_update_rpg);
 
 // Private ESOS UI Macros
@@ -98,8 +95,8 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
     }
 
 // Note: uses RF1 as intermediate pin because of RPI pins
-#define LED1_IMDT_PIN _RF1
-#define LED1_UI_CONFIG()                                                                                               \
+#define __LED1_IMDT_PIN _RF1
+#define __LED1_UI_CONFIG()                                                                                               \
     {                                                                                                                  \
         LED1_CONFIG();                                                                                                 \
         CONFIG_RF1_AS_DIG_OUTPUT(); /* Use RF1 as intermediate pin for RF4 */                                          \
@@ -110,8 +107,8 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
     }
 
 // Note: uses RF2 as intermediate pin because of RPI pins
-#define LED2_IMDT_PIN _RF2
-#define LED2_UI_CONFIG()                                                                                               \
+#define __LED2_IMDT_PIN _RF2
+#define __LED2_UI_CONFIG()                                                                                               \
     {                                                                                                                  \
         LED2_CONFIG();                                                                                                 \
         CONFIG_RF2_AS_DIG_OUTPUT(); /* Use RF2 as intermediate pin for RB14 */                                         \
@@ -122,8 +119,8 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
     }
 
 // Note: uses RF3 as intermediate pin because of RPI pins
-#define LED3_IMDT_PIN _RF3
-#define LED3_UI_CONFIG()                                                                                               \
+#define __LED3_IMDT_PIN _RF3
+#define __LED3_UI_CONFIG()                                                                                               \
     {                                                                                                                  \
         LED3_HB_CONFIG();                                                                                              \
         CONFIG_RF3_AS_DIG_OUTPUT(); /* Use RF3 as intermediate pin for RB15 */                                         \
