@@ -7,32 +7,19 @@
  * esos_f14ui.h - C code framework for ESOS user-interface (UI) service
  */
 
-#include "revF14.h"
 #include "esos.h"
 #include "esos_pic24.h"
 #include "esos_f14ui.h"
 
-ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC1) // TODO: Eliminate
-{
-    ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_IC1);
-    (_RF1) ? LED1_ON() : LED1_OFF();
-}
-
-ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC2) // TODO: Eliminate
-{
-    ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_IC2);
-    (_RF2) ? LED2_ON() : LED2_OFF();
-}
-
-ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC3) // TODO: Eliminate
-{
-    ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_IC3);
-    (_RF3) ? LED3_HB_ON() : LED3_HB_OFF();
-}
+#include "revF14.h"
 
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_CN)
 {
-    // TODO
+    (LED1_IMDT_PIN) ? LED1_ON() : LED1_OFF();
+    (LED2_IMDT_PIN) ? LED2_ON() : LED2_OFF();
+    (LED3_IMDT_PIN) ? LED3_HB_ON() : LED3_HB_OFF();
+
+    ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_CN);
 }
 
 volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;

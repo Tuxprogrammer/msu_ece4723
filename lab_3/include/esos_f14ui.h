@@ -8,9 +8,9 @@
  */
 
 /* HARDWARE SYSTEM RESOURCES USED BY THIS SERVICE:
- * Input Compare 14 (LED1)
- * Input Compare 15 (LED2)
- * Input Compare 16 (LED3_HB)
+ * Input Compare 14 ?
+ * Input Compare 15 ?
+ * Input Compare 16 ?
  * Output Compare 11 (LED1)
  * Output Compare 12 (LED1)
  * Output Compare 13 (LED2)
@@ -86,7 +86,7 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
 // Private ESOS UI Macros
 // Macro to setup Output Compare modules with specified remappable output pin
 #define __ESOS_UIF14_CONFIG_TOGGLE_OC(Rxy_RP, OCodd, OCeven) __ESOS_UIF14__CONFIG_TOGGLE_OC(Rxy_RP, OCodd, OCeven)
-#define __ESOS_UIF14__CONFIG_TOGGLE_OC(Rxy_RP, OCodd, OCeven)                                                                       \
+#define __ESOS_UIF14__CONFIG_TOGGLE_OC(Rxy_RP, OCodd, OCeven)                                                          \
     {                                                                                                                  \
         _RP##Rxy_RP##R = _RPOUT_OC##OCeven;                                                                            \
         OC##OCodd##CON1 = OC##OCodd##CON2 = OC##OCeven##CON1 = OC##OCeven##CON2 = 0x0000;                              \
@@ -98,42 +98,39 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
     }
 
 // Note: uses RF1 as intermediate pin because of RPI pins
+#define LED1_IMDT_PIN _RF1
 #define LED1_UI_CONFIG()                                                                                               \
     {                                                                                                                  \
         LED1_CONFIG();                                                                                                 \
         CONFIG_RF1_AS_DIG_OUTPUT(); /* Use RF1 as intermediate pin for RF4 */                                          \
-        __ESOS_UIF14_CONFIG_TOGGLE_OC(RF1_RP, 11, 12); /* Configure LED Flsash Controller on RF1 using OC11/12 */                   \
-        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC1, ESOS_USER_IRQ_LEVEL2, _IC1Interrupt);                   \
-        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC1);                                                          \
-        CONFIG_IC1_TO_RP(RF1_RP);                                                                                      \
-        IC1CON1 = 0x1C01;                                                                                              \
-        IC1CON2 = 0x001F;                                                                                              \
+        __ESOS_UIF14_CONFIG_TOGGLE_OC(RF1_RP, 11, 12); /* Configure LED Flsash Controller on RF1 using OC11/12 */      \
+        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_CN, ESOS_USER_IRQ_LEVEL2, _CNInterrupt);                     \
+        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_CN);                                                           \
+        ENABLE_RF1_CN_INTERRUPT();                                                                                     \
     }
 
 // Note: uses RF2 as intermediate pin because of RPI pins
+#define LED2_IMDT_PIN _RF2
 #define LED2_UI_CONFIG()                                                                                               \
     {                                                                                                                  \
         LED2_CONFIG();                                                                                                 \
         CONFIG_RF2_AS_DIG_OUTPUT(); /* Use RF2 as intermediate pin for RB14 */                                         \
-        __ESOS_UIF14_CONFIG_TOGGLE_OC(RF2_RP, 13, 14); /* Configure LED Flash Controller on RF2 using OC13/14 */                    \
+        __ESOS_UIF14_CONFIG_TOGGLE_OC(RF2_RP, 13, 14); /* Configure LED Flash Controller on RF2 using OC13/14 */       \
         ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC2, ESOS_USER_IRQ_LEVEL2, _IC2Interrupt);                   \
         ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC2);                                                          \
-        CONFIG_IC2_TO_RP(RF2_RP);                                                                                      \
-        IC2CON1 = 0x1C01;                                                                                              \
-        IC2CON2 = 0x001F;                                                                                              \
+        ENABLE_RF2_CN_INTERRUPT();                                                                                     \
     }
 
 // Note: uses RF3 as intermediate pin because of RPI pins
+#define LED3_IMDT_PIN _RF3
 #define LED3_UI_CONFIG()                                                                                               \
     {                                                                                                                  \
         LED3_HB_CONFIG();                                                                                              \
         CONFIG_RF3_AS_DIG_OUTPUT(); /* Use RF3 as intermediate pin for RB15 */                                         \
-        __ESOS_UIF14_CONFIG_TOGGLE_OC(RF3_RP, 15, 16); /* Configure LED Flash Controller on RF3 using OC15/16 */                    \
+        __ESOS_UIF14_CONFIG_TOGGLE_OC(RF3_RP, 15, 16); /* Configure LED Flash Controller on RF3 using OC15/16 */       \
         ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC3, ESOS_USER_IRQ_LEVEL2, _IC3Interrupt);                   \
         ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC3);                                                          \
-        CONFIG_IC3_TO_RP(RF3_RP);                                                                                      \
-        IC3CON1 = 0x1C01;                                                                                              \
-        IC3CON2 = 0x001F;                                                                                              \
+        ENABLE_RF3_CN_INTERRUPT();                                                                                     \
     }
 
 // Public Function Prototypes
