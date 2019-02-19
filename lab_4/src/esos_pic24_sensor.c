@@ -104,8 +104,6 @@ void esos_sensor_config_hw(esos_sensor_ch_t e_senCh, esos_sensor_vref_t e_senVRe
 
         break;
     }
-
-    
 }
 
 /**
@@ -115,6 +113,7 @@ Initiate a conversion for a configured sensor
 void esos_sensor_initiate_hw(void)
 {
     esos_SetUserFlag(ESOS_SENSOR_IS_CONVERTING_FLAG);
+    AD1CON1bits.SAMP = 1; // initiate a conversion;
 }
 
 /**
@@ -124,8 +123,12 @@ Receive the value from a conversion that has already been initiated
 uint16_t esos_sensor_getvalue_u16_hw(void)
 {
     if (esos_IsUserFlagClear(ESOS_SENSOR_IS_CONVERTING_FLAG))
+        // wait a minute ... who ARE you ???
         return 0;
-    uint16_t u16_adcVal = convertADC1();
+    do {
+    } while (AD1CON1bits.DONE == 0); // do nothing until its done.
+    uint16_t u16_adcVal = (ADC1BUF0); // grab the value.
+    esos_ClearUserFlag(ESOS_SENSOR_IS_CONVERTING_FLAG);
     return u16_adcVal;
 }
 
@@ -136,6 +139,7 @@ Release any pending conversions for the sensor
 void esos_sensor_release_hw(void)
 {
     esos_ClearUserFlag(ESOS_SENSOR_IS_CONVERTING_FLAG);
+    AD1CON1bits.ADON = 0; // turn off the adc
 }
 
 /**

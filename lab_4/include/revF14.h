@@ -101,9 +101,11 @@
 // #define ADC_VREF_AVDD_EXT           0x4000  // A/D Voltage reference configuration Vref+ AVdd and Vref- external
 // #define ADC_VREF_EXT_EXT            0x6000  // A/D Voltage reference configuration both Vref+ and Vref- are external
 // #define ADC_VREF_AVDD_AVSS          0x8000  // A/D Voltage reference configuration Vref+ is AVdd and Vref- is AVss
-#define ADC_CONFIG(pin, tad)                                                                                            \
+#define ADC_CONFIG(pin, tad)                                                                                           \
     {                                                                                                                  \
-        configADC1_ManualCH0(pin, tad, 0);                                                                              \
+        configADC1_ManualCH0(pin, tad, 1);                                                                             \
+        AD1CON1bits.ADON = 0;                                                                                          \
         AD1CON2 = ADC_VREF_EXT_AVSS;                                                                                   \
+        AD1CON1bits.ADON = 1;                                                                                          \
     }
 #endif

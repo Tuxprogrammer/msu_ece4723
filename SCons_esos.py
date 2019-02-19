@@ -67,13 +67,15 @@ PIC24_LIB_FILES = [
     "../../../pic24lib_all/lib/src/pic24_timer.c",
     "../../../pic24lib_all/lib/src/pic24_util.c",
     "../../../pic24lib_all/lib/src/pic24_serial.c",
-    "../../../pic24lib_all/lib/src/pic24_uart.c"]
+    "../../../pic24lib_all/lib/src/pic24_uart.c",
+    "../../../pic24lib_all/lib/src/pic24_adc.c"]
 
 ESOS_LIB_FILES = [
     "../../../pic24lib_all/esos/src/esos.c",
     "../../../pic24lib_all/esos/src/esos_comm.c",
     "../../../pic24lib_all/esos/src/esos_cb.c",
     "../../../pic24lib_all/esos/src/esos_mail.c",
+    "../../../pic24lib_all/esos/src/esos_sensor.c",
     "../../../pic24lib_all/esos/src/pic24/esos_pic24_i2c.c",
     "../../../pic24lib_all/esos/src/pic24/esos_pic24_irq.c",
     "../../../pic24lib_all/esos/src/pic24/esos_pic24_rs232.c",
