@@ -86,4 +86,24 @@
 #define RPGB_HIGH (_RB9 == 1)
 #define RPGB_LOW (_RB9 == 0)
 
+#define POT1 (RB2_AN)
+#define TEMP1 (RB3_AN)
+
+// configure Analog Peripherals
+#define ANALOG_CONFIG()                                                                                                \
+    {                                                                                                                  \
+        CONFIG_RB2_AS_ANALOG();                                                                                        \
+        CONFIG_RB3_AS_ANALOG();                                                                                        \
+    }
+
+// The above might need to be changed.
+// #define ADC_VREF_EXT_AVSS           0x2000  // A/D Voltage reference configuration Vref+ external and Vref- is AVss
+// #define ADC_VREF_AVDD_EXT           0x4000  // A/D Voltage reference configuration Vref+ AVdd and Vref- external
+// #define ADC_VREF_EXT_EXT            0x6000  // A/D Voltage reference configuration both Vref+ and Vref- are external
+// #define ADC_VREF_AVDD_AVSS          0x8000  // A/D Voltage reference configuration Vref+ is AVdd and Vref- is AVss
+#define ADC_CONFIG(pin, tad)                                                                                            \
+    {                                                                                                                  \
+        configADC1_ManualCH0(pin, tad, 0);                                                                              \
+        AD1CON2 = ADC_VREF_EXT_AVSS;                                                                                   \
+    }
 #endif
