@@ -24,21 +24,27 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_CN)
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_CN);
 }
 
-static uint32_t u32_last_press_ms;
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC11)
 {
     // Read in required data
     uint8_t u8_sw_pressed = __SW1_CLEAN_PIN;
-    uint32_t u32_fifo = (((uint32_t)IC12BUF) << 16) | IC11BUF;
 
     // Determine if the event was a button press
     if (u8_sw_pressed) {
         _st_esos_uiF14Data.b_SW1Pressed = TRUE;
         _st_esos_uiF14Data.b_SW1DoublePressed = FALSE; // Clear double pressed flag on subsequent press
 
-        // TODO: Double press
-
-        u32_last_press_ms = u32_fifo;
+        // Check if double press timer is already started
+        if (IC11CON2bits.ICTRIG == 0) {
+            // Check for double press
+            if (__SW1_TIMER_VAL / CYCLES_PER_MS <= _st_esos_uiF14Data.u16_SW1DoublePressedPeriod) {
+                esos_uiF14_setSW1DoublePressed();
+            }
+            IC11CON2bits.ICTRIG = IC12CON2bits.ICTRIG = 1; // Stop double press timer
+        } else {
+            __SW1_TIMER_RESET();
+            IC11CON2bits.ICTRIG = IC12CON2bits.ICTRIG = 0; // Start double press timer
+        }
     } else {
         _st_esos_uiF14Data.b_SW1Pressed = FALSE;
     }
@@ -47,34 +53,88 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC11)
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_IC11);
 }
 
-ESOS_USER_TASK(TEST1)
-{
-    ESOS_TASK_BEGIN();
-    while (TRUE) {
-        // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u32_fifo);
-        //ESOS_TASK_WAIT_ON_SEND_STRING("\n");
-        ESOS_TASK_WAIT_TICKS(500);
-    }
-    ESOS_TASK_END();
-}
-
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC13)
 {
+    // Read in required data
+    uint8_t u8_sw_pressed = __SW2_CLEAN_PIN;
+
+    // Determine if the event was a button press
+    if (u8_sw_pressed) {
+        _st_esos_uiF14Data.b_SW2Pressed = TRUE;
+        _st_esos_uiF14Data.b_SW2DoublePressed = FALSE; // Clear double pressed flag on subsequent press
+
+        // Check if double press timer is already started
+        if (IC13CON2bits.ICTRIG == 0) {
+            // Check for double press
+            if (__SW2_TIMER_VAL / CYCLES_PER_MS <= _st_esos_uiF14Data.u16_SW2DoublePressedPeriod) {
+                esos_uiF14_setSW2DoublePressed();
+            }
+            IC13CON2bits.ICTRIG = IC14CON2bits.ICTRIG = 1; // Stop double press timer
+        } else {
+            __SW2_TIMER_RESET();
+            IC13CON2bits.ICTRIG = IC14CON2bits.ICTRIG = 0; // Start double press timer
+        }
+
+    } else {
+        _st_esos_uiF14Data.b_SW2Pressed = FALSE;
+    }
+
     // Mark interrupt serviced
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_IC13);
 }
 
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC15)
 {
+    // Read in required data
+    uint8_t u8_sw_pressed = __SW3_CLEAN_PIN;
+
+    // Determine if the event was a button press
+    if (u8_sw_pressed) {
+        _st_esos_uiF14Data.b_SW3Pressed = TRUE;
+        _st_esos_uiF14Data.b_SW3DoublePressed = FALSE; // Clear double pressed flag on subsequent press
+
+        // Check if double press timer is already started
+        if (IC15CON2bits.ICTRIG == 0) {
+            // Check for double press
+            if (__SW3_TIMER_VAL / CYCLES_PER_MS <= _st_esos_uiF14Data.u16_SW3DoublePressedPeriod) {
+                esos_uiF14_setSW3DoublePressed();
+            }
+            IC15CON2bits.ICTRIG = IC16CON2bits.ICTRIG = 1; // Stop double press timer
+        } else {
+            __SW3_TIMER_RESET();
+            IC15CON2bits.ICTRIG = IC16CON2bits.ICTRIG = 0; // Start double press timer
+        }
+
+    } else {
+        _st_esos_uiF14Data.b_SW3Pressed = FALSE;
+    }
+
     // Mark interrupt serviced
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_IC15);
 }
 
 ESOS_USER_TIMER(__esos_uiF14_poll)
 {
+    // Debounce Switches
     __SW1_CLEAN_PIN = SW1_PRESSED;
     __SW2_CLEAN_PIN = SW2_PRESSED;
     __SW3_CLEAN_PIN = SW3_PRESSED;
+
+    // Check Double Press Timers
+    if (__SW1_TIMER_VAL / CYCLES_PER_MS > _st_esos_uiF14Data.u16_SW1DoublePressedPeriod) {
+        IC11CON2bits.ICTRIG = IC12CON2bits.ICTRIG = 1;
+        __SW1_TIMER_RESET();
+    }
+
+    if (__SW2_TIMER_VAL / CYCLES_PER_MS > _st_esos_uiF14Data.u16_SW2DoublePressedPeriod) {
+        IC13CON2bits.ICTRIG = IC14CON2bits.ICTRIG = 1;
+        __SW2_TIMER_RESET();
+    }
+
+    if (__SW3_TIMER_VAL / CYCLES_PER_MS > _st_esos_uiF14Data.u16_SW3DoublePressedPeriod) {
+        IC15CON2bits.ICTRIG = IC16CON2bits.ICTRIG = 1;
+        __SW3_TIMER_RESET();
+    }
 }
 
 volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
@@ -538,54 +598,6 @@ ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
     _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
 }
 
-// ESOS_USER_TASK(__esos_uiF14_SW1_double_pressed)
-// {
-//     static uint32_t start = 0, stop = 0;
-//     ESOS_TASK_BEGIN();
-//     while (TRUE) {
-//         ESOS_TASK_WAIT_UNTIL_UIF14_SW1_PRESSED();
-//         ESOS_TASK_WAIT_UNTIL_UIF14_SW1_RELEASED();
-//         stop = esos_GetSystemTick();
-//         if (stop - start < esos_uiF14_getSW1DoublePressedPeriod()) {
-//             esos_uiF14_setSW1DoublePressed();
-//         }
-//         start = esos_GetSystemTick();
-//     }
-//     ESOS_TASK_END();
-// }
-
-// ESOS_USER_TASK(__esos_uiF14_SW2_double_pressed)
-// {
-//     static uint32_t start = 0, stop = 0;
-//     ESOS_TASK_BEGIN();
-//     while (TRUE) {
-//         ESOS_TASK_WAIT_UNTIL_UIF14_SW2_PRESSED();
-//         ESOS_TASK_WAIT_UNTIL_UIF14_SW2_RELEASED();
-//         stop = esos_GetSystemTick();
-//         if (stop - start < esos_uiF14_getSW2DoublePressedPeriod()) {
-//             esos_uiF14_setSW2DoublePressed();
-//         }
-//         start = esos_GetSystemTick();
-//     }
-//     ESOS_TASK_END();
-// }
-
-// ESOS_USER_TASK(__esos_uiF14_SW3_double_pressed)
-// {
-//     static uint32_t start = 0, stop = 0;
-//     ESOS_TASK_BEGIN();
-//     while (TRUE) {
-//         ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED();
-//         ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED();
-//         stop = esos_GetSystemTick();
-//         if (stop - start < esos_uiF14_getSW3DoublePressedPeriod()) {
-//             esos_uiF14_setSW3DoublePressed();
-//         }
-//         start = esos_GetSystemTick();
-//     }
-//     ESOS_TASK_END();
-// }
-
 ESOS_USER_TASK(__esos_uiF14_update_rpg)
 {
     ESOS_TASK_BEGIN();
@@ -637,11 +649,7 @@ void config_esos_uiF14()
     esos_RegisterTask(__esos_uiF14_task);
     esos_RegisterTimer(__esos_uiF14_update_rpg_velocity, __ESOS_UIF14_RPG_PERIOD);
     esos_RegisterTimer(__esos_uiF14_poll, __ESOS_UIF14_POLL_RATE);
-    // esos_RegisterTask(__esos_uiF14_SW1_double_pressed);
-    // esos_RegisterTask(__esos_uiF14_SW2_double_pressed);
-    // esos_RegisterTask(__esos_uiF14_SW3_double_pressed);
     esos_RegisterTask(__esos_uiF14_update_rpg);
-    esos_RegisterTask(TEST1);
 }
 
 // UIF14 task to manage user-interface
@@ -650,25 +658,6 @@ ESOS_USER_TASK(__esos_uiF14_task)
     ESOS_TASK_BEGIN();
 
     while (TRUE) {
-        // // Switches
-        // if (SW1_PRESSED) {
-        //     _st_esos_uiF14Data.b_SW1Pressed = TRUE;
-        // } else {
-        //     _st_esos_uiF14Data.b_SW1Pressed = FALSE;
-        // }
-
-        // if (SW2_PRESSED) {
-        //     _st_esos_uiF14Data.b_SW2Pressed = TRUE;
-        // } else {
-        //     _st_esos_uiF14Data.b_SW2Pressed = FALSE;
-        // }
-
-        // if (SW3_PRESSED) {
-        //     _st_esos_uiF14Data.b_SW3Pressed = TRUE;
-        // } else {
-        //     _st_esos_uiF14Data.b_SW3Pressed = FALSE;
-        // }
-
         if (RPGA_HIGH) {
             _st_esos_uiF14Data.b_RPGAHigh = TRUE;
         } else {

@@ -102,7 +102,7 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
         IC##ICodd##CON1bits.ICM = IC##ICeven##CON1bits.ICM = 0b000;                                                    \
         IC##ICodd##CON1bits.ICTSEL = IC##ICeven##CON1bits.ICTSEL = 0b111;                                              \
         IC##ICodd##CON2bits.IC32 = IC##ICeven##CON2bits.IC32 = 1;                                                      \
-        IC##ICodd##CON2bits.ICTRIG = IC##ICeven##CON2bits.ICTRIG = 0;                                                  \
+        IC##ICodd##CON2bits.ICTRIG = IC##ICeven##CON2bits.ICTRIG = 1;                                                  \
         IC##ICodd##CON2bits.SYNCSEL = IC##ICeven##CON2bits.SYNCSEL = 0b00000;                                          \
         IC##ICodd##CON1bits.ICI = 0b00;                                                                                \
         IC##ICodd##CON1bits.ICM = IC##ICeven##CON1bits.ICM = 0b001;                                                    \
@@ -146,6 +146,12 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
 
 // Note: Uses CN interrupt to debounce switch input then routes to IC1 module for press analysis
 #define __SW1_CLEAN_PIN _RD1
+#define __SW1_TIMER_VAL (((uint32_t)IC12TMR << 16) | (uint32_t)IC11TMR)
+#define __SW1_TIMER_RESET()                                                                                            \
+    {                                                                                                                  \
+        IC11CON1bits.ICM = IC12CON1bits.ICM = 0b000;                                                                   \
+        IC11CON1bits.ICM = IC12CON1bits.ICM = 0b001;                                                                   \
+    }
 #define __SW1_UI_CONFIG()                                                                                              \
     {                                                                                                                  \
         SW1_CONFIG();                                                                                                  \
@@ -157,6 +163,12 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
 
 // Note: Uses CN interrupt to debounce switch input then routes to IC2 module for press analysis
 #define __SW2_CLEAN_PIN _RD2
+#define __SW2_TIMER_VAL (((uint32_t)IC14TMR << 16) | (uint32_t)IC13TMR)
+#define __SW2_TIMER_RESET()                                                                                            \
+    {                                                                                                                  \
+        IC13CON1bits.ICM = IC14CON1bits.ICM = 0b000;                                                                   \
+        IC13CON1bits.ICM = IC14CON1bits.ICM = 0b001;                                                                   \
+    }
 #define __SW2_UI_CONFIG()                                                                                              \
     {                                                                                                                  \
         SW2_CONFIG();                                                                                                  \
@@ -168,6 +180,12 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
 
 // Note: Uses CN interrupt to debounce switch input then routes to IC3 module for press analysis
 #define __SW3_CLEAN_PIN _RD3
+#define __SW3_TIMER_VAL (((uint32_t)IC16TMR << 16) | (uint32_t)IC15TMR)
+#define __SW3_TIMER_RESET()                                                                                            \
+    {                                                                                                                  \
+        IC15CON1bits.ICM = IC16CON1bits.ICM = 0b000;                                                                   \
+        IC15CON1bits.ICM = IC16CON1bits.ICM = 0b001;                                                                   \
+    }
 #define __SW3_UI_CONFIG()                                                                                              \
     {                                                                                                                  \
         SW3_CONFIG();                                                                                                  \

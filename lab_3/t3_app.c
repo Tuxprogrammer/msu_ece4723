@@ -163,8 +163,8 @@ void user_init()
     config_esos_uiF14();
     esos_uiF14_flashLED3(500);
 
-    esos_RegisterTask(rpg_interface);
-    esos_RegisterTask(switch_interface);
+    //esos_RegisterTask(rpg_interface);
+    //esos_RegisterTask(switch_interface);
     esos_RegisterTask(feedback);
     esos_RegisterTask(menu);
 }
