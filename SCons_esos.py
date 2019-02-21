@@ -41,7 +41,7 @@ SHARED_LIB_COPY = [
 ]
 
 SHARED_LIB_NOTE = \
-"""/************************************************************
+    """/************************************************************
  * WARNING: DO NOT MODIFY THE CONTENTS OF THIS FILE
  * This file is automatically overwritten on each build.
  *
@@ -56,10 +56,12 @@ SHARED_LIB_NOTE = \
 for src, dest in SHARED_LIB_COPY:
     if not os.path.exists(os.path.dirname(dest)):
         os.makedirs(os.path.dirname(dest))
-    
+
     note = SHARED_LIB_NOTE.format(src)
-    with open(src, "r") as original: data = original.read()
-    with open(dest, "w") as modified: modified.write(note + data)
+    with open(src, "r") as original:
+        data = original.read()
+    with open(dest, "w") as modified:
+        modified.write(note + data)
 
 PIC24_LIB_FILES = [
     "../../../pic24lib_all/lib/src/pic24_clockfreq.c",
@@ -70,17 +72,16 @@ PIC24_LIB_FILES = [
     "../../../pic24lib_all/lib/src/pic24_uart.c",
     "../../../pic24lib_all/lib/src/pic24_adc.c"]
 
-ESOS_LIB_FILES = [
-    "../../../pic24lib_all/esos/src/esos.c",
-    "../../../pic24lib_all/esos/src/esos_comm.c",
-    "../../../pic24lib_all/esos/src/esos_cb.c",
-    "../../../pic24lib_all/esos/src/esos_mail.c",
-    "../../../pic24lib_all/esos/src/esos_sensor.c",
-    "../../../pic24lib_all/esos/src/pic24/esos_pic24_i2c.c",
-    "../../../pic24lib_all/esos/src/pic24/esos_pic24_irq.c",
-    "../../../pic24lib_all/esos/src/pic24/esos_pic24_rs232.c",
-    "../../../pic24lib_all/esos/src/pic24/esos_pic24_spi.c",
-    "../../../pic24lib_all/esos/src/pic24/esos_pic24_tick.c"]
+ESOS_LIB_FILES = ["../../../pic24lib_all/esos/src/esos.c",
+                  "../../../pic24lib_all/esos/src/esos_comm.c",
+                  "../../../pic24lib_all/esos/src/esos_cb.c",
+                  "../../../pic24lib_all/esos/src/esos_mail.c",
+                  # "../../../pic24lib_all/esos/src/esos_sensor.c",
+                  "../../../pic24lib_all/esos/src/pic24/esos_pic24_i2c.c",
+                  "../../../pic24lib_all/esos/src/pic24/esos_pic24_irq.c",
+                  "../../../pic24lib_all/esos/src/pic24/esos_pic24_rs232.c",
+                  "../../../pic24lib_all/esos/src/pic24/esos_pic24_spi.c",
+                  "../../../pic24lib_all/esos/src/pic24/esos_pic24_tick.c"]
 
 SHARED_LIB_FILES = Glob("./lib/src/*.c", True, True, True)
 

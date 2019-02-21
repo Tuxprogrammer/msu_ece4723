@@ -12,7 +12,7 @@
 #include "esos_pic24.h"
 #include "esos_f14ui.h"
 #include "esos_sensor.h"
-#include "t3_strings.h"
+#include "t4_strings.h"
 
 ESOS_USER_TIMER(heartbeat)
 {
