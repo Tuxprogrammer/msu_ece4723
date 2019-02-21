@@ -13,6 +13,9 @@
 
 #include "revF14.h"
 
+// Private Data
+volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
+
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_CN)
 {
     // Update LED Values
@@ -24,13 +27,26 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_CN)
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_CN);
 }
 
+// static int8_t ai8_rpg_lookup[4][4] = { { 0, -1, 1, 0 }, { 1, 0, 0, -1 }, { -1, 0, 0, 1 }, { 0, 1, -1, 0 } };
+ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC9)
+{
+    // static uint8_t u8_rpg_cur;
+    // static uint8_t u8_rpg_old;
+
+    // u8_rpg_cur = ((uint8_t)RPGA_HIGH << 2) | RPGB_HIGH;
+    _st_esos_uiF14Data.i16_RPGCounter += 1;
+
+    // Mark interrupt serviced
+    ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_IC9);
+}
+
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC11)
 {
     // Read in required data
-    uint8_t u8_sw_pressed = __SW1_CLEAN_PIN;
+    BOOL b_sw_pressed = __SW1_CLEAN_PIN;
 
     // Determine if the event was a button press
-    if (u8_sw_pressed) {
+    if (b_sw_pressed) {
         _st_esos_uiF14Data.b_SW1Pressed = TRUE;
         _st_esos_uiF14Data.b_SW1DoublePressed = FALSE; // Clear double pressed flag on subsequent press
 
@@ -38,7 +54,7 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC11)
         if (IC11CON2bits.ICTRIG == 0) {
             // Check for double press
             if (__SW1_TIMER_VAL / CYCLES_PER_MS <= _st_esos_uiF14Data.u16_SW1DoublePressedPeriod) {
-                esos_uiF14_setSW1DoublePressed();
+                _st_esos_uiF14Data.b_SW1DoublePressed = TRUE;
             }
             IC11CON2bits.ICTRIG = IC12CON2bits.ICTRIG = 1; // Stop double press timer
         } else {
@@ -56,10 +72,10 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC11)
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC13)
 {
     // Read in required data
-    uint8_t u8_sw_pressed = __SW2_CLEAN_PIN;
+    BOOL b_sw_pressed = __SW2_CLEAN_PIN;
 
     // Determine if the event was a button press
-    if (u8_sw_pressed) {
+    if (b_sw_pressed) {
         _st_esos_uiF14Data.b_SW2Pressed = TRUE;
         _st_esos_uiF14Data.b_SW2DoublePressed = FALSE; // Clear double pressed flag on subsequent press
 
@@ -67,7 +83,7 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC13)
         if (IC13CON2bits.ICTRIG == 0) {
             // Check for double press
             if (__SW2_TIMER_VAL / CYCLES_PER_MS <= _st_esos_uiF14Data.u16_SW2DoublePressedPeriod) {
-                esos_uiF14_setSW2DoublePressed();
+                _st_esos_uiF14Data.b_SW2DoublePressed = TRUE;
             }
             IC13CON2bits.ICTRIG = IC14CON2bits.ICTRIG = 1; // Stop double press timer
         } else {
@@ -86,10 +102,10 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC13)
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC15)
 {
     // Read in required data
-    uint8_t u8_sw_pressed = __SW3_CLEAN_PIN;
+    BOOL b_sw_pressed = __SW3_CLEAN_PIN;
 
     // Determine if the event was a button press
-    if (u8_sw_pressed) {
+    if (b_sw_pressed) {
         _st_esos_uiF14Data.b_SW3Pressed = TRUE;
         _st_esos_uiF14Data.b_SW3DoublePressed = FALSE; // Clear double pressed flag on subsequent press
 
@@ -97,7 +113,7 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_IC15)
         if (IC15CON2bits.ICTRIG == 0) {
             // Check for double press
             if (__SW3_TIMER_VAL / CYCLES_PER_MS <= _st_esos_uiF14Data.u16_SW3DoublePressedPeriod) {
-                esos_uiF14_setSW3DoublePressed();
+                _st_esos_uiF14Data.b_SW3DoublePressed = TRUE;
             }
             IC15CON2bits.ICTRIG = IC16CON2bits.ICTRIG = 1; // Stop double press timer
         } else {
@@ -120,6 +136,11 @@ ESOS_USER_TIMER(__esos_uiF14_poll)
     __SW2_CLEAN_PIN = SW2_PRESSED;
     __SW3_CLEAN_PIN = SW3_PRESSED;
 
+    // Debounce RPG
+    //__RPGA_CLEAN_PIN = _RB8;
+    // __RPGB_CLEAN_PIN = _RB9;
+    // __RPG_INT_PIN = __RPGA_CLEAN_PIN ^ __RPGB_CLEAN_PIN;
+
     // Check Double Press Timers
     if (__SW1_TIMER_VAL / CYCLES_PER_MS > _st_esos_uiF14Data.u16_SW1DoublePressedPeriod) {
         IC11CON2bits.ICTRIG = IC12CON2bits.ICTRIG = 1;
@@ -137,29 +158,20 @@ ESOS_USER_TIMER(__esos_uiF14_poll)
     }
 }
 
-volatile _st_esos_uiF14Data_t _st_esos_uiF14Data;
-
-#pragma region PRIVATE RPG FUNCTIONS
-inline void _esos_uiF14_setRPGCounter(uint16_t newValue)
+ESOS_USER_TASK(TEST)
 {
-    _st_esos_uiF14Data.u16_RPGCounter = newValue;
-}
+    ESOS_TASK_BEGIN();
 
-inline uint16_t _esos_uiF14_getRPGCounter(void)
-{
-    return _st_esos_uiF14Data.u16_RPGCounter;
-}
+    while (TRUE) {
+        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING((uint32_t)_RB8);
+        ESOS_TASK_WAIT_ON_SEND_STRING(", ");
+        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING((uint32_t)_RB9);
+        ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+        ESOS_TASK_WAIT_TICKS(500);
+    }
 
-inline void _esos_uiF14_setLastRPGCounter(uint16_t newValue)
-{
-    _st_esos_uiF14Data.u16_lastRPGCounter = newValue;
+    ESOS_TASK_END();
 }
-
-inline uint16_t _esos_uiF14_getLastRPGCounter(void)
-{
-    return _st_esos_uiF14Data.u16_lastRPGCounter;
-}
-#pragma endregion
 
 #pragma region SWITCH 1
 inline BOOL esos_uiF14_isSW1Pressed(void)
@@ -180,11 +192,6 @@ inline BOOL esos_uiF14_isSW1DoublePressed(void)
     } else {
         return FALSE;
     }
-}
-
-inline void esos_uiF14_setSW1DoublePressed(void)
-{
-    _st_esos_uiF14Data.b_SW1DoublePressed = TRUE;
 }
 
 inline uint16_t esos_uiF14_getSW1DoublePressedPeriod(void)
@@ -219,11 +226,6 @@ inline BOOL esos_uiF14_isSW2DoublePressed(void)
     }
 }
 
-inline void esos_uiF14_setSW2DoublePressed(void)
-{
-    _st_esos_uiF14Data.b_SW2DoublePressed = TRUE;
-}
-
 inline uint16_t esos_uiF14_getSW2DoublePressedPeriod(void)
 {
     return _st_esos_uiF14Data.u16_SW2DoublePressedPeriod;
@@ -253,11 +255,6 @@ inline BOOL esos_uiF14_isSW3DoublePressed(void)
         return TRUE;
     } else
         return FALSE;
-}
-
-inline void esos_uiF14_setSW3DoublePressed(void)
-{
-    _st_esos_uiF14Data.b_SW3DoublePressed = TRUE;
 }
 
 inline uint16_t esos_uiF14_getSW3DoublePressedPeriod(void)
@@ -494,23 +491,6 @@ inline void esos_uiF14_turnGreenLEDOff(void)
 
 #pragma region PUBLIC RPG FUNCTIONS
 
-inline BOOL esos_uiF14_getRPGA(void)
-{
-    return _st_esos_uiF14Data.b_RPGAHigh;
-}
-inline void esos_uiF14_setRPGA(BOOL rpg)
-{
-    _st_esos_uiF14Data.b_RPGAHigh = rpg;
-}
-inline BOOL esos_uiF14_getRPGB(void)
-{
-    return _st_esos_uiF14Data.b_RPGBHigh;
-}
-inline void esos_uiF14_setRPGB(BOOL rpg)
-{
-    _st_esos_uiF14Data.b_RPGBHigh = rpg;
-}
-
 inline int16_t esos_uiF14_getRPGVelocity(void)
 {
     return _st_esos_uiF14Data.i16_RPGVelocity;
@@ -590,35 +570,7 @@ inline BOOL esos_uiF14_isRPGTurningCCW(void)
 }
 #pragma endregion
 
-#pragma region USER TASKS
-ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity)
-{
-    esos_uiF14_setRPGVelocity((_st_esos_uiF14Data.u16_RPGCounter - _st_esos_uiF14Data.u16_lastRPGCounter)
-                              /*/ __ESOS_UIF14_RPG_PERIOD*/);
-    _esos_uiF14_setLastRPGCounter(_esos_uiF14_getRPGCounter());
-}
-
-ESOS_USER_TASK(__esos_uiF14_update_rpg)
-{
-    ESOS_TASK_BEGIN();
-    while (TRUE) {
-        ESOS_TASK_WAIT_UNTIL_RPGA_LOW();
-        // ESOS_TASK_WAIT_TICKS(2); // simple debounce 1-5ms
-        if (esos_uiF14_getRPGB()) {
-            _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() + 1);
-        } else {
-            _esos_uiF14_setRPGCounter(_esos_uiF14_getRPGCounter() + 1); // change this to a minus -- VERY BAD HAX
-        }
-        // ESOS_TASK_WAIT_TICKS(2); // simple debounce 1-5ms
-        ESOS_TASK_WAIT_UNTIL_RPGA_HIGH();
-        // ESOS_TASK_WAIT_TICKS(2); // simple debounce 1-5ms
-    }
-    ESOS_TASK_END();
-}
-#pragma endregion
-
 // UIF14 INITIALIZATION FUNCTION
-
 void config_esos_uiF14()
 {
     // Configure LEDs/OCs and Intermediate Pin RF1/2/3 ICs/Interrupts
@@ -632,12 +584,10 @@ void config_esos_uiF14()
     __SW3_UI_CONFIG();
 
     // configure RPG
+    // __RPG_UI_CONFIG();
     RPG_CONFIG();
 
-    // zero out the RPG counter
-    _esos_uiF14_setRPGCounter(0);
-    _esos_uiF14_setLastRPGCounter(0);
-
+    // Set default threshold/period values
     esos_uiF14_setSW1DoublePressedPeriod(__ESOS_UIF14_DEFAULT_SWDP_PERIOD);
     esos_uiF14_setSW2DoublePressedPeriod(__ESOS_UIF14_DEFAULT_SWDP_PERIOD);
     esos_uiF14_setSW3DoublePressedPeriod(__ESOS_UIF14_DEFAULT_SWDP_PERIOD);
@@ -646,31 +596,6 @@ void config_esos_uiF14()
     esos_uiF14_setRPGFastThreshold(__ESOS_UIF14_DEFAULT_RPGF_PERIOD);
 
     // Register and start tasks/timers
-    esos_RegisterTask(__esos_uiF14_task);
-    esos_RegisterTimer(__esos_uiF14_update_rpg_velocity, __ESOS_UIF14_RPG_PERIOD);
     esos_RegisterTimer(__esos_uiF14_poll, __ESOS_UIF14_POLL_RATE);
-    esos_RegisterTask(__esos_uiF14_update_rpg);
-}
-
-// UIF14 task to manage user-interface
-ESOS_USER_TASK(__esos_uiF14_task)
-{
-    ESOS_TASK_BEGIN();
-
-    while (TRUE) {
-        if (RPGA_HIGH) {
-            _st_esos_uiF14Data.b_RPGAHigh = TRUE;
-        } else {
-            _st_esos_uiF14Data.b_RPGAHigh = FALSE;
-        }
-
-        if (RPGB_HIGH) {
-            _st_esos_uiF14Data.b_RPGBHigh = TRUE;
-        } else {
-            _st_esos_uiF14Data.b_RPGBHigh = FALSE;
-        }
-
-        ESOS_TASK_WAIT_TICKS(__ESOS_UIF14_POLL_RATE);
-    }
-    ESOS_TASK_END();
+    esos_RegisterTask(TEST);
 }

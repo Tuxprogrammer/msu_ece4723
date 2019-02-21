@@ -16,7 +16,7 @@
  * Pin RC15         (SW3)
  * Pin RB8  [RPI40] (RPGA)
  * Pin RB9  [RPI41] (RPGB)
- * 
+ *
  * Configuration Not Required:
  * Pin RB10 [RPI43] (ICSP RX)
  * Pin RF0  [RP96]  (ICSP TX)
@@ -92,7 +92,6 @@
         CONFIG_RB9_AS_DIG_INPUT();                                                                                     \
         ENABLE_RB8_PULLUP();                                                                                           \
         ENABLE_RB9_PULLUP();                                                                                           \
-        CONFIG_INT1_TO_RP(40);                                                                                         \
         DELAY_US(1);                                                                                                   \
     }
 
