@@ -32,7 +32,7 @@
 #define __ESOS_UIF14_DEFAULT_RPGS_PERIOD 5
 #define __ESOS_UIF14_DEFAULT_RPGM_PERIOD 15
 #define __ESOS_UIF14_DEFAULT_RPGF_PERIOD 30
-#define __ESOS_UIF14_UI_PERIOD_MS 10
+#define __ESOS_UIF14_POLL_RATE 64
 #define __ESOS_UIF14_RPG_TURNS_PER_REV 12
 #define __ESOS_UIF14_RPG_PERIOD 2000
 
@@ -77,6 +77,7 @@ uint16_t _esos_uiF14_getLastRPGCounter(void);
 void _esos_ui_setLastRPGCounter(uint16_t);
 
 ESOS_USER_TASK(__esos_uiF14_task);
+ESOS_USER_TIMER(__esos_uiF14_poll);
 ESOS_USER_TIMER(__esos_uiF14_update_rpg_velocity);
 ESOS_USER_TASK(__esos_uiF14_update_rpg);
 
@@ -89,14 +90,27 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
         OC##OCodd##CON1 = OC##OCodd##CON2 = OC##OCeven##CON1 = OC##OCeven##CON2 = 0x0000;                              \
         OC##OCodd##CON1bits.TRIGMODE = OC##OCeven##CON1bits.TRIGMODE = 1;                                              \
         OC##OCodd##CON1bits.OCTSEL = OC##OCeven##CON1bits.OCTSEL = 0b111;                                              \
-        OC##OCodd##CON2 = OC##OCeven##CON2 = OC_SYNCSEL_OCxRS;                                                         \
-        OC##OCodd##CON2 = OC##OCeven##CON2 |= OC_IC32_ON;                                                              \
+        OC##OCodd##CON2 = OC##OCeven##CON2 = OC_SYNCSEL_OCxRS | OC_IC32_ON;                                            \
         OC##OCodd##CON2 |= OC_TRIS_ON;                                                                                 \
+    }
+
+// Macro to setup Input Capture modules with specified remappable input pin
+#define __ESOS_UIF14_CONFIG_SW_IC(pin, ICodd, ICeven) __ESOS_UIF14__CONFIG_SW_IC(pin, ICodd, ICeven)
+#define __ESOS_UIF14__CONFIG_SW_IC(pin, ICodd, ICeven)                                                                 \
+    {                                                                                                                  \
+        _IC##ICodd##R = pin; /* Configure Input Capture ICodd to pin */                                                \
+        IC##ICodd##CON1bits.ICM = IC##ICeven##CON1bits.ICM = 0b000;                                                    \
+        IC##ICodd##CON1bits.ICTSEL = IC##ICeven##CON1bits.ICTSEL = 0b111;                                              \
+        IC##ICodd##CON2bits.IC32 = IC##ICeven##CON2bits.IC32 = 1;                                                      \
+        IC##ICodd##CON2bits.ICTRIG = IC##ICeven##CON2bits.ICTRIG = 0;                                                  \
+        IC##ICodd##CON2bits.SYNCSEL = IC##ICeven##CON2bits.SYNCSEL = 0b00000;                                          \
+        IC##ICodd##CON1bits.ICI = 0b00;                                                                                \
+        IC##ICodd##CON1bits.ICM = IC##ICeven##CON1bits.ICM = 0b001;                                                    \
     }
 
 // Note: uses RF1 as intermediate pin because of RPI pins
 #define __LED1_IMDT_PIN _RF1
-#define __LED1_UI_CONFIG()                                                                                               \
+#define __LED1_UI_CONFIG()                                                                                             \
     {                                                                                                                  \
         LED1_CONFIG();                                                                                                 \
         CONFIG_RF1_AS_DIG_OUTPUT(); /* Use RF1 as intermediate pin for RF4 */                                          \
@@ -108,26 +122,59 @@ ESOS_USER_TASK(__esos_uiF14_update_rpg);
 
 // Note: uses RF2 as intermediate pin because of RPI pins
 #define __LED2_IMDT_PIN _RF2
-#define __LED2_UI_CONFIG()                                                                                               \
+#define __LED2_UI_CONFIG()                                                                                             \
     {                                                                                                                  \
         LED2_CONFIG();                                                                                                 \
         CONFIG_RF2_AS_DIG_OUTPUT(); /* Use RF2 as intermediate pin for RB14 */                                         \
         __ESOS_UIF14_CONFIG_TOGGLE_OC(RF2_RP, 13, 14); /* Configure LED Flash Controller on RF2 using OC13/14 */       \
-        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC2, ESOS_USER_IRQ_LEVEL2, _IC2Interrupt);                   \
-        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC2);                                                          \
+        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_CN, ESOS_USER_IRQ_LEVEL2, _CNInterrupt);                     \
+        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_CN);                                                           \
         ENABLE_RF2_CN_INTERRUPT();                                                                                     \
     }
 
 // Note: uses RF3 as intermediate pin because of RPI pins
 #define __LED3_IMDT_PIN _RF3
-#define __LED3_UI_CONFIG()                                                                                               \
+#define __LED3_UI_CONFIG()                                                                                             \
     {                                                                                                                  \
         LED3_HB_CONFIG();                                                                                              \
         CONFIG_RF3_AS_DIG_OUTPUT(); /* Use RF3 as intermediate pin for RB15 */                                         \
         __ESOS_UIF14_CONFIG_TOGGLE_OC(RF3_RP, 15, 16); /* Configure LED Flash Controller on RF3 using OC15/16 */       \
-        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC3, ESOS_USER_IRQ_LEVEL2, _IC3Interrupt);                   \
-        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC3);                                                          \
+        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_CN, ESOS_USER_IRQ_LEVEL2, _CNInterrupt);                     \
+        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_CN);                                                           \
         ENABLE_RF3_CN_INTERRUPT();                                                                                     \
+    }
+
+// Note: Uses CN interrupt to debounce switch input then routes to IC1 module for press analysis
+#define __SW1_CLEAN_PIN _RD1
+#define __SW1_UI_CONFIG()                                                                                              \
+    {                                                                                                                  \
+        SW1_CONFIG();                                                                                                  \
+        CONFIG_RD1_AS_DIG_OUTPUT(); /* Use RD1 as debounced output from SW1 */                                         \
+        __ESOS_UIF14_CONFIG_SW_IC(RD1_RP, 11, 12);                                                                     \
+        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC11, ESOS_USER_IRQ_LEVEL1, _IC11Interrupt);                 \
+        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC11);                                                         \
+    }
+
+// Note: Uses CN interrupt to debounce switch input then routes to IC2 module for press analysis
+#define __SW2_CLEAN_PIN _RD2
+#define __SW2_UI_CONFIG()                                                                                              \
+    {                                                                                                                  \
+        SW2_CONFIG();                                                                                                  \
+        CONFIG_RD2_AS_DIG_OUTPUT(); /* Use RD2 as debounced output from SW2 */                                         \
+        __ESOS_UIF14_CONFIG_SW_IC(RD2_RP, 13, 14);                                                                     \
+        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC13, ESOS_USER_IRQ_LEVEL1, _IC13Interrupt);                 \
+        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC13);                                                         \
+    }
+
+// Note: Uses CN interrupt to debounce switch input then routes to IC3 module for press analysis
+#define __SW3_CLEAN_PIN _RD3
+#define __SW3_UI_CONFIG()                                                                                              \
+    {                                                                                                                  \
+        SW3_CONFIG();                                                                                                  \
+        CONFIG_RD3_AS_DIG_OUTPUT(); /* Use RD3 as debounced output from SW3 */                                         \
+        __ESOS_UIF14_CONFIG_SW_IC(RD3_RP, 15, 16);                                                                     \
+        ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC15, ESOS_USER_IRQ_LEVEL1, _IC15Interrupt);                 \
+        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_IC15);                                                         \
     }
 
 // Public Function Prototypes
