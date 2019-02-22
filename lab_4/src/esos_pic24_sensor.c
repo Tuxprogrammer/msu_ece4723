@@ -148,5 +148,5 @@ Determine truth of: the sensor is currently converting
  */
 BOOL esos_sensor_is_converting_hw(void)
 {
-    esos_IsUserFlagSet(ESOS_SENSOR_IS_CONVERTING_FLAG);
+    return esos_IsUserFlagSet(ESOS_SENSOR_IS_CONVERTING_FLAG);
 }
