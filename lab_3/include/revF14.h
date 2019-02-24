@@ -37,13 +37,13 @@
 #define LED1 (_LATF4)
 #define LED1_ON() (_LATF4 = 1)
 #define LED1_OFF() (_LATF4 = 0)
-#define LED1_HB_TOGGLE() (_LATF4 = !_LATF4)
+#define LED1_TOGGLE() (_LATF4 = !_LATF4)
 
 #define LED2_CONFIG() CONFIG_RB14_AS_DIG_OUTPUT()
 #define LED2 (_LATB14)
 #define LED2_ON() (_LATB14 = 1)
 #define LED2_OFF() (_LATB14 = 0)
-#define LED2_HB_TOGGLE() (_LATB14 = !_LATB14)
+#define LED2_TOGGLE() (_LATB14 = !_LATB14)
 
 #define LED3_HB_CONFIG() CONFIG_RB15_AS_DIG_OUTPUT()
 #define LED3_HB (_LATB15)
@@ -97,9 +97,5 @@
 
 #define RPGA (_RB8)
 #define RPGB (_RB9)
-#define RPGA_HIGH (_RB8 == 1)
-#define RPGA_LOW (_RB8 == 0)
-#define RPGB_HIGH (_RB9 == 1)
-#define RPGB_LOW (_RB9 == 0)
 
 #endif

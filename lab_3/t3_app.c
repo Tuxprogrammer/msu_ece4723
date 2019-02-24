@@ -8,21 +8,59 @@
 ESOS_USER_TASK(rpg_interface)
 {
     ESOS_TASK_BEGIN();
+
+    static BOOL b_rpg_prev, b_rpg_slow_prev, b_rpg_med_prev, b_rpg_fast_prev, b_rpg_cw_prev, b_rpg_ccw_prev;
     while (TRUE) {
-        if (!(esos_uiF14_isRPGTurning())) {
-            esos_uiF14_turnLED2Off();
-            esos_uiF14_flashLED2(0);
-        } else if (esos_uiF14_isRPGTurningSlow()) {
-            esos_uiF14_turnLED2On();
-            esos_uiF14_flashLED2(0);
-        } else if (esos_uiF14_isRPGTurningMedium()) {
-            esos_uiF14_turnLED2On();
-            esos_uiF14_flashLED2(500);
-        } else if (esos_uiF14_isRPGTurningFast()) {
-            esos_uiF14_turnLED2On();
-            esos_uiF14_flashLED2(100);
+        if (esos_uiF14_isRPGTurning() && esos_uiF14_isRPGTurning() != b_rpg_prev) {
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_TURNING);
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
         }
-        ESOS_TASK_WAIT_TICKS(1000);
+
+        if (!esos_uiF14_isRPGTurning()) {
+            esos_uiF14_turnLED2Off();
+        }
+
+        if (esos_uiF14_isRPGTurningSlow() && esos_uiF14_isRPGTurningSlow() != b_rpg_slow_prev) {
+            esos_uiF14_turnLED2On();
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_SLOW);
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        }
+        if (esos_uiF14_isRPGTurningMedium() && esos_uiF14_isRPGTurningMedium() != b_rpg_med_prev) {
+            esos_uiF14_flashLED2(500);
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_TURNING);
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_MEDIUM);
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        }
+        if (esos_uiF14_isRPGTurningFast() && esos_uiF14_isRPGTurningFast() != b_rpg_fast_prev) {
+            esos_uiF14_flashLED2(100);
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_TURNING);
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_FAST);
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        }
+
+        if (esos_uiF14_isRPGTurningCW() && esos_uiF14_isRPGTurningCW() != b_rpg_cw_prev) {
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_CW);
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        }
+        if (esos_uiF14_isRPGTurningCCW() && esos_uiF14_isRPGTurningCCW() != b_rpg_ccw_prev) {
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_CCW);
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        }
+
+        b_rpg_prev = esos_uiF14_isRPGTurning();
+        b_rpg_slow_prev = esos_uiF14_isRPGTurningSlow();
+        b_rpg_med_prev = esos_uiF14_isRPGTurningMedium();
+        b_rpg_fast_prev = esos_uiF14_isRPGTurningFast();
+        b_rpg_cw_prev = esos_uiF14_isRPGTurningCW();
+        b_rpg_ccw_prev = esos_uiF14_isRPGTurningCCW();
+
+        ESOS_TASK_YIELD();
     }
 
     ESOS_TASK_END();
@@ -45,7 +83,7 @@ ESOS_USER_TASK(switch_interface)
             static uint8_t count;
             esos_uiF14_turnLED1Off();
 
-            esos_uiF14_flashLED1(250); // Flash LED1 3 times
+            esos_uiF14_flashLED1(250);
             ESOS_TASK_WAIT_TICKS(750);
         }
         ESOS_TASK_YIELD();
@@ -53,7 +91,7 @@ ESOS_USER_TASK(switch_interface)
     ESOS_TASK_END();
 };
 
-ESOS_USER_TASK(feedback)
+ESOS_USER_TASK(sw_feedback)
 {
     static BOOL e_SW1_PRESSED;
     static BOOL e_SW2_PRESSED;
@@ -61,16 +99,6 @@ ESOS_USER_TASK(feedback)
     static BOOL e_SW1_DPRESSED;
     static BOOL e_SW2_DPRESSED;
     static BOOL e_SW3_DPRESSED;
-    static BOOL e_LED1_ON;
-    static BOOL e_LED2_ON;
-    static BOOL e_RPG_TURNING;
-    static BOOL e_RPG_CW;
-    static BOOL e_RPG_CCW;
-    static BOOL e_RPG_SLOW;
-    static BOOL e_RPG_MEDIUM;
-    static BOOL e_RPG_FAST;
-    static uint16_t e_RPG_COUNTER;
-    static int16_t e_RPG_VELOCITY;
 
     ESOS_TASK_BEGIN();
     while (TRUE) {
@@ -122,37 +150,6 @@ ESOS_USER_TASK(feedback)
             ESOS_TASK_WAIT_ON_SEND_STRING(str_e_SW3_DPRESSED);
             ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
         }
-        if (e_RPG_TURNING != esos_uiF14_isRPGTurning()) {
-            e_RPG_TURNING = esos_uiF14_isRPGTurning();
-            e_RPG_CW = esos_uiF14_isRPGTurningCW();
-            e_RPG_CCW = esos_uiF14_isRPGTurningCCW();
-            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_TURNING);
-            if (e_RPG_CW) {
-                ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_CW);
-            } else if (e_RPG_CCW) {
-                ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_CCW);
-            }
-            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-        }
-        if (e_RPG_SLOW != esos_uiF14_isRPGTurningSlow()) {
-            e_RPG_SLOW = esos_uiF14_isRPGTurningSlow();
-            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_SLOW);
-            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-        }
-        if (e_RPG_MEDIUM != esos_uiF14_isRPGTurningMedium()) {
-            e_RPG_MEDIUM = esos_uiF14_isRPGTurningMedium();
-            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_MEDIUM);
-            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-        }
-        if (e_RPG_FAST != esos_uiF14_isRPGTurningFast()) {
-            e_RPG_FAST = esos_uiF14_isRPGTurningFast();
-            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-            ESOS_TASK_WAIT_ON_SEND_STRING(str_e_RPG_FAST);
-            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-        }
         ESOS_TASK_YIELD();
     }
     ESOS_TASK_END();
@@ -161,10 +158,10 @@ ESOS_USER_TASK(feedback)
 void user_init()
 {
     config_esos_uiF14();
-    esos_uiF14_flashLED3(500);
+    esos_uiF14_flashLED3(500); // heartbeat LED
 
-    //esos_RegisterTask(rpg_interface);
-    //esos_RegisterTask(switch_interface);
-    esos_RegisterTask(feedback);
+    esos_RegisterTask(rpg_interface);
+    esos_RegisterTask(switch_interface);
+    esos_RegisterTask(sw_feedback);
     esos_RegisterTask(menu);
 }
