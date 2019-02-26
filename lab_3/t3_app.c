@@ -80,7 +80,6 @@ ESOS_USER_TASK(switch_interface)
 
         if ((esos_uiF14_isSW3Pressed() && esos_uiF14_isSW2DoublePressed()) ||
             (!esos_uiF14_isSW3Pressed() && esos_uiF14_isSW1DoublePressed())) {
-            static uint8_t count;
             esos_uiF14_turnLED1Off();
 
             esos_uiF14_flashLED1(250);

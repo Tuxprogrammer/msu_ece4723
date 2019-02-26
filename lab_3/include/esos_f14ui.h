@@ -8,18 +8,22 @@
  */
 
 /* HARDWARE SYSTEM RESOURCES USED BY THIS SERVICE:
- * Input Compare 14 ?
- * Input Compare 15 ? TODO
- * Input Compare 16 ?
- * Output Compare 11 (LED1)
- * Output Compare 12 (LED1)
- * Output Compare 13 (LED2)
- * Output Compare 14 (LED2)
- * Output Compare 15 (LED3_HB)
- * Output Compare 16 (LED3_HB)
+ * Input Compare 11/12 (SW1)
+ * Input Compare 13/14 (SW2)
+ * Input Compare 15/16 (SW3)
+ * Output Compare 11/12 (LED1)
+ * Output Compare 13/14 (LED2)
+ * Output Compare 15/16 (LED3_HB)
  * Pins RF1 [RP97], RF4 [RP100] (LED1)
  * Pins RF2 [RP98], RB14 [RPI46] (LED2)
  * Pins RF3 [RP99], RB15 [RPI47] (LED3_HB)
+ * Pins RD6, RD7 (RPG)
+ */
+
+/* SOFTWARE SYSTEM RESOURCES USED BY THIS SERVICE:
+ * 3 ESOS Timers
+ * Change Notification ISR (SW1,2,3)
+ * IC11,13,15 ISRs
  */
 
 #ifndef ESOS_UIF14_H
@@ -179,24 +183,21 @@ void config_esos_uiF14();
 
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_MAKES_REV(y)                                                                    \
     {                                                                                                                  \
-        _esos_ui_setLastRPGCounter_u16(_esos_uiF14_getRPGCounter()); /*FIX THIS*/                                      \
-        ESOS_TASK_WAIT_UNTIL(                                                                                          \
-            _esos_uiF14_getRPGCounter() == _esos_uiF14_getLastRPGCounter() + (y * __ESOS_UIF14_RPG_TURNS_PER_REV) ||   \
-            _esos_uiF14_getRPGCounter() == _esos_uiF14_getLastRPGCounter() - (y * __ESOS_UIF14_RPG_TURNS_PER_REV));    \
+        int16_t i16_cntr = _esos_uiF14_getRPGValue_i16();                                                              \
+        ESOS_TASK_WAIT_UNTIL(_esos_uiF14_getRPGCounter() == i16_cntr + (y * __ESOS_UIF14_RPG_TURNS_PER_REV) ||         \
+                             _esos_uiF14_getRPGCounter() == i16_cntr - (y * __ESOS_UIF14_RPG_TURNS_PER_REV));          \
     }
 
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_MAKES_CW_REV(y)                                                                 \
     {                                                                                                                  \
-        _esos_ui_setLastRPGCounter_u16(_esos_uiF14_getRPGCounter());                                                   \
-        ESOS_TASK_WAIT_UNTIL(_esos_uiF14_getRPGCounter() ==                                                            \
-                             _esos_uiF14_getLastRPGCounter() + (y * __ESOS_UIF14_RPG_TURNS_PER_REV));                  \
+        int16_t i16_cntr = _esos_uiF14_getRPGValue_i16();                                                              \
+        ESOS_TASK_WAIT_UNTIL(_esos_uiF14_getRPGCounter() == i16_cntr + (y * __ESOS_UIF14_RPG_TURNS_PER_REV));          \
     }
 
 #define ESOS_TASK_WAIT_UNTIL_UIF14_RPG_MAKES_CCW_REV(y)                                                                \
     {                                                                                                                  \
-        _esos_ui_setLastRPGCounter_u16(_esos_uiF14_getRPGCounter());                                                   \
-        ESOS_TASK_WAIT_UNTIL(_esos_uiF14_getRPGCounter() ==                                                            \
-                             _esos_uiF14_getLastRPGCounter() - (y * __ESOS_UIF14_RPG_TURNS_PER_REV));                  \
+        int16_t i16_cntr = _esos_uiF14_getRPGValue_i16();                                                              \
+        ESOS_TASK_WAIT_UNTIL(_esos_uiF14_getRPGCounter() == i16_cntr - (y * __ESOS_UIF14_RPG_TURNS_PER_REV));          \
     }
 
 // Private ESOS UI Macros
