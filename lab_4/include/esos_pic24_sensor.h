@@ -49,6 +49,10 @@
 /* F L A G S ****************************************************************/
 #define ESOS_SENSOR_IS_CONVERTING_FLAG ESOS_USER_FLAG_0
 
+/* D E F I N E S ************************************************************/
+#define POT_CHANNEL (ESOS_SENSOR_CH02)
+#define TEMP_CHANNEL (ESOS_SENSOR_CH03)
+
 /* P U B L I C  P R O T O T Y P E S *****************************************/
 void esos_sensor_config_hw (esos_sensor_ch_t, esos_sensor_vref_t);
 void esos_sensor_initiate_hw (void);
