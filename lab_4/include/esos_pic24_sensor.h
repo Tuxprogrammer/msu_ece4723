@@ -59,5 +59,6 @@ void esos_sensor_initiate_hw (void);
 uint16_t esos_sensor_getvalue_u16_hw (void);
 void esos_sensor_release_hw (void);
 BOOL esos_sensor_is_converting_hw (void);
+int convert_uint32_t_to_str(uint32_t u32_val, char *str, uint32_t len, int base);
 
 #endif

@@ -79,9 +79,30 @@ ESOS_USER_TASK(display_output)
                 ESOS_ALLOCATE_CHILD_TASK(read_adc);
                 ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_ON_AVAILABLE_SENSOR, POT_CHANNEL, ESOS_SENSOR_VREF_3V0);
                 do {
-                    ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_SENSOR_QUICK_READ, &pu16_out);
+                    ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_SENSOR_READ, &pu16_out, output_state,
+                                             ESOS_SENSOR_FORMAT_VOLTAGE);
+                    static uint32_t pu32_out, volt_ipart, volt_fpart;
+                    pu32_out = (uint32_t)pu16_out * 3; // vref is 3.0 volts
+                    volt_ipart = pu32_out / 10000;
+                    volt_fpart = pu32_out - volt_ipart * 10000;
+
+                    static char volt_str[12];
+
                     ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                    ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pu16_out);
+                    ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pu32_out);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
+                    ESOS_TASK_WAIT_ON_SEND_UINT8('=');
+                    ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
+                    convert_uint32_t_to_str(volt_ipart, volt_str, 12, 10);
+                    ESOS_TASK_WAIT_ON_SEND_STRING(volt_str);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8('.');
+                    convert_uint32_t_to_str(volt_fpart, volt_str, 12, 10);
+                    if (volt_fpart >= 000 && volt_fpart <= 999) {
+                        ESOS_TASK_WAIT_ON_SEND_UINT8('0');
+                    }
+                    ESOS_TASK_WAIT_ON_SEND_STRING(volt_str);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
+                    ESOS_TASK_WAIT_ON_SEND_UINT8('V');
                     ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
                     ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                     ESOS_TASK_WAIT_TICKS(1000);
@@ -94,12 +115,35 @@ ESOS_USER_TASK(display_output)
                 ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_ON_AVAILABLE_SENSOR, POT_CHANNEL, ESOS_SENSOR_VREF_3V0);
                 // ESOS_TASK_WAIT_ON_SEND_STRING("_wait_sensor_availble");
                 ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_SENSOR_READ, &pu16_out, output_state,
-                                         ESOS_SENSOR_FORMAT_BITS); // could change this to percent to get a cool output
+                                         ESOS_SENSOR_FORMAT_VOLTAGE); // could change this to percent to get a cool
+                                                                      // output
                 // ESOS_TASK_WAIT_ON_SEND_STRING("_wait_sensor_read");
 
                 ESOS_SENSOR_CLOSE();
+
+                static uint32_t pu32_out, volt_ipart, volt_fpart;
+                pu32_out = (uint32_t)pu16_out * 3; // vref is 3.0 volts
+                volt_ipart = pu32_out / 10000;
+                volt_fpart = pu32_out - volt_ipart * 10000;
+
+                static char volt_str[12];
+
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pu16_out);
+                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pu32_out);
+                ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
+                ESOS_TASK_WAIT_ON_SEND_UINT8('=');
+                ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
+                convert_uint32_t_to_str(volt_ipart, volt_str, 12, 10);
+                ESOS_TASK_WAIT_ON_SEND_STRING(volt_str);
+                ESOS_TASK_WAIT_ON_SEND_UINT8('.');
+                convert_uint32_t_to_str(volt_fpart, volt_str, 12, 10);
+                // Fix the times when fpart is wrong.
+                if (volt_fpart >= 000 && volt_fpart <= 999) {
+                    ESOS_TASK_WAIT_ON_SEND_UINT8('0');
+                }
+                ESOS_TASK_WAIT_ON_SEND_STRING(volt_str);
+                ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
+                ESOS_TASK_WAIT_ON_SEND_UINT8('V');
                 ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                 output_enabled = FALSE;
