@@ -54,56 +54,19 @@ Configure and enable the sensor module for hwxxx hardware.
 void esos_sensor_config_hw(esos_sensor_ch_t e_senCh, esos_sensor_vref_t e_senVRef)
 {
     ANALOG_CONFIG();
-    switch (e_senCh) {
-    case ESOS_SENSOR_CH00:
-        ADC_CONFIG(POT1, 31);
-        break;
-    case ESOS_SENSOR_CH01:
-        ADC_CONFIG(TEMP1, 31);
-        break;
-    case ESOS_SENSOR_CH02:
 
-        break;
-    case ESOS_SENSOR_CH03:
+    // sample at 31 Tad
+    ADC_CONFIG();
 
-        break;
-    case ESOS_SENSOR_CH04:
+    AD1CON1bits.ADON = 0;
+    /* Channel setup */
+    AD1CHS0bits.CH0SA = e_senCh; /* Select AN<ch> for CH0 +ve */
+    AD1CHS0bits.CH0NA = 0; /* select Vref- for ch0 -ve */
 
-        break;
-    case ESOS_SENSOR_CH05:
-
-        break;
-    case ESOS_SENSOR_CH06:
-
-        break;
-    case ESOS_SENSOR_CH07:
-
-        break;
-    case ESOS_SENSOR_CH08:
-
-        break;
-    case ESOS_SENSOR_CH09:
-
-        break;
-    case ESOS_SENSOR_CH0A:
-
-        break;
-    case ESOS_SENSOR_CH0B:
-
-        break;
-    case ESOS_SENSOR_CH0C:
-
-        break;
-    case ESOS_SENSOR_CH0D:
-
-        break;
-    case ESOS_SENSOR_CH0E:
-
-        break;
-    case ESOS_SENSOR_CH0F:
-
-        break;
-    }
+    AD1CHS123 = 0; /* disable ch1,2,3 */
+    AD1CSSH = 0; /* Set Input Scan Select Register High */
+    AD1CSSL = 0; /* Set Input Scan Select Register Low */
+    AD1CON1bits.ADON = 1;
 }
 
 /**
@@ -122,13 +85,12 @@ Receive the value from a conversion that has already been initiated
  */
 uint16_t esos_sensor_getvalue_u16_hw(void)
 {
-    if (esos_IsUserFlagClear(ESOS_SENSOR_IS_CONVERTING_FLAG))
+    if (!esos_IsUserFlagClear(ESOS_SENSOR_IS_CONVERTING_FLAG)) {
         // wait a minute ... who ARE you ???
         return 0;
-    do {
-    } while (AD1CON1bits.DONE == 0); // do nothing until its done.
+    }
+
     uint16_t u16_adcVal = (ADC1BUF0); // grab the value.
-    esos_ClearUserFlag(ESOS_SENSOR_IS_CONVERTING_FLAG);
     return u16_adcVal;
 }
 
@@ -148,5 +110,9 @@ Determine truth of: the sensor is currently converting
  */
 BOOL esos_sensor_is_converting_hw(void)
 {
+    if (AD1CON1bits.DONE == 1) {
+        esos_ClearUserFlag(ESOS_SENSOR_IS_CONVERTING_FLAG);
+        return FALSE;
+    }
     return esos_IsUserFlagSet(ESOS_SENSOR_IS_CONVERTING_FLAG);
 }
