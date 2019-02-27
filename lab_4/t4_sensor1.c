@@ -12,6 +12,7 @@
 #include "esos_pic24.h"
 #include "esos_f14ui.h"
 #include "esos_sensor.h"
+#include "esos_pic24_sensor.h"
 #include "t4_strings.h"
 
 ESOS_USER_TIMER(heartbeat)
@@ -19,7 +20,7 @@ ESOS_USER_TIMER(heartbeat)
     esos_uiF14_toggleLED3();
 }
 
-static uint16_t pu16_buf[64];
+static uint16_t pu16_out;
 static uint8_t output_state;
 
 /*Create an ESOS application called t4_sensor1 that will exercise your new ESOS sensor ser-vice.
@@ -40,22 +41,22 @@ ESOS_USER_TASK(display_output)
         } else if (output_state == 1) {
             // output once, then go to yield
             ESOS_ALLOCATE_CHILD_TASK(read_adc);
-            ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_ON_AVAILABLE_SENSOR, ESOS_SENSOR_CH02, ESOS_SENSOR_VREF_3V0);
-            ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_SENSOR_QUICK_READ, pu16_buf);
+            ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_ON_AVAILABLE_SENSOR, POT_CHANNEL, ESOS_SENSOR_VREF_3V0);
+            ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_SENSOR_QUICK_READ, &pu16_out);
             ESOS_SENSOR_CLOSE();
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-            ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pu16_buf[0]);
+            ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pu16_out);
             ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
             ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
             output_state = 0;
         } else if (output_state == 2) {
             // output every 1 second, until the output_state flag is unset
             ESOS_ALLOCATE_CHILD_TASK(read_adc);
-            ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_ON_AVAILABLE_SENSOR, ESOS_SENSOR_CH02, ESOS_SENSOR_VREF_3V0);
+            ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_ON_AVAILABLE_SENSOR, POT_CHANNEL, ESOS_SENSOR_VREF_3V0);
             do {
-                ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_SENSOR_QUICK_READ, pu16_buf);
+                ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_SENSOR_QUICK_READ, &pu16_out);
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pu16_buf[0]);
+                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pu16_out);
                 ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_TICKS(1000);
