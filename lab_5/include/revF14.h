@@ -15,6 +15,9 @@
 
 #include "pic24_all.h"
 
+// Uncomment to enable Nibble-Wide Mode for LCD
+//#define ESOS_LCD44780_NIBBLE_MODE
+
 // configure LEDs
 #define LED1_CONFIG() CONFIG_RF4_AS_DIG_OUTPUT()
 #define LED1 (_LATF4)
@@ -101,7 +104,7 @@
 // #define ADC_VREF_AVDD_EXT           0x4000  // A/D Voltage reference configuration Vref+ AVdd and Vref- external
 // #define ADC_VREF_EXT_EXT            0x6000  // A/D Voltage reference configuration both Vref+ and Vref- are external
 // #define ADC_VREF_AVDD_AVSS          0x8000  // A/D Voltage reference configuration Vref+ is AVdd and Vref- is AVss
-#define ADC_CONFIG()                                                                                           \
+#define ADC_CONFIG()                                                                                                   \
     {                                                                                                                  \
         /* AD1CON1 */                                                                                                  \
         AD1CON1bits.ADON = 0;                                                                                          \
@@ -130,7 +133,12 @@
     }
 
 // LCD Defines
-#define LCD44780_E  (_LATD10)
+#define LCD44780_E (_LATD10)
+#define LCD44780_E_CONFIG()                                                                                            \
+    {                                                                                                                  \
+        CONFIG_RD10_AS_DIG_INPUT();                                                                                    \
+    }
+
 #define LCD44780_RW (_LATD11)
 #define LCD44780_RS (_LATC12)
 #define LCD44780_D0 (_LATE0)
@@ -141,7 +149,5 @@
 #define LCD44780_D5 (_LATE5)
 #define LCD44780_D6 (_LATE6)
 #define LCD44780_D7 (_LATE7)
-
-
 
 #endif
