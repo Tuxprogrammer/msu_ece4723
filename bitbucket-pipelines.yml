@@ -11,7 +11,7 @@ image: tuxprogrammer/scons-xc:xc16
 
 pipelines:
   branches: 
-    '{default,lab4,pipeline-testing}':
+    '{default,lab4,lab5,pipeline-testing}':
       - step:
           script:
             - ./setup-lib.sh
