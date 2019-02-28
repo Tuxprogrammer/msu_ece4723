@@ -16,3 +16,5 @@ pipelines:
           script:
             - ./setup-lib.sh
             - /usr/bin/env python3 $(which scons)
+          artifacts:
+            - build/**
