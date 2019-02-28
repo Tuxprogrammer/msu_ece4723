@@ -10,6 +10,7 @@
 #include "revF14.h"
 #include "esos.h"
 #include "esos_pic24.h"
+#include "esos_f14ui.h"
 
 ESOS_USER_TIMER(heartbeat)
 {
