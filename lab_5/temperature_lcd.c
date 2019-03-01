@@ -27,7 +27,7 @@ ESOS_USER_TASK(test)
     esos_lcd44780_setCursorDisplay(1);
     esos_lcd44780_setCursorBlink(1);
 
-    esos_lcd44780_writeString(0, 0, "hello");
+    //esos_lcd44780_writeString(0, 0, "hello");
 
     ESOS_TASK_END();
 }

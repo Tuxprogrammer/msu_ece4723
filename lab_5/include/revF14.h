@@ -136,22 +136,19 @@
 #define LCD44780_E (_LATD10)
 #define LCD44780_E_CONFIG()                                                                                            \
     {                                                                                                                  \
-        CONFIG_RD10_AS_DIG_INPUT();                                                                                    \
-        ENABLE_RD10_PULLUP();                                                                                          \
+        CONFIG_RD10_AS_DIG_OUTPUT();                                                                                   \
     }
 
 #define LCD44780_RW (_LATD11)
 #define LCD44780_RW_CONFIG()                                                                                           \
     {                                                                                                                  \
-        CONFIG_RD11_AS_DIG_INPUT();                                                                                    \
-        ENABLE_RD11_PULLUP();                                                                                          \
+        CONFIG_RD11_AS_DIG_OUTPUT();                                                                                   \
     }
 
 #define LCD44780_RS (_LATC12)
 #define LCD44780_RS_CONFIG()                                                                                           \
     {                                                                                                                  \
-        CONFIG_RC12_AS_DIG_INPUT();                                                                                    \
-        ENABLE_RC12_PULLUP();                                                                                          \
+        CONFIG_RC12_AS_DIG_OUTPUT();                                                                                   \
     }
 
 #define LCD44780_D0 (_LATE0)
@@ -182,7 +179,7 @@
 #define LCD44780_D2_CONFIG_INPUT()                                                                                     \
     {                                                                                                                  \
         CONFIG_RE2_AS_DIG_INPUT();                                                                                     \
-        ENABLE_RE2_PULLUP();                                                                                            \
+        ENABLE_RE2_PULLUP();                                                                                           \
     }
 #define LCD44780_D2_CONFIG_OUTPUT()                                                                                    \
     {                                                                                                                  \
