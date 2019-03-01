@@ -18,9 +18,24 @@ ESOS_USER_TIMER(heartbeat)
     esos_uiF14_toggleLED3();
 }
 
+ESOS_USER_TASK(test)
+{
+    ESOS_TASK_BEGIN();
+
+    esos_lcd44780_configDisplay();
+    esos_lcd44780_setCursorHome();
+    esos_lcd44780_setCursorDisplay(1);
+    esos_lcd44780_setCursorBlink(1);
+
+    esos_lcd44780_writeString(0, 0, "hello");
+
+    ESOS_TASK_END();
+}
+
 void user_init()
 {
     config_esos_uiF14();
     esos_lcd44780_init();
     esos_RegisterTimer(heartbeat, 1000);
+    esos_RegisterTask(test);
 }

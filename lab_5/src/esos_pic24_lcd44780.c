@@ -48,14 +48,14 @@ void __esos_lcd44780_pic24_config(void)
 
 void __esos_lcd44780_pic24_setDataPins(uint8_t u8_data)
 {
-    LCD44780_D0 = u8_data & 0b00000001;
-    LCD44780_D1 = u8_data & 0b00000010;
-    LCD44780_D2 = u8_data & 0b00000100;
-    LCD44780_D3 = u8_data & 0b00001000;
-    LCD44780_D4 = u8_data & 0b00010000;
-    LCD44780_D5 = u8_data & 0b00100000;
-    LCD44780_D6 = u8_data & 0b01000000;
-    LCD44780_D7 = u8_data & 0b10000000;
+    LCD44780_D0 = (u8_data & 0b00000001);
+    LCD44780_D1 = (u8_data & 0b00000010) >> 1;
+    LCD44780_D2 = (u8_data & 0b00000100) >> 2;
+    LCD44780_D3 = (u8_data & 0b00001000) >> 3;
+    LCD44780_D4 = (u8_data & 0b00010000) >> 4;
+    LCD44780_D5 = (u8_data & 0b00100000) >> 5;
+    LCD44780_D6 = (u8_data & 0b01000000) >> 6;
+    LCD44780_D7 = (u8_data & 0b10000000) >> 7;
 }
 
 uint8_t __esos_lcd44780_pic24_getDataPins(void)
