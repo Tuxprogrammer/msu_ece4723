@@ -33,6 +33,7 @@
  */
 
 /*** I N C L U D E S *************************************************/
+#include "revF14.h"
 #include "esos_pic24_lcd44780.h"
 
 /*** T H E   C O D E *************************************************/
@@ -40,32 +41,57 @@ void __esos_lcd44780_pic24_config(void)
 {
     // Set up the hardware aspects of the HWxxx interface of the LCD module service
     //    direction, thresholds, etc beyond what is already done in esos_lcd44780_config()
-
-#ifdef ESOS_LCD44780_NIBBLE_MODE
-    
-#endif
+    LCD44780_E_CONFIG();
+    LCD44780_RW_CONFIG();
+    LCD44780_RS_CONFIG();
 }
 
 void __esos_lcd44780_pic24_setDataPins(uint8_t u8_data)
 {
-    // write the hardware-specific code to take the u8_data passed in
-    // and place it on the appropriate data pins
+    LCD44780_D0 = u8_data & 0b00000001;
+    LCD44780_D1 = u8_data & 0b00000010;
+    LCD44780_D2 = u8_data & 0b00000100;
+    LCD44780_D3 = u8_data & 0b00001000;
+    LCD44780_D4 = u8_data & 0b00010000;
+    LCD44780_D5 = u8_data & 0b00100000;
+    LCD44780_D6 = u8_data & 0b01000000;
+    LCD44780_D7 = u8_data & 0b10000000;
 }
 
 uint8_t __esos_lcd44780_pic24_getDataPins(void)
 {
     // write the hardware-specific code to read the appropriate data pins
     // and create the uint8 data to return to the caller
+    return (LCD44780_D7 << 7) | (LCD44780_D6 << 6) | (LCD44780_D5 << 5) | (LCD44780_D4 << 4) | (LCD44780_D3 << 3) |
+           (LCD44780_D2 << 2) | (LCD44780_D1 << 1) | (LCD44780_D0);
 }
 
 void __esos_lcd44780_pic24_configDataPinsAsInput(void)
 {
-    // write the hardware-specific code to set the LCD character module
-    // data pins to be "inputs" to prepare for a read of the LCD module
+#ifndef ESOS_LCD44780_NIBBLE_MODE
+    LCD44780_D0_CONFIG_INPUT();
+    LCD44780_D1_CONFIG_INPUT();
+    LCD44780_D2_CONFIG_INPUT();
+    LCD44780_D3_CONFIG_INPUT();
+#endif
+
+    LCD44780_D4_CONFIG_INPUT();
+    LCD44780_D5_CONFIG_INPUT();
+    LCD44780_D6_CONFIG_INPUT();
+    LCD44780_D7_CONFIG_INPUT();
 }
 
 void __esos_lcd44780_pic24_configDataPinsAsOutput(void)
 {
-    // write the hardware-specific code to set the LCD character module
-    // data pins to be "outputs" to prepare for a write to the LCD module
+#ifndef ESOS_LCD44780_NIBBLE_MODE
+    LCD44780_D0_CONFIG_OUTPUT();
+    LCD44780_D1_CONFIG_OUTPUT();
+    LCD44780_D2_CONFIG_OUTPUT();
+    LCD44780_D3_CONFIG_OUTPUT();
+#endif
+
+    LCD44780_D4_CONFIG_OUTPUT();
+    LCD44780_D5_CONFIG_OUTPUT();
+    LCD44780_D6_CONFIG_OUTPUT();
+    LCD44780_D7_CONFIG_OUTPUT();
 }
