@@ -98,7 +98,7 @@ ESOS_USER_TASK(__esos_lcd44780_service)
         if (esos_lcd44780_vars.b_cursorPositionNeedsUpdate) {
             esos_lcd44780_vars.b_cursorPositionNeedsUpdate = FALSE;
             ESOS_TASK_WAIT_LCD44780_SET_DATA_ADDRESS(
-                esos_lcd44780_vars.u8_cursorRow > 0 ? 0x40 : 0x00 | esos_lcd44780_vars.u8_cursorCol);
+                (esos_lcd44780_vars.u8_cursorRow > 0 ? 0x40 : 0x00) | esos_lcd44780_vars.u8_cursorCol);
         }
 
         if (esos_lcd44780_vars.b_cursorShownNeedsUpdate || esos_lcd44780_vars.b_cursorBlinkNeedsUpdate ||
@@ -214,7 +214,6 @@ void esos_lcd44780_setCursorHome(void)
     esos_lcd44780_vars.b_cursorPositionNeedsUpdate = TRUE;
 }
 
-// needs testing
 void esos_lcd44780_setCursor(uint8_t u8_row, uint8_t u8_column)
 {
     // Move cursor to (u8_row,u8_column) without changing memory buffer or the display
@@ -223,20 +222,17 @@ void esos_lcd44780_setCursor(uint8_t u8_row, uint8_t u8_column)
     esos_lcd44780_vars.b_cursorPositionNeedsUpdate = TRUE;
 }
 
-// note: overwriting the width will wrap back around to the beginning and not move to a new line
 void esos_lcd44780_writeChar(uint8_t u8_row, uint8_t u8_column, uint8_t u8_data)
 {
-    esos_lcd44780_vars.aac_lcdBuffer[u8_row][u8_column] = u8_data;
-    esos_lcd44780_vars.ab_lcdBufferNeedsUpdate[u8_row][u8_column] = TRUE;
+    esos_lcd44780_vars.aac_lcdBuffer[u8_row % ESOS_LCD44780_MEM_HEIGHT][u8_column % ESOS_LCD44780_MEM_WIDTH] = u8_data;
+    esos_lcd44780_vars.ab_lcdBufferNeedsUpdate[u8_row % ESOS_LCD44780_MEM_HEIGHT][u8_column % ESOS_LCD44780_MEM_WIDTH] = TRUE;
 }
 
-// note: overreading the width will wrap back around to the beginning and not move to a new line
 uint8_t esos_lcd44780_getChar(uint8_t u8_row, uint8_t u8_column)
 {
-    return esos_lcd44780_vars.aac_lcdBuffer[u8_row][u8_column];
+    return esos_lcd44780_vars.aac_lcdBuffer[u8_row % ESOS_LCD44780_MEM_HEIGHT][u8_column % ESOS_LCD44780_MEM_WIDTH];
 }
 
-// needs testing=
 void esos_lcd44780_writeBuffer(uint8_t u8_row, uint8_t u8_column, uint8_t *pu8_data, uint8_t u8_bufflen)
 {
     int n;
@@ -258,7 +254,6 @@ void esos_lcd44780_getBuffer(uint8_t u8_row, uint8_t u8_column, uint8_t *pu8_dat
     }
 }
 
-// needs testing
 void esos_lcd44780_writeString(uint8_t u8_row, uint8_t u8_column, char *psz_data)
 {
     int n = 0;
@@ -270,7 +265,6 @@ void esos_lcd44780_writeString(uint8_t u8_row, uint8_t u8_column, char *psz_data
     }
 }
 
-// needs testing
 void esos_lcd44780_setCursorDisplay(BOOL u8_state)
 {
     // Set cursor display state to u8_state, if u8_state is different
@@ -287,7 +281,6 @@ BOOL esos_lcd44780_getCursorDisplay(void)
     return esos_lcd44780_vars.b_cursorShown;
 }
 
-// needs testing
 void esos_lcd44780_setCursorBlink(BOOL u8_state)
 {
     // Set cursor blink state to u8_state
@@ -304,7 +297,6 @@ BOOL esos_lcd44780_getCursorBlink(void)
     return esos_lcd44780_vars.b_cursorBlink;
 }
 
-// needs testing
 void esos_lcd44780_setDisplayVisible(BOOL u8_state)
 {
     // Set display visible state to u8_state
@@ -321,7 +313,6 @@ BOOL esos_lcd44780_getDisplayVisible(void)
     return esos_lcd44780_vars.b_displayVisible;
 }
 
-// needs testing, work below might update data needlessly
 void esos_lcd44780_setCustomChar(uint8_t u8_charSlot, uint8_t *pu8_charData)
 {
     int n;
