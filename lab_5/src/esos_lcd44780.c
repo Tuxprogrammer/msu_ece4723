@@ -71,17 +71,18 @@ ESOS_USER_TASK(__esos_lcd44780_service)
     ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND_NOWAIT(ESOS_LCD44780_CMD_WAKE);
     ESOS_TASK_WAIT_TICKS(10); // must wait 5ms, busy flag not available
     ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND_NOWAIT(ESOS_LCD44780_CMD_WAKE);
-    ESOS_TASK_WAIT_TICKS(1); // must wait 160us, busy flag not available
+    ESOS_TASK_WAIT_TICKS(10); // must wait 160us, busy flag not available
     ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND_NOWAIT(ESOS_LCD44780_CMD_WAKE);
-    ESOS_TASK_WAIT_TICKS(1); // must wait 160us, busy flag not available
+    ESOS_TASK_WAIT_TICKS(10); // must wait 160us, busy flag not available
 
     // 4-bit startup sequence from datasheet
 #ifdef ESOS_LCD44780_NIBBLE_MODE // Use 4-bit data line mode
     ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND_NOWAIT(ESOS_LCD44780_CMD_WAKE_4BIT);
+    ESOS_TASK_WAIT_TICKS(10); // must wait 160us, busy flag not available
 #endif
 
     // Send startup sequence from datasheet
-#ifndef ESOS_LCD44780_NIBBLE_MODE // Use 4-bit data line mode
+#ifndef ESOS_LCD44780_NIBBLE_MODE // Use 8-bit data line mode
     ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND(ESOS_LCD44780_CMD_FUNCTION_SET | ESOS_LCD44780_CMD_FUNCTION_SET_DL_8BIT |
                                           ESOS_LCD44780_CMD_FUNCITON_SET_N_2LINE);
 #else // Use 4-bit data line mode
@@ -390,10 +391,10 @@ ESOS_CHILD_TASK(__esos_lcd44780_read_u8, uint8_t *pu8_data, BOOL b_isData, BOOL 
     __esos_lcd44780_hw_configDataPinsAsInput();
 
     __ESOS_LCD44780_HW_SET_E_HIGH();
-    ESOS_TASK_YIELD();
+    ESOS_TASK_WAIT_TICKS(1);
     *pu8_data = __esos_lcd44780_hw_getDataPins();
     __ESOS_LCD44780_HW_SET_E_LOW();
-    ESOS_TASK_YIELD();
+    ESOS_TASK_WAIT_TICKS(1);
 
     ESOS_TASK_END();
 }
@@ -421,9 +422,9 @@ ESOS_CHILD_TASK(__esos_lcd44780_write_u8, uint8_t u8_data, BOOL b_isData, BOOL b
     __esos_lcd44780_hw_setDataPins(u8_data);
 
     __ESOS_LCD44780_HW_SET_E_HIGH();
-    ESOS_TASK_YIELD();
+    ESOS_TASK_WAIT_TICKS(1);
     __ESOS_LCD44780_HW_SET_E_LOW();
-    ESOS_TASK_YIELD();
+    ESOS_TASK_WAIT_TICKS(1);
 
     ESOS_TASK_END();
 }
@@ -439,8 +440,10 @@ ESOS_CHILD_TASK(__esos_task_wait_lcd44780_while_busy)
         __ESOS_LCD44780_HW_SET_RS_REGISTERS();
         __ESOS_LCD44780_HW_SET_RW_READ();
         __ESOS_LCD44780_HW_SET_E_HIGH();
+        ESOS_TASK_WAIT_TICKS(1);
         b_hw_lcd_isBusy = (__esos_lcd44780_hw_getDataPins() & 0x80);
         __ESOS_LCD44780_HW_SET_E_LOW();
+        ESOS_TASK_WAIT_TICKS(1);
         if (b_hw_lcd_isBusy) {
             ESOS_TASK_YIELD();
         } else {

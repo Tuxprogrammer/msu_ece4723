@@ -22,11 +22,10 @@ ESOS_USER_TASK(test)
 {
     ESOS_TASK_BEGIN();
 
-
     esos_lcd44780_clearScreen();
-
     esos_lcd44780_writeBuffer(0, 0, "hello", 5);
 
+    ESOS_TASK_YIELD();
     ESOS_TASK_END();
 }
 
