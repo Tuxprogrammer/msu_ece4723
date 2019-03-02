@@ -82,11 +82,11 @@ ESOS_USER_TASK(__esos_lcd44780_service)
 #endif
 
     // Send startup sequence from datasheet
-#ifndef ESOS_LCD44780_NIBBLE_MODE // Use 8-bit data line mode
+#ifdef ESOS_LCD44780_NIBBLE_MODE // Use 4-bit data line mode
+    ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND(ESOS_LCD44780_CMD_FUNCTION_SET | ESOS_LCD44780_CMD_FUNCITON_SET_N_2LINE);
+#else // Use 8-bit data line mode
     ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND(ESOS_LCD44780_CMD_FUNCTION_SET | ESOS_LCD44780_CMD_FUNCTION_SET_DL_8BIT |
                                           ESOS_LCD44780_CMD_FUNCITON_SET_N_2LINE);
-#else // Use 4-bit data line mode
-    ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND(ESOS_LCD44780_CMD_FUNCTION_SET | ESOS_LCD44780_CMD_FUNCITON_SET_N_2LINE);
 #endif
     ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND(ESOS_LCD44780_CMD_CUR_DISP_SHIFT);
     ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND(ESOS_LCD44780_CMD_DISPLAY_ON_OFF | ESOS_LCD44780_CMD_DISPLAY_ON_OFF_DISP);
@@ -250,7 +250,7 @@ void esos_lcd44780_getBuffer(uint8_t u8_row, uint8_t u8_column, uint8_t *pu8_dat
 
     // Write u8_bufflen characters from pu8_data to (u8_row,u8_column)
     for (n = 0; n < u8_bufflen; n++) {
-        pu8_data[n] = esos_lcd44780_getChar(u8_row, u8_column+n);
+        pu8_data[n] = esos_lcd44780_getChar(u8_row, u8_column + n);
     }
 }
 
