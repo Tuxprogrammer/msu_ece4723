@@ -222,49 +222,50 @@ void esos_lcd44780_setCursor(uint8_t u8_row, uint8_t u8_column)
     esos_lcd44780_vars.b_cursorPositionNeedsUpdate = TRUE;
 }
 
+// note: overwriting the width will wrap back around to the beginning and not move to a new line
 void esos_lcd44780_writeChar(uint8_t u8_row, uint8_t u8_column, uint8_t u8_data)
 {
     esos_lcd44780_vars.aac_lcdBuffer[u8_row][u8_column] = u8_data;
     esos_lcd44780_vars.ab_lcdBufferNeedsUpdate[u8_row][u8_column] = TRUE;
 }
 
+// note: overreading the width will wrap back around to the beginning and not move to a new line
 uint8_t esos_lcd44780_getChar(uint8_t u8_row, uint8_t u8_column)
 {
     return esos_lcd44780_vars.aac_lcdBuffer[u8_row][u8_column];
 }
 
-// needs testing, note: overwriting the width will wrap back around to the beginning and not move to a new line
+// needs testing=
 void esos_lcd44780_writeBuffer(uint8_t u8_row, uint8_t u8_column, uint8_t *pu8_data, uint8_t u8_bufflen)
 {
-    int i;
+    int n;
 
     // Write u8_bufflen characters from pu8_data to (u8_row,u8_column)
-    for (i = 0; i < u8_bufflen; i++) {
-        esos_lcd44780_vars.aac_lcdBuffer[u8_row][(u8_column + i) % ESOS_LCD44780_MEM_WIDTH] = pu8_data[i];
-        esos_lcd44780_vars.ab_lcdBufferNeedsUpdate[u8_row][(u8_column + i) % ESOS_LCD44780_MEM_WIDTH] = TRUE;
+    for (n = 0; n < u8_bufflen; n++) {
+        esos_lcd44780_writeChar(u8_row, u8_column + n, pu8_data[n]);
     }
 }
 
-// needs testing, note: overreading the width will wrap back around to the beginning and not move to a new line
+// needs testing
 void esos_lcd44780_getBuffer(uint8_t u8_row, uint8_t u8_column, uint8_t *pu8_data, uint8_t u8_bufflen)
 {
-    int i;
+    int n;
 
     // Write u8_bufflen characters from pu8_data to (u8_row,u8_column)
-    for (i = 0; i < u8_bufflen; i++) {
-        pu8_data[i] = esos_lcd44780_vars.aac_lcdBuffer[u8_row][(u8_column + i) % ESOS_LCD44780_MEM_WIDTH];
+    for (n = 0; n < u8_bufflen; n++) {
+        pu8_data[n] = esos_lcd44780_getChar(u8_row, u8_column+n);
     }
 }
 
-// needs testing, note: overwriting the width will wrap back around to the beginning and not move to a new line
+// needs testing
 void esos_lcd44780_writeString(uint8_t u8_row, uint8_t u8_column, char *psz_data)
 {
+    int n = 0;
+
     // Write zero-terminated string psz_data to location starting at (u8_row,u8_column)
-    int i = 0;
-    while (psz_data[i] != '\0') {
-        esos_lcd44780_vars.aac_lcdBuffer[u8_row][(u8_column + i) % ESOS_LCD44780_MEM_WIDTH] = psz_data[i];
-        esos_lcd44780_vars.ab_lcdBufferNeedsUpdate[u8_row][(u8_column + i) % ESOS_LCD44780_MEM_WIDTH] = TRUE;
-        i++;
+    while (psz_data[n] != '\0') {
+        esos_lcd44780_writeChar(u8_row, u8_column + n, psz_data[n]);
+        n++;
     }
 }
 
@@ -322,23 +323,23 @@ BOOL esos_lcd44780_getDisplayVisible(void)
 // needs testing, work below might update data needlessly
 void esos_lcd44780_setCustomChar(uint8_t u8_charSlot, uint8_t *pu8_charData)
 {
-    int i;
+    int n;
 
     // Set custom character memory for u8_charSlot to data in pu8_charData
-    for (i = 0; i < 8; i++) {
-        esos_lcd44780_vars.ast_customChar[u8_charSlot].au8_data[i] = pu8_charData[i];
-        esos_lcd44780_vars.ab_customCharNeedsUpdate[u8_charSlot] = TRUE;
+    for (n = 0; n < 8; n++) {
+        esos_lcd44780_vars.ast_customChar[u8_charSlot].au8_data[n] = pu8_charData[n];
     }
+    esos_lcd44780_vars.ab_customCharNeedsUpdate[u8_charSlot] = TRUE;
 }
 
 // needs testing
 void esos_lcd44780_getCustomChar(uint8_t u8_charSlot, uint8_t *pu8_charData)
 {
-    int i;
+    int n;
 
     // Return pu8_charData with custom character memory for u8_charSlot
-    for (i = 0; i < 8; i++) {
-        pu8_charData[i] = esos_lcd44780_vars.ast_customChar[u8_charSlot].au8_data[i];
+    for (n = 0; n < 8; n++) {
+        pu8_charData[n] = esos_lcd44780_vars.ast_customChar[u8_charSlot].au8_data[n];
     }
 }
 
