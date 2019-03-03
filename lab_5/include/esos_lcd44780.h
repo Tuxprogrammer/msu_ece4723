@@ -48,7 +48,7 @@
 #define ESOS_TASK_WAIT_ON_LCD44780_REFRESH() ESOS_TASK_WAIT_UNTIL(esos_lcd44780_isCurrent())
 
 #define ESOS_LCD44780_CMD_WAKE 0b00110000
-#define ESOS_LCD44780_CMD_WAKE_4BIT 0b00100010
+#define ESOS_LCD44780_CMD_WAKE_4BIT 0b00100000
 #define ESOS_LCD44780_CMD_CLEAR_DISPLAY 0b00000001
 #define ESOS_LCD44780_CMD_RETURN_HOME 0b00000010
 #define ESOS_LCD44780_CMD_ENTRY_MODE_SET 0b00000100
@@ -81,7 +81,7 @@
 #define ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND_NOWAIT(u8_cmd)                                                           \
     do {                                                                                                               \
         ESOS_ALLOCATE_CHILD_TASK(th_lcd44780_child);                                                                   \
-        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_write_u8, u8_cmd, FALSE, TRUE);                    \
+        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_write_u8, u8_cmd, FALSE, FALSE);                   \
     } while (0)
 
 #define ESOS_TASK_WAIT_LCD44780_SET_CG_ADDRESS(u8_addr)                                                                \

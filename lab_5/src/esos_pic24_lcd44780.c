@@ -48,6 +48,12 @@ void __esos_lcd44780_pic24_config(void)
 
 void __esos_lcd44780_pic24_setDataPins(uint8_t u8_data)
 {
+#ifdef ESOS_LCD44780_NIBBLE_MODE
+    LCD44780_D4 = (u8_data & 0b00000001);
+    LCD44780_D5 = (u8_data & 0b00000010) >> 1;
+    LCD44780_D6 = (u8_data & 0b00000100) >> 2;
+    LCD44780_D7 = (u8_data & 0b00001000) >> 3;
+#else
     LCD44780_D0 = (u8_data & 0b00000001);
     LCD44780_D1 = (u8_data & 0b00000010) >> 1;
     LCD44780_D2 = (u8_data & 0b00000100) >> 2;
@@ -56,14 +62,17 @@ void __esos_lcd44780_pic24_setDataPins(uint8_t u8_data)
     LCD44780_D5 = (u8_data & 0b00100000) >> 5;
     LCD44780_D6 = (u8_data & 0b01000000) >> 6;
     LCD44780_D7 = (u8_data & 0b10000000) >> 7;
+#endif
 }
 
 uint8_t __esos_lcd44780_pic24_getDataPins(void)
 {
-    // write the hardware-specific code to read the appropriate data pins
-    // and create the uint8 data to return to the caller
+#ifdef ESOS_LCD44780_NIBBLE_MODE
+    return (LCD44780_D7 << 3) | (LCD44780_D6 << 2) | (LCD44780_D5 << 1) | (LCD44780_D4);
+#else
     return (LCD44780_D7 << 7) | (LCD44780_D6 << 6) | (LCD44780_D5 << 5) | (LCD44780_D4 << 4) | (LCD44780_D3 << 3) |
            (LCD44780_D2 << 2) | (LCD44780_D1 << 1) | (LCD44780_D0);
+#endif
 }
 
 void __esos_lcd44780_pic24_configDataPinsAsInput(void)
