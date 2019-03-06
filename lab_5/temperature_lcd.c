@@ -7,6 +7,8 @@
  * temperature_sensor.c - ESOS LCD Temperature Sensor
  */
 
+//#define ESOS_LCD44780_NIBBLE_MODE
+
 #include "revF14.h"
 #include "esos.h"
 #include "esos_pic24.h"
@@ -18,21 +20,10 @@ ESOS_USER_TIMER(heartbeat)
     esos_uiF14_toggleLED3();
 }
 
-ESOS_USER_TASK(test) {
-    ESOS_TASK_BEGIN();
-
-    esos_lcd44780_writeString(0, 0, "4bitmode");
-    esos_lcd44780_writeString(1, 0, "suxxx");
-
-    ESOS_TASK_YIELD();
-    ESOS_TASK_END();
-}
-
 void user_init()
 {
     config_esos_uiF14();
     esos_lcd44780_init();
     esos_lcd44780_configDisplay();
     esos_RegisterTimer(heartbeat, 500);
-    esos_RegisterTask(test);
 }
