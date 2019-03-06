@@ -60,6 +60,7 @@
 #define ESOS_LCD44780_CMD_DISPLAY_ON_OFF_BLINK 0b00000001
 #define ESOS_LCD44780_CMD_CUR_DISP_SHIFT 0b00010000
 #define ESOS_LCD44780_CMD_FUNCTION_SET 0b00100000
+#define ESOS_LCD44780_CMD_FUNCTION_SET_DL_4BIT 0b00000000
 #define ESOS_LCD44780_CMD_FUNCTION_SET_DL_8BIT 0b00010000
 #define ESOS_LCD44780_CMD_FUNCITON_SET_N_2LINE 0b00001000
 #define ESOS_LCD44780_CMD_FUNCTION_SET_F_5X11 0b00000100
@@ -75,15 +76,25 @@
 #define ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND(u8_cmd)                                                                  \
     do {                                                                                                               \
         ESOS_ALLOCATE_CHILD_TASK(th_lcd44780_child);                                                                   \
-        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_write_u8, u8_cmd, FALSE, TRUE);                    \
+        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_write_u8, u8_cmd, FALSE, TRUE, TRUE);                    \
     } while (0)
 
 #define ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND_NOWAIT(u8_cmd)                                                           \
     do {                                                                                                               \
         ESOS_ALLOCATE_CHILD_TASK(th_lcd44780_child);                                                                   \
-        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_write_u8, u8_cmd, FALSE, FALSE);                   \
+        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_write_u8, u8_cmd, FALSE, FALSE, TRUE);                   \
+    } while (0)
+#define ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND_4BIT(u8_cmd)                                                                  \
+    do {                                                                                                               \
+        ESOS_ALLOCATE_CHILD_TASK(th_lcd44780_child);                                                                   \
+        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_write_u8, u8_cmd, FALSE, TRUE, FALSE);                    \
     } while (0)
 
+#define ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND_NOWAIT_4BIT(u8_cmd)                                                           \
+    do {                                                                                                               \
+        ESOS_ALLOCATE_CHILD_TASK(th_lcd44780_child);                                                                   \
+        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_write_u8, u8_cmd, FALSE, FALSE, FALSE);                   \
+    } while (0)
 #define ESOS_TASK_WAIT_LCD44780_SET_CG_ADDRESS(u8_addr)                                                                \
     ESOS_TASK_WAIT_LCD44780_WRITE_COMMAND(u8_addr | ESOS_LCD44780_CMD_SET_CGRAM_ADDR)
 
@@ -99,13 +110,13 @@
 #define ESOS_TASK_WAIT_LCD44780_WRITE_DATA(u8_data)                                                                    \
     do {                                                                                                               \
         ESOS_ALLOCATE_CHILD_TASK(th_lcd44780_child);                                                                   \
-        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_write_u8, u8_data, TRUE, TRUE);                    \
+        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_write_u8, u8_data, TRUE, TRUE, TRUE);                    \
     } while (0)
 
 #define ESOS_TASK_WAIT_LCD44780_READ_DATA(u8_addr)                                                                     \
     do {                                                                                                               \
         ESOS_ALLOCATE_CHILD_TASK(th_lcd44780_child);                                                                   \
-        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_read_u8, u8_addr, TRUE, TRUE);                     \
+        ESOS_TASK_SPAWN_AND_WAIT(th_lcd44780_child, __esos_lcd44780_read_u8, u8_addr, TRUE, TRUE, TRUE);                     \
     } while (0)
 
 /* S T R U C T U R E S ******************************************************/
@@ -140,7 +151,7 @@ BOOL esos_lcd44780_isCurrent(void);
 
 ESOS_USER_TASK(__esos_lcd44780_service);
 ESOS_CHILD_TASK(__esos_task_wait_lcd44780_while_busy);
-ESOS_CHILD_TASK(__esos_lcd44780_write_u8, uint8_t u8_data, BOOL b_isData, BOOL b_useBusyFlag);
+ESOS_CHILD_TASK(__esos_lcd44780_write_u8, uint8_t u8_data, BOOL b_isData, BOOL b_useBusyFlag, BOOL b_send8Bits);
 ESOS_CHILD_TASK(__esos_lcd44780_read_u8, uint8_t *pu8_data, BOOL b_isData, BOOL b_useBusyFlag);
 
 #endif

@@ -88,10 +88,14 @@ void __esos_lcd44780_pic24_configDataPinsAsInput(void)
     LCD44780_D5_CONFIG_INPUT();
     LCD44780_D6_CONFIG_INPUT();
     LCD44780_D7_CONFIG_INPUT();
+
+    __ESOS_LCD44780_HW_SET_RW_READ();
 }
 
 void __esos_lcd44780_pic24_configDataPinsAsOutput(void)
 {
+    __ESOS_LCD44780_HW_SET_RW_WRITE();
+
 #ifndef ESOS_LCD44780_NIBBLE_MODE
     LCD44780_D0_CONFIG_OUTPUT();
     LCD44780_D1_CONFIG_OUTPUT();
