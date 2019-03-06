@@ -14,7 +14,6 @@
 
 static uint8_t char_phallic[8] = { 0x0E, 0x1F, 0x0E, 0x0E, 0x0E, 0x0E, 0x1B, 0x1B };
 
-static uint8_t char_0EIGTH_BAR[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 static uint8_t char_1EIGTH_BAR[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F };
 static uint8_t char_2EIGTH_BAR[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x1F };
 static uint8_t char_3EIGTH_BAR[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x1F, 0x1F };
@@ -23,11 +22,7 @@ static uint8_t char_5EIGTH_BAR[8] = { 0x00, 0x00, 0x00, 0x1F, 0x1F, 0x1F, 0x1F, 
 static uint8_t char_6EIGTH_BAR[8] = { 0x00, 0x00, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F };
 static uint8_t char_7EIGTH_BAR[8] = { 0x00, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F };
 static uint8_t char_8EIGTH_BAR[8] = { 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F };
-static uint8_t char_SLIDER_LINE[8] = { 0x00, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00 };
-static uint8_t char_SLIDER_BAR[8] = { 0x00, 0x00, 0x04, 0x0E, 0x1F, 0x0E, 0x04, 0x00 };
-
-enum custom_chars {
-    _0EIGTH_BAR,
+enum custom_chars_bar {
     _1EIGTH_BAR,
     _2EIGTH_BAR,
     _3EIGTH_BAR,
@@ -36,14 +31,14 @@ enum custom_chars {
     _6EIGTH_BAR,
     _7EIGTH_BAR,
     _8EIGTH_BAR,
-    SLIDER_LINE,
-    SLIDER_BAR
 };
 
-void esos_lcd44780_init_custom_chars()
+static uint8_t char_SLIDER_LINE[8] = { 0x00, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00 };
+static uint8_t char_SLIDER_BAR[8] = { 0x00, 0x00, 0x04, 0x0E, 0x1F, 0x0E, 0x04, 0x00 };
+enum custom_chars_slider { SLIDER_LINE, SLIDER_BAR };
+
+void esos_lcd44780_init_custom_chars_bar()
 {
-    esos_lcd44780_clearScreen();
-    esos_lcd44780_setCustomChar(_0EIGTH_BAR, char_0EIGTH_BAR);
     esos_lcd44780_setCustomChar(_1EIGTH_BAR, char_1EIGTH_BAR);
     esos_lcd44780_setCustomChar(_2EIGTH_BAR, char_2EIGTH_BAR);
     esos_lcd44780_setCustomChar(_3EIGTH_BAR, char_3EIGTH_BAR);
@@ -52,9 +47,12 @@ void esos_lcd44780_init_custom_chars()
     esos_lcd44780_setCustomChar(_6EIGTH_BAR, char_6EIGTH_BAR);
     esos_lcd44780_setCustomChar(_7EIGTH_BAR, char_7EIGTH_BAR);
     esos_lcd44780_setCustomChar(_8EIGTH_BAR, char_8EIGTH_BAR);
+}
+
+void esos_lcd44780_init_custom_chars_slider()
+{
     esos_lcd44780_setCustomChar(SLIDER_LINE, char_SLIDER_LINE);
     esos_lcd44780_setCustomChar(SLIDER_BAR, char_SLIDER_BAR);
-    esos_lcd44780_setCursorHome();
 }
 
 #endif

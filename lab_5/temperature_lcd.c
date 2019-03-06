@@ -41,6 +41,7 @@ ESOS_USER_TASK(display_output)
         if (refresh_timeout == REFRESH_RATE) {
             refresh_timeout = 0;
             if (sw3_state) {
+                esos_lcd44780_init_custom_chars_bar();
                 // ESOS_TASK_WAIT_ON_SEND_STRING("WE ARE OUTPUTTING STUFF NOW");
                 ESOS_ALLOCATE_CHILD_TASK(read_adc);
                 ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_ON_AVAILABLE_SENSOR, TEMP_CHANNEL, ESOS_SENSOR_VREF_3V0);
@@ -95,7 +96,6 @@ ESOS_USER_TASK(display_output)
 
                 if (pu32_out < 2000) {
                     // do nothing because its fookin cold
-                    u8_barBottom = _0EIGTH_BAR;
                 } else if (pu32_out >= 2000 && pu32_out < 2100) {
                     u8_barBottom = _1EIGTH_BAR;
                 } else if (pu32_out >= 2100 && pu32_out < 2200) {
@@ -142,6 +142,7 @@ ESOS_USER_TASK(display_output)
                 esos_lcd44780_writeChar(1, 7, u8_barBottom);
 
             } else {
+                esos_lcd44780_init_custom_chars_slider();
                 ESOS_ALLOCATE_CHILD_TASK(read_adc);
                 ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_ON_AVAILABLE_SENSOR, POT_CHANNEL, ESOS_SENSOR_VREF_3V0);
                 ESOS_TASK_SPAWN_AND_WAIT(read_adc, _WAIT_SENSOR_QUICK_READ, &pu16_out);
@@ -202,7 +203,6 @@ void user_init()
     config_esos_uiF14();
     esos_lcd44780_init();
     esos_lcd44780_configDisplay();
-    esos_lcd44780_init_custom_chars();
 
     esos_RegisterTimer(heartbeat, 500);
     esos_RegisterTask(display_output);
