@@ -34,8 +34,12 @@ enum custom_chars_bar {
 };
 
 static uint8_t char_SLIDER_LINE[8] = { 0x00, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00 };
-static uint8_t char_SLIDER_BAR[8] = { 0x00, 0x00, 0x04, 0x0E, 0x1F, 0x0E, 0x04, 0x00 };
-enum custom_chars_slider { SLIDER_LINE, SLIDER_BAR };
+static uint8_t char_SLIDER_BAR1[8] = { 0x00, 0x00, 0x10, 0x10, 0x1F, 0x10, 0x10, 0x00 };
+static uint8_t char_SLIDER_BAR2[8] = { 0x00, 0x00, 0x08, 0x08, 0x1F, 0x08, 0x08, 0x00 };
+static uint8_t char_SLIDER_BAR3[8] = { 0x00, 0x00, 0x04, 0x04, 0x1F, 0x04, 0x04, 0x00 };
+static uint8_t char_SLIDER_BAR4[8] = { 0x00, 0x00, 0x02, 0x02, 0x1F, 0x02, 0x02, 0x00 };
+static uint8_t char_SLIDER_BAR5[8] = { 0x00, 0x00, 0x01, 0x01, 0x1F, 0x01, 0x01, 0x00 };
+enum custom_chars_slider { SLIDER_LINE, SLIDER_BAR1, SLIDER_BAR2, SLIDER_BAR3, SLIDER_BAR4, SLIDER_BAR5 };
 
 void esos_lcd44780_init_custom_chars_bar()
 {
@@ -52,7 +56,11 @@ void esos_lcd44780_init_custom_chars_bar()
 void esos_lcd44780_init_custom_chars_slider()
 {
     esos_lcd44780_setCustomChar(SLIDER_LINE, char_SLIDER_LINE);
-    esos_lcd44780_setCustomChar(SLIDER_BAR, char_SLIDER_BAR);
+    esos_lcd44780_setCustomChar(SLIDER_BAR1, char_SLIDER_BAR1);
+    esos_lcd44780_setCustomChar(SLIDER_BAR2, char_SLIDER_BAR2);
+    esos_lcd44780_setCustomChar(SLIDER_BAR3, char_SLIDER_BAR3);
+    esos_lcd44780_setCustomChar(SLIDER_BAR4, char_SLIDER_BAR4);
+    esos_lcd44780_setCustomChar(SLIDER_BAR5, char_SLIDER_BAR5);
 }
 
 #endif

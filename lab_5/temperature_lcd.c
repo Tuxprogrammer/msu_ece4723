@@ -164,22 +164,38 @@ ESOS_USER_TASK(display_output)
 
                 pu8_out = pu16_out & 0xFF;
 
+                // within the determined 5x8 LCD cell, scale discretely with 5 bar placements
+                uint8_t pot_bar_char;
+                uint16_t tmp = pu16_out & 0x1FF;
+                if (tmp < 0x067) {
+                    pot_bar_char = SLIDER_BAR1;
+                } else if (tmp < 0x0CD) {
+                    pot_bar_char = SLIDER_BAR2;
+                } else if (tmp < 0x133) {
+                    pot_bar_char = SLIDER_BAR3;
+                } else if (tmp < 0x199) {
+                    pot_bar_char = SLIDER_BAR4;
+                } else {
+                    pot_bar_char = SLIDER_BAR5;
+                }
+
+                // determine which 5x8 lcd cell to place the indicator bar
                 if (pu16_out < 0x1FF) {
-                    au8_slider[0] = SLIDER_BAR;
+                    au8_slider[0] = pot_bar_char;
                 } else if (pu16_out >= 0x1FF && pu16_out < 0x3FF) {
-                    au8_slider[1] = SLIDER_BAR;
+                    au8_slider[1] = pot_bar_char;
                 } else if (pu16_out >= 0x3FF && pu16_out < 0x5FF) {
-                    au8_slider[2] = SLIDER_BAR;
+                    au8_slider[2] = pot_bar_char;
                 } else if (pu16_out >= 0x5FF && pu16_out < 0x7FF) {
-                    au8_slider[3] = SLIDER_BAR;
+                    au8_slider[3] = pot_bar_char;
                 } else if (pu16_out >= 0x7FF && pu16_out < 0x9FF) {
-                    au8_slider[4] = SLIDER_BAR;
+                    au8_slider[4] = pot_bar_char;
                 } else if (pu16_out >= 0x9FF && pu16_out < 0xBFF) {
-                    au8_slider[5] = SLIDER_BAR;
+                    au8_slider[5] = pot_bar_char;
                 } else if (pu16_out >= 0xBFF && pu16_out < 0xDFF) {
-                    au8_slider[6] = SLIDER_BAR;
+                    au8_slider[6] = pot_bar_char;
                 } else if (pu16_out >= 0xDFF && pu16_out <= 0xFFF) {
-                    au8_slider[7] = SLIDER_BAR;
+                    au8_slider[7] = pot_bar_char;
                 }
 
                 convert_uint32_t_to_str(pu8_out, pot_str, 12, 16);
