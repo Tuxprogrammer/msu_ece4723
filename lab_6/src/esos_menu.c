@@ -161,7 +161,7 @@ ESOS_USER_TASK(esos_menu_task)
                         __esos_menu_conf.e_menutype = NONE;
                         break;
                     } else if (esos_uiF14_getRPGValue_i16() <= -1) {
-						// Will: Commented out because our code does this already?
+                        // Will: Commented out because our code does this already?
                         // _esos_uiF14_setRPGCounter(esos_uiF14_getRPGValue_i16() + 1);
                         if (esos_uiF14_isRPGTurningFast())
                             pst_entry->value -= 100;
@@ -171,7 +171,7 @@ ESOS_USER_TASK(esos_menu_task)
                             pst_entry->value -= 1;
                         break;
                     } else if (esos_uiF14_getRPGValue_i16() >= 1) {
-						// Will: Commented out because our code does this already?
+                        // Will: Commented out because our code does this already?
                         // _esos_uiF14_setRPGCounter(esos_uiF14_getRPGValue_i16() - 1);
                         if (esos_uiF14_isRPGTurningFast())
                             pst_entry->value += 100;
