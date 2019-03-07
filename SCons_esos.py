@@ -35,10 +35,14 @@ Import("env bin2hex linker_side_effect")
 SHARED_LIB_COPY = [
     ("../../lab_3/include/esos_f14ui.h", "../../lib/include/esos_f14ui.h"),
     ("../../lab_3/src/esos_f14ui.c", "../../lib/src/esos_f14ui.c"),
-    ("../../lab_4/include/revF14.h", "../../lib/include/revF14.h"),
     ("../../lab_4/include/esos_pic24_sensor.h", "../../lib/include/esos_pic24_sensor.h"),
+    ("../../lab_4/src/esos_sensor.c", "../../lib/src/esos_sensor.c"),
     ("../../lab_4/src/esos_pic24_sensor.c", "../../lib/src/esos_pic24_sensor.c"),
-    ("../../lab_4/src/esos_sensor.c", "../../lib/src/esos_sensor.c")
+    ("../../lab_5/include/revF14.h", "../../lib/include/revF14.h"),
+    ("../../lab_5/include/esos_lcd44780.h", "../../lib/include/esos_lcd44780.h"),
+    ("../../lab_5/include/esos_pic24_lcd44780.h", "../../lib/include/esos_pic24_lcd44780.h"),
+    ("../../lab_5/src/esos_lcd44780.c", "../../lib/src/esos_lcd44780.c"),
+    ("../../lab_5/src/esos_pic24_lcd44780.c", "../../lib/src/esos_pic24_lcd44780.c")
 ]
 
 SHARED_LIB_NOTE = \
@@ -78,6 +82,7 @@ ESOS_LIB_FILES = ["../../../pic24lib_all/esos/src/esos.c",
                   "../../../pic24lib_all/esos/src/esos_cb.c",
                   "../../../pic24lib_all/esos/src/esos_mail.c",
                   # "../../../pic24lib_all/esos/src/esos_sensor.c",
+                  # "../../../pic24lib_all/esos/src/esos_lcd44780.c",
                   "../../../pic24lib_all/esos/src/pic24/esos_pic24_i2c.c",
                   "../../../pic24lib_all/esos/src/pic24/esos_pic24_irq.c",
                   "../../../pic24lib_all/esos/src/pic24/esos_pic24_rs232.c",
