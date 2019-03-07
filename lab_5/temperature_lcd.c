@@ -7,6 +7,8 @@
  * temperature_sensor.c - ESOS LCD Temperature Sensor
  */
 
+//#define ESOS_LCD44780_NIBBLE_MODE
+
 #include "revF14.h"
 #include "esos.h"
 #include "esos_pic24.h"

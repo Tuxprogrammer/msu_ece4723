@@ -41,8 +41,8 @@
  */
 
 /* I N C L U D E S **********************************************************/
-#include <esos_lcd44780.h>
 #include "revF14.h"
+#include <esos_lcd44780.h>
 
 /* HW-SPECIFIC MACROS *******************************************************/
 #define __esos_lcd44780_hw_config __esos_lcd44780_pic24_config

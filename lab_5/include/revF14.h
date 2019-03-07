@@ -7,6 +7,7 @@
  * revF14.h - hardware configuration and control macros using pic24lib
  */
 
+
 #ifndef REVF14_H
 #define REVF14_H
 #ifndef __dsPIC33EP512GP806__
@@ -16,7 +17,7 @@
 #include "pic24_all.h"
 
 // Uncomment to enable Nibble-Wide Mode for LCD
-//#define ESOS_LCD44780_NIBBLE_MODE
+#define ESOS_LCD44780_NIBBLE_MODE
 
 // configure LEDs
 #define LED1_CONFIG() CONFIG_RF4_AS_DIG_OUTPUT()
