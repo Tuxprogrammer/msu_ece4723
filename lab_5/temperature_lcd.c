@@ -19,7 +19,7 @@
 #define REFRESH_RATE 200
 
 static uint16_t pu16_out;
-static BOOL sw3_state;
+static BOOL display_state;
 static uint16_t refresh_timeout;
 
 ESOS_USER_TIMER(heartbeat)
@@ -27,20 +27,31 @@ ESOS_USER_TIMER(heartbeat)
     esos_uiF14_toggleLED3();
 }
 
+ESOS_USER_TASK(display_state_setter)
+{
+    ESOS_TASK_BEGIN();
+    display_state = 0;
+    while (TRUE) {
+        // toggle state only once on press
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_PRESSED();
+        display_state = !display_state;
+        esos_lcd44780_clearScreen();
+        refresh_timeout = REFRESH_RATE;
+        ESOS_TASK_WAIT_UNTIL_UIF14_SW3_RELEASED();
+
+        ESOS_TASK_YIELD();
+    }
+    ESOS_TASK_END();
+}
+
 ESOS_USER_TASK(display_output)
 {
     static ESOS_TASK_HANDLE read_adc;
     ESOS_TASK_BEGIN();
     while (TRUE) {
-        if (sw3_state != esos_uiF14_isSW3Pressed()) {
-            sw3_state = esos_uiF14_isSW3Pressed();
-            esos_lcd44780_clearScreen();
-            refresh_timeout = REFRESH_RATE;
-        }
-
         if (refresh_timeout == REFRESH_RATE) {
             refresh_timeout = 0;
-            if (sw3_state) {
+            if (display_state) {
                 esos_lcd44780_init_custom_chars_bar();
                 // ESOS_TASK_WAIT_ON_SEND_STRING("WE ARE OUTPUTTING STUFF NOW");
                 ESOS_ALLOCATE_CHILD_TASK(read_adc);
@@ -197,5 +208,6 @@ void user_init()
     esos_lcd44780_configDisplay();
 
     esos_RegisterTimer(heartbeat, 500);
+    esos_RegisterTask(display_state_setter);
     esos_RegisterTask(display_output);
 }
