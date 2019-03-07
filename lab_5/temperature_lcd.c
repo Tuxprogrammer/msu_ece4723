@@ -16,7 +16,7 @@
 #include "esos_lcd44780.h"
 #include "esos_lcd44780_customChars.h"
 
-#define REFRESH_RATE 500
+#define REFRESH_RATE 200
 
 static uint16_t pu16_out;
 static BOOL sw3_state;
@@ -155,7 +155,7 @@ ESOS_USER_TASK(display_output)
                 esos_lcd44780_writeString(0, 0, "pot 0x");
 
                 static uint8_t pu8_out;
-                static char pot_str[12];
+                static char pot_str[3];
                 static uint8_t au8_slider[8];
                 static int i;
                 for (i = 0; i < 8; i++) {
@@ -169,8 +169,13 @@ ESOS_USER_TASK(display_output)
                 // within the determined 5x8 LCD cell, scale discretely with 5 bar placements
                 au8_slider[i] = ((pu16_out & 0x1FF) / 0x067) + 1;
 
-                convert_uint32_t_to_str(pu8_out, pot_str, 12, 16);
-                pot_str[3] = 0; // definitely terminate in case of overflow.
+                convert_uint32_t_to_str(pu16_out >> 4, pot_str, 3, 16);
+                // hack to fix convert_uint32_t_to_str not leaving leading 0s
+                if (pot_str[1] == 0) {
+                    pot_str[2] = pot_str[1];
+                    pot_str[1] = pot_str[0];
+                    pot_str[0] = '0';
+                }
                 esos_lcd44780_writeString(0, 6, pot_str);
                 esos_lcd44780_writeBuffer(1, 0, au8_slider, 8);
             }
