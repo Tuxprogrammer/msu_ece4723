@@ -58,7 +58,7 @@ ESOS_USER_TIMER(__esos_uiF14_rpg_poll)
     u8_rpg_prv = __RPG_VALUE;
 }
 
-static int32_t i32fp_vel_avg = 0, i32fp_vel_cur = 0, i32fp_pos_prev = 0, i32fp_pos_curr = 0;
+static volatile int32_t i32fp_vel_avg = 0, i32fp_vel_cur = 0, i32fp_pos_prev = 0, i32fp_pos_curr = 0;
 ESOS_USER_TIMER(__esos_uiF14_rpg_vel)
 {
     i32fp_pos_curr = ((int32_t)_st_esos_uiF14Data.i16_RPGCounter) << 12;
@@ -433,6 +433,12 @@ inline void esos_uiF14_turnGreenLEDOff(void)
 #pragma endregion
 
 #pragma region RPG Functions
+inline void esos_uiF14_resetRPG(void) {
+    _st_esos_uiF14Data.i16_RPGCounter = 0;
+    _st_esos_uiF14Data.i16_RPGVelocity = 0;
+    i32fp_vel_avg = i32fp_vel_cur = i32fp_pos_prev = i32fp_pos_curr = 0;
+}
+
 inline int16_t esos_uiF14_getRPGValue_i16(void)
 {
     return _st_esos_uiF14Data.i16_RPGCounter;

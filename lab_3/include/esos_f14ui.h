@@ -112,8 +112,9 @@ inline void esos_uiF14_turnGreenLEDOff(void);
 inline void esos_uiF14_turnYellowLEDOn(void);
 inline void esos_uiF14_turnYellowLEDOff(void);
 
-inline int16_t esos_uiF14_getRPGVelocity_i16(void);
+inline void esos_uiF14_resetRPG(void);
 inline int16_t esos_uiF14_getRPGValue_i16(void);
+inline int16_t esos_uiF14_getRPGVelocity_i16(void);
 inline BOOL esos_uiF14_isRPGTurning(void);
 inline BOOL esos_uiF14_isRPGTurningSlow(void);
 inline BOOL esos_uiF14_isRPGTurningMedium(void);

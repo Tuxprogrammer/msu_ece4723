@@ -152,7 +152,7 @@ ESOS_USER_TASK(esos_menu_task)
                 itoa(pst_entry->value, (char *)au8_intbuffer, 10);
                 esos_lcd44780_writeString(1, 0, (char *)au8_intbuffer);
 
-                _esos_uiF14_setRPGCounter(0);
+                esos_uiF14_resetRPG();
 
                 while (TRUE) {
                     if (esos_uiF14_isSW3Pressed()) {
@@ -160,8 +160,9 @@ ESOS_USER_TASK(esos_menu_task)
                         ESOS_TASK_WAIT_UNTIL(!esos_uiF14_isSW3Pressed());
                         __esos_menu_conf.e_menutype = NONE;
                         break;
-                    } else if (esos_uiF14_getRPGCounter_i16() <= -4) {
-                        _esos_uiF14_setRPGCounter(esos_uiF14_getRPGCounter_i16() + 4);
+                    } else if (esos_uiF14_getRPGValue_i16() <= -1) {
+						// Will: Commented out because our code does this already?
+                        // _esos_uiF14_setRPGCounter(esos_uiF14_getRPGValue_i16() + 1);
                         if (esos_uiF14_isRPGTurningFast())
                             pst_entry->value -= 100;
                         else if (esos_uiF14_isRPGTurningMedium())
@@ -169,8 +170,9 @@ ESOS_USER_TASK(esos_menu_task)
                         else
                             pst_entry->value -= 1;
                         break;
-                    } else if (esos_uiF14_getRPGCounter_i16() >= 4) {
-                        _esos_uiF14_setRPGCounter(esos_uiF14_getRPGCounter_i16() - 4);
+                    } else if (esos_uiF14_getRPGValue_i16() >= 1) {
+						// Will: Commented out because our code does this already?
+                        // _esos_uiF14_setRPGCounter(esos_uiF14_getRPGValue_i16() - 1);
                         if (esos_uiF14_isRPGTurningFast())
                             pst_entry->value += 100;
                         else if (esos_uiF14_isRPGTurningMedium())
