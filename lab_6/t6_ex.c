@@ -5,7 +5,22 @@
 /*TODO: Ctrl+F replace all instances of mm with a name that abides
         by the coding standards.
 */
-static esos_menu_longmenu_t mm = {
+static esos_menu_longmenu_t main_menu = {
+    .u8_numitems = 7,
+    .u8_choice = 0, // Default
+    .ast_items =
+        {
+            { "Set", "wvform" },
+            { "Set", "freq" },
+            { "Set", "ampltd" },
+            { "Read", "LM60" },
+            { "Read", "1631" },
+            { "Set", "LEDs" },
+            { "", "About..." },
+        },
+};
+
+static esos_menu_longmenu_t main_menu_with_duty = {
     .u8_numitems = 8,
     .u8_choice = 0, // Default
     .ast_items =
@@ -92,23 +107,52 @@ ESOS_USER_TASK(lcd_example)
     ESOS_TASK_BEGIN();
     while (TRUE) {
         // Display main menu until the user presses SW3 to choose a selection
-        ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(mm);
-        if (mm.u8_choice == 0)
-            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
-        else if (mm.u8_choice == 1)
-            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
-        else if (mm.u8_choice == 2)
-            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl);
-        else if (mm.u8_choice == 3)
-            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(duty);
-        else if (mm.u8_choice == 4)
-            ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(lm60);
-        else if (mm.u8_choice == 5)
-            ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(_1631);
-        else if (mm.u8_choice == 6)
-            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
-        else if (mm.u8_choice == 7)
-            ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(about);
+
+        // // couldn't get the menu switching to work with pointers for cleaner code
+        // // TODO: determine if possible and refactor if so
+        // esos_menu_longmenu_t *menu = &main_menu;
+        // if (wvform.u8_choice == 2) {
+        //     menu = &main_menu_with_duty;
+        // }
+
+        // if square wave selected, show duty cycle
+        if (wvform.u8_choice == 2) {
+            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(main_menu_with_duty);
+            if (main_menu_with_duty.u8_choice == 0) {
+                ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
+            } else if (main_menu_with_duty.u8_choice == 1) {
+                ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
+            } else if (main_menu_with_duty.u8_choice == 2) {
+                ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl);
+            } else if (main_menu_with_duty.u8_choice == 3) {
+                ESOS_TASK_WAIT_ESOS_MENU_ENTRY(duty);
+            } else if (main_menu_with_duty.u8_choice == 4) {
+                ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(lm60);
+            } else if (main_menu_with_duty.u8_choice == 5) {
+                ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(_1631);
+            } else if (main_menu_with_duty.u8_choice == 6) {
+                ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
+            } else if (main_menu_with_duty.u8_choice == 7) {
+                ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(about);
+            }
+        } else {
+            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(main_menu);
+            if (main_menu.u8_choice == 0) {
+                ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
+            } else if (main_menu.u8_choice == 1) {
+                ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
+            } else if (main_menu.u8_choice == 2) {
+                ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl);
+            } else if (main_menu.u8_choice == 3) {
+                ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(lm60);
+            } else if (main_menu.u8_choice == 4) {
+                ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(_1631);
+            } else if (main_menu.u8_choice == 5) {
+                ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
+            } else if (main_menu.u8_choice == 6) {
+                ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(about);
+            }
+        }
     }
     ESOS_TASK_END();
 }
