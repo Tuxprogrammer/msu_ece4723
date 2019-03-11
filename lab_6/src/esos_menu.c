@@ -60,14 +60,16 @@ ESOS_USER_TASK(esos_menu_task)
                     // The user has chosen.  Bail out.
                     __esos_menu_conf.e_menutype = NONE;
                     break;
-                } else if (esos_uiF14_isRPGTurning() && esos_uiF14_isRPGTurningCW() && !b_lastMenu) {
+                } else if (esos_uiF14_isRPGTurning() && esos_uiF14_isRPGTurningCW() &&
+                           esos_uiF14_getRPGVelocity_i16() > 750 && !b_lastMenu) {
                     // Attempt to increase the current value.
                     ++pst_menu->u8_choice;
-                    ESOS_TASK_WAIT_UNTIL(!esos_uiF14_isRPGTurning());
+                    ESOS_TASK_WAIT_UNTIL(esos_uiF14_getRPGVelocity_i16() < 750);
                     break;
-                } else if (esos_uiF14_isRPGTurning() && esos_uiF14_isRPGTurningCCW() && !b_firstMenu) {
+                } else if (esos_uiF14_isRPGTurning() && esos_uiF14_isRPGTurningCCW() &&
+                           esos_uiF14_getRPGVelocity_i16() < -750 && !b_firstMenu) {
                     --pst_menu->u8_choice;
-                    ESOS_TASK_WAIT_UNTIL(!esos_uiF14_isRPGTurning());
+                    ESOS_TASK_WAIT_UNTIL(esos_uiF14_getRPGVelocity_i16() > -750);
                     break;
                 }
                 ESOS_TASK_YIELD();
