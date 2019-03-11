@@ -27,11 +27,11 @@ static esos_menu_staticmenu_t err = {
     .lines = { { "404" }, { "NotFnd" } },
 };
 
-// TODO: determine what type of entry the wvform ought to be
-static esos_menu_staticmenu_t wvform = {
-    .u8_numlines = 4,
-    .u8_currentline = 0,
-    .lines = { { "idk" }, { "what" }, { "this" }, { "is" } },
+// TODO: determine if this is the correct type of entry for the wvform
+static esos_menu_longmenu_t wvform = {
+    .u8_numitems = 4,
+    .u8_choice = 0,
+    .ast_items = { { "Select", "tri" }, { "Select", "sine" }, { "Select", "square" }, { "Select", "user1" } },
 };
 
 static esos_menu_entry_t freq = {
@@ -94,7 +94,7 @@ ESOS_USER_TASK(lcd_example)
         // Display main menu until the user presses SW3 to choose a selection
         ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(mm);
         if (mm.u8_choice == 0)
-            ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(wvform);
+            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
         else if (mm.u8_choice == 1)
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
         else if (mm.u8_choice == 2)
