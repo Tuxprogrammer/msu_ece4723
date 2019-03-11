@@ -120,54 +120,10 @@ ESOS_USER_TASK(set_led)
     LED2_OFF();
     LED3_HB_OFF();
     while (TRUE) {
-        switch (leds.entries[0].value) {
-        case 0:
-            LED1_OFF();
-            LED2_OFF();
-            LED3_HB_OFF();
-            break;
-        case 1:
-            LED1_OFF();
-            LED2_OFF();
-            LED3_HB_ON();
-            break;
-        case 2:
-            LED1_OFF();
-            LED2_ON();
-            LED3_HB_OFF();
-            break;
-        case 3:
-            LED1_OFF();
-            LED2_ON();
-            LED3_HB_ON();
-            break;
-        case 4:
-            LED1_ON();
-            LED2_OFF();
-            LED3_HB_OFF();
-            break;
-        case 5:
-            LED1_ON();
-            LED2_OFF();
-            LED3_HB_ON();
-            break;
-        case 6:
-            LED1_ON();
-            LED2_ON();
-            LED3_HB_OFF();
-            break;
-        case 7:
-            LED1_ON();
-            LED2_ON();
-            LED3_HB_ON();
-            break;
-        }
-
-        // couldn't get this bit manipulation bullshit to work properly
-        // TODO: try again
-        // LED1 = (leds.entries[0].value & 0b100 == 0x100);
-        // LED2 = (leds.entries[0].value & 0b010 == 0x010);
-        // LED3_HB = (leds.entries[0].value & 0b001 == 0x001);
+        // Note that LED3_HB is negated because the pin goes high when LED3 is off
+        LED1 = (leds.entries[0].value & 0b100) == 0b100;
+        LED2 = (leds.entries[0].value & 0b010) == 0b010;
+        LED3_HB = (leds.entries[0].value & 0b001) != 0b001;
         ESOS_TASK_YIELD();
     }
     ESOS_TASK_END();
