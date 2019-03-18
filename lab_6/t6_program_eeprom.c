@@ -11,7 +11,7 @@
 #include "esos_f14ui.h"
 #include "esos_at24c02d.h"
 
-static const uint8_t au8_EEPROM_DATA[AT24C02D_NUM_PAGES * AT24C02D_PAGE_SIZE] = {
+static uint8_t au8_EEPROM_DATA[AT24C02D_NUM_PAGES * AT24C02D_PAGE_SIZE] = {
     'S',  'I',  'N',  'E',  0x00, 0x00, 0x00, 0x02, // Page 0 - SINE Name Entry, Scale Factor = (1 / 2)
     0x00, 0x03, 0x06, 0x0A, 0x0D, 0x10, 0x14, 0x17, // Page 1 - SINE 1/4 Wave Entry
     0x1A, 0x1E, 0x21, 0x24, 0x28, 0x2B, 0x2E, 0x32, // Page 2
@@ -59,12 +59,42 @@ ESOS_USER_TASK(program_eeprom)
 
     // Write au8_EEPROM_DATA to entire memory
     for (u8_addr = 0; u8_addr < AT24C02D_NUM_PAGES * AT24C02D_PAGE_SIZE; u8_addr += AT24C02D_PAGE_SIZE) {
-        /*                                             ↓ 1337 h4x below (may not work) */
+        /*                                             ↓ 1337 h4x (may not work) */
         ESOS_AT24C02D_WRITE_PAGE(u8_addr, (uint8_t *)(au8_EEPROM_DATA + u8_addr), AT24C02D_PAGE_SIZE);
         ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
         ESOS_TASK_WAIT_ON_SEND_STRING("\nEEPROM Write Page - Addr: ");
         ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(u8_addr);
         ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        ESOS_TASK_YIELD();
+    }
+
+    ESOS_TASK_YIELD();
+    ESOS_TASK_END();
+}
+
+ESOS_USER_TASK(test_eeprom)
+{
+    ESOS_TASK_BEGIN();
+
+    ESOS_TASK_WAIT_TICKS(1000);
+
+    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+    ESOS_TASK_WAIT_ON_SEND_STRING("Verifying memory state...\n");
+    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+    uint8_t u8_addr, *pu8_data;
+    for (u8_addr = 0; u8_addr < AT24C02D_NUM_PAGES * AT24C02D_PAGE_SIZE; u8_addr++) {
+        ESOS_AT24C02D_READ_BYTE(u8_addr, pu8_data); // WHY DOESNT THIS WORK
+        ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+        ESOS_TASK_WAIT_ON_SEND_STRING("\nADDR: ");
+        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(u8_addr);
+        ESOS_TASK_WAIT_ON_SEND_STRING(" EXP: ");
+        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(au8_EEPROM_DATA[u8_addr]);
+        ESOS_TASK_WAIT_ON_SEND_STRING(" ACT: ");
+        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(*pu8_data);
+        ESOS_TASK_WAIT_ON_SEND_STRING((*pu8_data == au8_EEPROM_DATA[u8_addr]) ? " GOOD" : " BAD");
+        ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        ESOS_TASK_YIELD();
     }
 
     ESOS_TASK_YIELD();
@@ -75,4 +105,5 @@ void user_init()
 {
     config_esos_uiF14();
     esos_RegisterTimer(heartbeat_LED, 500);
+    esos_RegisterTask(program_eeprom);
 }
