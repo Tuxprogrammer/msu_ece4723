@@ -23,8 +23,17 @@
         for (uint8_t u8_i = 0; i < u8_len; i++) {                                                                      \
             au8_tmp_data[u8_i + 1] = pu8_data[u8_i];                                                                   \
         }                                                                                                              \
-        ESOS_TASK_WAIT_ON_WRITENI2C1(ESOS_TASK_WAIT_ON_WRITENI2C1, au8_tmp_data, (uint16_t)(u8_len + 1));              \
+        ESOS_TASK_WAIT_ON_WRITENI2C1(AT24C02D_ADDR, au8_tmp_data, (uint16_t)(u8_len + 1));                             \
     }
 
-uint8_t esos_at24c02d_read_byte(uint8_t u8_addr);
-void esos_at24c02d_read_seq(uint8_t u8_addr, uint8_t *pu8_buffer, uint16_t u16_len);
+#define ESOS_AT24C02D_READ_BYTE(u8_addr, pu8_data)                                                                     \
+    {                                                                                                                  \
+        ESOS_TASK_WAIT_ON_WRITE1I2C1(AT24C02D_ADDR, u8_addr);                                                          \
+        ESOS_TASK_WAIT_ON_READ1I2C1(AT24C02D_ADDR, *pu8_data);                                                         \
+    }
+
+#define ESOS_AT34C02D_READ_SEQ(u8_addr, pu8_buffer, u16_len)                                                           \
+    {                                                                                                                  \
+        ESOS_TASK_WAIT_ON_WRITE1I2C1(AT24C02D_ADDR, u8_addr);                                                          \
+        ESOS_TASK_WAIT_ON_READNI2C1(AT24C02D_ADDR, pu8_buffer, u16_len);                                               \
+    }
