@@ -55,46 +55,43 @@ ESOS_USER_TASK(program_eeprom)
 {
     ESOS_TASK_BEGIN();
 
-    uint8_t u8_addr;
+    static uint16_t u16_addr = 0;
 
     // Write au8_EEPROM_DATA to entire memory
-    for (u8_addr = 0; u8_addr < AT24C02D_NUM_PAGES * AT24C02D_PAGE_SIZE; u8_addr += AT24C02D_PAGE_SIZE) {
+    for (u16_addr = 0; u16_addr < AT24C02D_NUM_PAGES * AT24C02D_PAGE_SIZE; u16_addr += AT24C02D_PAGE_SIZE) {
         /*                                             ↓ 1337 h4x (may not work) */
-        ESOS_AT24C02D_WRITE_PAGE(u8_addr, (uint8_t *)(au8_EEPROM_DATA + u8_addr), AT24C02D_PAGE_SIZE);
+        ESOS_AT24C02D_WRITE_PAGE(u16_addr, (uint8_t *)(au8_EEPROM_DATA + u16_addr), AT24C02D_PAGE_SIZE);
         ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
         ESOS_TASK_WAIT_ON_SEND_STRING("\nEEPROM Write Page - Addr: ");
-        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(u8_addr);
+        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(*((uint8_t *)(au8_EEPROM_DATA + u16_addr)));
         ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-        ESOS_TASK_YIELD();
+        ESOS_TASK_WAIT_TICKS(10);
     }
 
-    ESOS_TASK_YIELD();
-    ESOS_TASK_END();
-}
-
-ESOS_USER_TASK(test_eeprom)
-{
-    ESOS_TASK_BEGIN();
-
-    ESOS_TASK_WAIT_TICKS(1000);
-
     ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-    ESOS_TASK_WAIT_ON_SEND_STRING("Verifying memory state...\n");
+    ESOS_TASK_WAIT_ON_SEND_STRING("\nVerifying memory state...\n");
     ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
-    uint8_t u8_addr, *pu8_data;
-    for (u8_addr = 0; u8_addr < AT24C02D_NUM_PAGES * AT24C02D_PAGE_SIZE; u8_addr++) {
-        ESOS_AT24C02D_READ_BYTE(u8_addr, pu8_data); // WHY DOESNT THIS WORK
+    static uint8_t u8_data = 0;
+    for (u16_addr = 0; u16_addr < AT24C02D_NUM_PAGES * AT24C02D_PAGE_SIZE; u16_addr++) {
+        ESOS_TASK_WAIT_ON_AVAILABLE_I2C();
+        ESOS_TASK_WAIT_ON_WRITE1I2C1(AT24C02D_ADDR, u16_addr);
+        ESOS_TASK_SIGNAL_AVAILABLE_I2C();
+
+        ESOS_TASK_WAIT_ON_AVAILABLE_I2C();
+        ESOS_TASK_WAIT_ON_READ1I2C1(AT24C02D_ADDR, u8_data);
+        ESOS_TASK_SIGNAL_AVAILABLE_I2C();
+
         ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
         ESOS_TASK_WAIT_ON_SEND_STRING("\nADDR: ");
-        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(u8_addr);
+        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(u16_addr);
         ESOS_TASK_WAIT_ON_SEND_STRING(" EXP: ");
-        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(au8_EEPROM_DATA[u8_addr]);
+        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(au8_EEPROM_DATA[u16_addr]);
         ESOS_TASK_WAIT_ON_SEND_STRING(" ACT: ");
-        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(*pu8_data);
-        ESOS_TASK_WAIT_ON_SEND_STRING((*pu8_data == au8_EEPROM_DATA[u8_addr]) ? " GOOD" : " BAD");
+        ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(u8_data);
+        ESOS_TASK_WAIT_ON_SEND_STRING((u8_data == au8_EEPROM_DATA[u16_addr]) ? " GOOD" : " BAD");
         ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-        ESOS_TASK_YIELD();
+        ESOS_TASK_WAIT_TICKS(10);
     }
 
     ESOS_TASK_YIELD();
@@ -104,6 +101,7 @@ ESOS_USER_TASK(test_eeprom)
 void user_init()
 {
     config_esos_uiF14();
+    esos_pic24_configI2C1(400);
     esos_RegisterTimer(heartbeat_LED, 500);
     esos_RegisterTask(program_eeprom);
 }
