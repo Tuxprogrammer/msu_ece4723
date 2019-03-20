@@ -5,6 +5,7 @@
 #include "fall17lib.h"
 #include "esos_lcd44780.h"
 #include "esos_f14ui.h"
+#include "esos_lcd44780_customChars.h"
 
 __esos_menu_conf_t __esos_menu_conf;
 
@@ -29,6 +30,7 @@ ESOS_USER_TASK(esos_menu_task)
             static BOOL b_firstMenu;
             static BOOL b_lastMenu;
             static esos_menu_longmenu_t *pst_menu;
+            static uint8_t u8_current;
 
             // Draw the menu, then wait for a button
             pst_menu = __esos_menu_conf.pv_data;
@@ -62,16 +64,35 @@ ESOS_USER_TASK(esos_menu_task)
                     break;
                 } else if (esos_uiF14_isRPGTurning() && esos_uiF14_isRPGTurningCW() &&
                            esos_uiF14_getRPGVelocity_i16() > 750 && !b_lastMenu) {
+                    u8_current = pst_menu->u8_choice;
                     // Attempt to increase the current value.
                     ++pst_menu->u8_choice;
+                    // if its hidden don't show the menu
+                    while (pst_menu->ast_items[pst_menu->u8_choice].b_hidden == 1) {
+                        if (pst_menu->u8_choice == pst_menu->u8_numitems - 1) {
+                            pst_menu->u8_choice = u8_current; // the rest of the menus are all hidden
+                        } else {
+                            ++pst_menu->u8_choice;
+                        }
+                    }
                     ESOS_TASK_WAIT_UNTIL(esos_uiF14_getRPGVelocity_i16() < 750);
                     break;
                 } else if (esos_uiF14_isRPGTurning() && esos_uiF14_isRPGTurningCCW() &&
                            esos_uiF14_getRPGVelocity_i16() < -750 && !b_firstMenu) {
+                    u8_current = pst_menu->u8_choice;
                     --pst_menu->u8_choice;
+                    // if its hidden don't show the menu
+                    while (pst_menu->ast_items[pst_menu->u8_choice].b_hidden == 1) {
+                        if (pst_menu->u8_choice == 0) {
+                            pst_menu->u8_choice = u8_current; // the rest of the menus are all hidden
+                        } else {
+                            --pst_menu->u8_choice;
+                        }
+                    }
                     ESOS_TASK_WAIT_UNTIL(esos_uiF14_getRPGVelocity_i16() > -750);
                     break;
                 }
+
                 ESOS_TASK_YIELD();
             }
         }
@@ -186,6 +207,139 @@ ESOS_USER_TASK(esos_menu_task)
                     ESOS_TASK_YIELD();
                 }
             }
+        }
+
+        while (__esos_menu_conf.e_menutype == SLIDERBAR) {
+            static BOOL b_firstLine;
+            static BOOL b_lastLine;
+            static esos_menu_sliderbar_t *pst_menu;
+            static uint8_t i;
+
+            // Draw the menu, then wait for a button
+            pst_menu = __esos_menu_conf.pv_data;
+
+            esos_lcd44780_clearScreen();
+            esos_lcd44780_writeString(0, 0, pst_menu->lines[0]);
+            esos_lcd44780_writeString(1, 0, pst_menu->lines[1]);
+
+            // load custom characters
+            if (pst_menu->type == 0) {
+                esos_lcd44780_init_custom_chars_slider();
+            } else {
+                esos_lcd44780_init_custom_chars_bar();
+            }
+
+            // Wait for the user to press a button.
+            while (TRUE) {
+                // Draw the slider or bargraph.
+                if (pst_menu->type == 0) {
+                    // slider
+                    static uint8_t au8_slider[8];
+                    for (i = 0; i < 8; i++) {
+                        au8_slider[i] = SLIDER_LINE;
+                    }
+
+                    // increment i until we reach the correct value
+                    i = pst_menu->min / pst_menu->div;
+                    while (i * pst_menu->div < pst_menu->value && i < 0x07) {
+                        i++;
+                    };
+
+                    au8_slider[i] = ((pst_menu->value & 0x1FF) / 0x067) + 1;
+
+                    esos_lcd44780_writeBuffer(1, 0, au8_slider, 8);
+                } else if (pst_menu->type == 1) {
+                    // bar
+                    uint8_t u8_barTop = ' ';
+                    uint8_t u8_barBottom = ' ';
+
+                    // increment i until we reach the correct value
+                    i = pst_menu->min / pst_menu->div;
+                    while (i * pst_menu->div < pst_menu->value && i < 0x10) {
+                        i++;
+                    };
+
+                    ESOS_TASK_WAIT_ON_SEND_STRING("DRAW BAR ");
+                    ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pst_menu->value);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
+                    ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(i*pst_menu->div);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+
+                    switch (i) {
+                    case 0x00:
+                    default:
+                        break;
+                    case 0x01:
+                        u8_barBottom = _1EIGTH_BAR;
+                    case 0x02:
+                        u8_barBottom = _2EIGTH_BAR;
+                        break;
+                    case 0x03:
+                        u8_barBottom = _3EIGTH_BAR;
+                        break;
+                    case 0x04:
+                        u8_barBottom = _4EIGTH_BAR;
+                        break;
+                    case 0x05:
+                        u8_barBottom = _5EIGTH_BAR;
+                        break;
+                    case 0x06:
+                        u8_barBottom = _6EIGTH_BAR;
+                        break;
+                    case 0x07:
+                        u8_barBottom = _7EIGTH_BAR;
+                        break;
+                    case 0x08:
+                        u8_barBottom = _8EIGTH_BAR;
+                        break;
+                    case 0x09:
+                        u8_barTop = _1EIGTH_BAR;
+                        u8_barBottom = _8EIGTH_BAR;
+                        break;
+                    case 0x0A:
+                        u8_barTop = _2EIGTH_BAR;
+                        u8_barBottom = _8EIGTH_BAR;
+                        break;
+                    case 0x0B:
+                        u8_barTop = _3EIGTH_BAR;
+                        u8_barBottom = _8EIGTH_BAR;
+                        break;
+                    case 0x0C:
+                        u8_barTop = _4EIGTH_BAR;
+                        u8_barBottom = _8EIGTH_BAR;
+                        break;
+                    case 0x0D:
+                        u8_barTop = _5EIGTH_BAR;
+                        u8_barBottom = _8EIGTH_BAR;
+                        break;
+                    case 0x0E:
+                        u8_barTop = _6EIGTH_BAR;
+                        u8_barBottom = _8EIGTH_BAR;
+                        break;
+                    case 0x0F:
+                        u8_barTop = _7EIGTH_BAR;
+                        u8_barBottom = _8EIGTH_BAR;
+                        break;
+                    case 0x10:
+                        u8_barTop = _8EIGTH_BAR;
+                        u8_barBottom = _8EIGTH_BAR;
+                        break;
+                    }
+
+                    esos_lcd44780_writeChar(0, 7, u8_barTop);
+                    esos_lcd44780_writeChar(1, 7, u8_barBottom);
+                }
+
+                if (esos_uiF14_isSW3Pressed() || esos_uiF14_isSW1Pressed() || esos_uiF14_isSW2Pressed()) {
+                    // The user is done.  Bail out.
+                    ESOS_TASK_WAIT_UNTIL(
+                        !(esos_uiF14_isSW3Pressed() || esos_uiF14_isSW1Pressed() || esos_uiF14_isSW2Pressed()));
+                    __esos_menu_conf.e_menutype = NONE;
+                    break;
+                }
+                ESOS_TASK_YIELD();
+            }
+            ESOS_TASK_YIELD();
         }
 
         // Clean up the display after finishing a menu.
