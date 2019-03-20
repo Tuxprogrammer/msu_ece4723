@@ -17,7 +17,7 @@
 #include "esos_pic24_spi.h"
 
 // Uncomment to enable Nibble-Wide Mode for LCD
-#define ESOS_LCD44780_NIBBLE_MODE
+//#define ESOS_LCD44780_NIBBLE_MODE
 
 // configure LEDs
 #define LED1_CONFIG() CONFIG_RF4_AS_DIG_OUTPUT()
@@ -95,14 +95,40 @@
 
 #define DS1631ADDR 0x90
 
+// SCK -> RD5
+// SDI -> N/C RD9
+// SDO -> RD4
+// CS -> RD0
+// SHDN -> RD2
+
+#define _RPOUT_SCK1OUT 6 //this is required to remap SCK1OUT
+#define CONFIG_SCK1OUT_TO_RP(Rxy_RP)  _CONFIG_SCK1OUT_TO_RP(Rxy_RP)
+#define _CONFIG_SCK1OUT_TO_RP(Rxy_RP) (_RP##Rxy_RP##R = _RPOUT_SCK1OUT)
+
+#define MCP4922_SCK (_LATD5)
+#define MCP4922_SCK_CONFIG()                                                                                           \
+    {                                                                                                                  \
+        CONFIG_RD5_AS_DIG_OUTPUT();                                                                                    \
+    }
+#define MCP4922_SDI (_LATD9)
+#define MCP4922_SDI_CONFIG()                                                                                           \
+    {                                                                                                                  \
+        CONFIG_RD9_AS_DIG_INPUT();                                                                                     \
+    }
+#define MCP4922_SDO (_LATD4)
+#define MCP4922_SDO_CONFIG()                                                                                           \
+    {                                                                                                                  \
+        CONFIG_RD4_AS_DIG_OUTPUT();                                                                                    \
+    }
 #define MCP4922_CS (_LATD0)
 #define MCP4922_CS_CONFIG()                                                                                            \
     {                                                                                                                  \
         CONFIG_RD0_AS_DIG_OUTPUT();                                                                                    \
     }
+#define MCP4922_SHDN (_LATD2)
 #define MCP4922_SHDN_CONFIG()                                                                                          \
     {                                                                                                                  \
-        CONFIG_RD2_AS_DIG_OUTPUT();                                                                                    \
+        /*CONFIG_RD2_AS_DIG_OUTPUT();*/                                                                                  \
     }
 #define SLAVE_DISABLE() (_LATD0 = 1)
 #define SLAVE_ENABLE() (_LATD0 = 0)
