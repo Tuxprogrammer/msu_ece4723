@@ -9,10 +9,12 @@
 
 __esos_menu_conf_t __esos_menu_conf;
 
+// 00011110
 uint8_t au8_upArrow[] = {
     0b00000, 0b00000, 0b00000, 0b00100, 0b01110, 0b11111, 0b00000, 0b00000, 0b00000,
 };
 
+// 00011111
 uint8_t au8_dnArrow[] = {
     0b00000, 0b00000, 0b00000, 0b11111, 0b01110, 0b00100, 0b00000, 0b00000, 0b00000,
 };
@@ -213,14 +215,13 @@ ESOS_USER_TASK(esos_menu_task)
             static BOOL b_firstLine;
             static BOOL b_lastLine;
             static esos_menu_sliderbar_t *pst_menu;
+            static uint32_t acc;
             static uint8_t i;
 
             // Draw the menu, then wait for a button
             pst_menu = __esos_menu_conf.pv_data;
 
             esos_lcd44780_clearScreen();
-            esos_lcd44780_writeString(0, 0, pst_menu->lines[0]);
-            esos_lcd44780_writeString(1, 0, pst_menu->lines[1]);
 
             // load custom characters
             if (pst_menu->type == 0) {
@@ -228,6 +229,14 @@ ESOS_USER_TASK(esos_menu_task)
             } else {
                 esos_lcd44780_init_custom_chars_bar();
             }
+
+            // ESOS_TASK_WAIT_TICKS(1); // give the characters time to save
+
+            esos_lcd44780_writeString(0, 0, pst_menu->lines[0]);
+            esos_lcd44780_writeString(1, 0, pst_menu->lines[1]);
+            ESOS_TASK_WAIT_ON_LCD44780_REFRESH();
+
+            // ESOS_TASK_WAIT_TICKS(1); // give the characters time to save
 
             // Wait for the user to press a button.
             while (TRUE) {
@@ -240,9 +249,11 @@ ESOS_USER_TASK(esos_menu_task)
                     }
 
                     // increment i until we reach the correct value
-                    i = pst_menu->min / pst_menu->div;
-                    while (i * pst_menu->div < pst_menu->value && i < 0x07) {
+                    i = 0;
+                    acc = pst_menu->min; // pst_menu->min / pst_menu->div;
+                    while (acc < pst_menu->value && i < 0x07) {
                         i++;
+                        acc += pst_menu->div;
                     };
 
                     au8_slider[i] = ((pst_menu->value & 0x1FF) / 0x067) + 1;
@@ -254,16 +265,20 @@ ESOS_USER_TASK(esos_menu_task)
                     uint8_t u8_barBottom = ' ';
 
                     // increment i until we reach the correct value
-                    i = pst_menu->min / pst_menu->div;
-                    while (i * pst_menu->div < pst_menu->value && i < 0x10) {
+                    i = 0;
+                    acc = pst_menu->min; // pst_menu->min / pst_menu->div;
+                    while (acc < pst_menu->value && i < 0x10) {
                         i++;
+                        acc += pst_menu->div;
                     };
 
-                    ESOS_TASK_WAIT_ON_SEND_STRING("DRAW BAR ");
-                    ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pst_menu->value);
-                    ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
-                    ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(i*pst_menu->div);
-                    ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+                    // ESOS_TASK_WAIT_ON_SEND_STRING("DRAW BAR ");
+                    // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(pst_menu->value);
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
+                    // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(i);
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
+                    // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(acc);
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
 
                     switch (i) {
                     case 0x00:
@@ -326,8 +341,14 @@ ESOS_USER_TASK(esos_menu_task)
                         break;
                     }
 
-                    esos_lcd44780_writeChar(0, 7, u8_barTop);
-                    esos_lcd44780_writeChar(1, 7, u8_barBottom);
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(u8_barTop);
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8(' ');
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(u8_barBottom);
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+
+                    esos_lcd44780_writeChar(0, 6, u8_barTop);
+                    esos_lcd44780_writeChar(1, 6, u8_barBottom);
+                    ESOS_TASK_WAIT_ON_LCD44780_REFRESH();
                 }
 
                 if (esos_uiF14_isSW3Pressed() || esos_uiF14_isSW1Pressed() || esos_uiF14_isSW2Pressed()) {
@@ -337,7 +358,7 @@ ESOS_USER_TASK(esos_menu_task)
                     __esos_menu_conf.e_menutype = NONE;
                     break;
                 }
-                ESOS_TASK_YIELD();
+                ESOS_TASK_WAIT_TICKS(100);
             }
             ESOS_TASK_YIELD();
         }

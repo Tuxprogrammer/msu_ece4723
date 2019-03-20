@@ -16,16 +16,16 @@
 
 ESOS_TASK_HANDLE dac_hdl;
 
-void writeSPI(uint16_t* pu16_out, uint16_t* pu16_in, uint16_t u16_cnt) {
-    static uint16_t*      pu16_tempPtrIn;
-    static uint16_t*      pu16_tempPtrOut;
-    static uint16_t       u16_tempCnt, u16_i;
-    static uint8_t        u8_isReading, u8_isWriting;
-    uint16_t              u16_scratch;
+void writeSPI(uint16_t *pu16_out, uint16_t *pu16_in, uint16_t u16_cnt)
+{
+    static uint16_t *pu16_tempPtrIn;
+    static uint16_t *pu16_tempPtrOut;
+    static uint16_t u16_tempCnt, u16_i;
+    static uint8_t u8_isReading, u8_isWriting;
+    uint16_t u16_scratch;
     pu16_tempPtrOut = pu16_out;
     pu16_tempPtrIn = pu16_in;
     u16_tempCnt = u16_cnt;
-
 
     if (pu16_tempPtrOut == NULLPTR)
         u8_isWriting = FALSE;
@@ -38,8 +38,9 @@ void writeSPI(uint16_t* pu16_out, uint16_t* pu16_in, uint16_t u16_cnt) {
         u8_isReading = TRUE;
 
     // clear the overflow flag, just in case it is set
-    if (SPI1STATbits.SPIROV) SPI1STATbits.SPIROV = 0;
-    //clear SPI interrupt flag since we are about to write new value to SPI
+    if (SPI1STATbits.SPIROV)
+        SPI1STATbits.SPIROV = 0;
+    // clear SPI interrupt flag since we are about to write new value to SPI
     _SPI1IF = 0;
     /* read SPI1BUF to clear SPI_RX_BUFFER_FULL bit just in case previous
     SPI use did not read the SPI1BUF that last time!
@@ -49,24 +50,23 @@ void writeSPI(uint16_t* pu16_out, uint16_t* pu16_in, uint16_t u16_cnt) {
         if (u8_isWriting) {
             SPI1BUF = *pu16_tempPtrOut;
             pu16_tempPtrOut++;
-        }
-        else {
+        } else {
             SPI1BUF = 0;
         } // end isWriting
 
-          /* Seen some strange behavior checking _SPI1IF like the
-          * hardware support library.  The following method is valid
-          * and appears to work in all cases.
-          */
-          // wait for TX word to be copied to SPI1SR
+        /* Seen some strange behavior checking _SPI1IF like the
+         * hardware support library.  The following method is valid
+         * and appears to work in all cases.
+         */
+        // wait for TX word to be copied to SPI1SR
 
         while (SPI1STAT & SPI_TX_BUFFER_FULL) {
-            //do nothing
+            // do nothing
         }
 
         // wait for RX word to be copied from SPI1SR
         while (!(SPI1STAT & SPI_RX_BUFFER_FULL)) {
-            //do nothing
+            // do nothing
         }
         // read the word from SPI (clears SPI_RX_BUFFER_FULL bit)
         u16_scratch = SPI1BUF;
@@ -114,13 +114,14 @@ ESOS_CHILD_TASK(_WRITE_DAC_AB, uint16_t u16_data)
 
     u16_data = 0x3000 | (u16_data >> 4);
 
+    /*
     ESOS_TASK_WAIT_ON_SEND_STRING("_WRITE_DAC_AB: ");
     ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_data);
     ESOS_TASK_WAIT_ON_SEND_STRING("\n");
-
+    */
     ESOS_TASK_WAIT_ON_AVAILABLE_SPI();
     SLAVE_ENABLE();
-    //ESOS_TASK_WAIT_ON_WRITE1SPI1(u16_data);
+    // ESOS_TASK_WAIT_ON_WRITE1SPI1(u16_data);
     writeSPI(&u16_data, NULLPTR, 1);
     ESOS_TASK_WAIT_TICKS(1);
     SLAVE_DISABLE();
@@ -138,14 +139,19 @@ ESOS_USER_TASK(test_dac)
 {
     ESOS_TASK_BEGIN();
     ESOS_ALLOCATE_CHILD_TASK(dac_hdl);
+    static uint32_t i;
 
     while (TRUE) {
-        static uint16_t i;
-        for (i = 0; i < 0xFFFF; i += 1024) {
+
+        for (i = 0x0000; i < 0xFF00; i += 0xF00) {
             ESOS_TASK_SPAWN_AND_WAIT(dac_hdl, _WRITE_DAC_AB, i);
-            ESOS_TASK_WAIT_TICKS(10);
+            ESOS_TASK_YIELD();
         }
-        ESOS_TASK_WAIT_TICKS(1000);
+
+        for (i = 0xFF00; i >= 0x0F00; i -= 0xF00) {
+            ESOS_TASK_SPAWN_AND_WAIT(dac_hdl, _WRITE_DAC_AB, i);
+            ESOS_TASK_YIELD();
+        }
     }
 
     ESOS_TASK_YIELD();

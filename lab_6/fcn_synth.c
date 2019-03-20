@@ -66,12 +66,12 @@ static esos_menu_entry_t leds = {
 };
 
 static esos_menu_sliderbar_t lm60 = {
-    .value = 2000,
+    .value = 2500,
     .min = 2000,
     .max = 3500,
     .div = 100,
     .type = 1,
-    .lines = { { "LM60" }, { "" } },
+    .lines = { { "LM60   " }, { "       " } },
 };
 
 static esos_menu_staticmenu_t _1631 = {
@@ -140,7 +140,7 @@ ESOS_USER_TASK(set_led)
         LED1 = (leds.entries[0].value & 0b100) == 0b100;
         LED2 = (leds.entries[0].value & 0b010) == 0b010;
         LED3_HB = (leds.entries[0].value & 0b001) != 0b001;
-        ESOS_TASK_YIELD();
+        ESOS_TASK_WAIT_TICKS(50);
     }
     ESOS_TASK_END();
 }
@@ -155,18 +155,18 @@ ESOS_USER_TASK(update_lm60)
     ESOS_ALLOCATE_CHILD_TASK(read_temp);
     while (TRUE) {
         if (b_updateLM60) {
-            ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_ON_AVAILABLE_SENSOR, TEMP_CHANNEL, ESOS_SENSOR_VREF_3V0);
-            ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_SENSOR_READ, &pu16_out, ESOS_SENSOR_ONE_SHOT,
-                                     ESOS_SENSOR_FORMAT_VOLTAGE);
-            ESOS_SENSOR_CLOSE();
+             ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_ON_AVAILABLE_SENSOR, POT_CHANNEL, ESOS_SENSOR_VREF_3V0);
+             ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_SENSOR_READ, &pu16_out, ESOS_SENSOR_ONE_SHOT,
+                                      ESOS_SENSOR_FORMAT_VOLTAGE);
+             ESOS_SENSOR_CLOSE();
 
-            pu32_out = (uint32_t)pu16_out * 1000; // convert to not use decimals
-            pu32_out = (pu32_out - 424000) / 625; // millimillivolts to temp
-            lm60.value = pu32_out;
+             pu32_out = (uint32_t)pu16_out * 1000; // convert to not use decimals
+             pu32_out = (pu32_out - 424000) / 625; // millimillivolts to temp
+             lm60.value = pu32_out;
 
             // We could update the menu with text on line 2 here
         }
-        ESOS_TASK_YIELD();
+        ESOS_TASK_WAIT_TICKS(10);
     }
 
     ESOS_TASK_END();

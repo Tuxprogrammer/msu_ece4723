@@ -17,7 +17,7 @@
 #include "pic24_all.h"
 
 // Uncomment to enable Nibble-Wide Mode for LCD
-#define ESOS_LCD44780_NIBBLE_MODE
+//#define ESOS_LCD44780_NIBBLE_MODE
 
 // configure LEDs
 #define LED1_CONFIG() CONFIG_RF4_AS_DIG_OUTPUT()
