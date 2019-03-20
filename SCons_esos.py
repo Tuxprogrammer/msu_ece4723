@@ -38,11 +38,16 @@ SHARED_LIB_COPY = [
     ("../../lab_4/include/esos_pic24_sensor.h", "../../lib/include/esos_pic24_sensor.h"),
     ("../../lab_4/src/esos_sensor.c", "../../lib/src/esos_sensor.c"),
     ("../../lab_4/src/esos_pic24_sensor.c", "../../lib/src/esos_pic24_sensor.c"),
-    ("../../lab_5/include/revF14.h", "../../lib/include/revF14.h"),
     ("../../lab_5/include/esos_lcd44780.h", "../../lib/include/esos_lcd44780.h"),
     ("../../lab_5/include/esos_pic24_lcd44780.h", "../../lib/include/esos_pic24_lcd44780.h"),
     ("../../lab_5/src/esos_lcd44780.c", "../../lib/src/esos_lcd44780.c"),
-    ("../../lab_5/src/esos_pic24_lcd44780.c", "../../lib/src/esos_pic24_lcd44780.c")
+    ("../../lab_5/src/esos_pic24_lcd44780.c", "../../lib/src/esos_pic24_lcd44780.c"),
+    ("../../lab_6/include/revF14.h", "../../lib/include/revF14.h"),
+    ("../../lab_6/include/fall17lib.h", "../../lib/include/fall17lib.h"),
+    ("../../lab_6/include/esos_menu.h", "../../lib/include/esos_menu.h"),
+    ("../../lab_6/src/esos_menu.c", "../../lib/src/esos_menu.c"),
+
+
 ]
 
 SHARED_LIB_NOTE = \
