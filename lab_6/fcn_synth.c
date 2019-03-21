@@ -9,6 +9,7 @@
 #include "esos_pic24_i2c.h"
 #include "esos_pic24_irq.h"
 #include "esos_at24c02d.h"
+#include "pic24_timer.h"
 
 static BOOL b_updateLM60;
 static BOOL b_updateDS1631;
@@ -202,12 +203,13 @@ void write_DAC(uint16_t u16_data)
     SLAVE_ENABLE();
     // ESOS_TASK_WAIT_ON_WRITE1SPI1(u16_data);
     writeSPI(&u16_data, NULLPTR, 1);
-    __builtin_nop();
+    // __builtin_nop();
     SLAVE_DISABLE();
 }
 
 static uint8_t u8_cycle_time = 0;
 static uint16_t u8_out_prim = 0;
+static uint32_t u32_dac_val = 0;
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
 {
     if (wvform.u8_choice == 0) { // triangle wave
@@ -217,7 +219,8 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
             u8_out_prim -= 2;
         }
     } else if (wvform.u8_choice == 1) {
-        if (u8_out_prim > 0) {
+        // if the cycle time is greater than the percentage of the 240 samples that are during the duty cycle
+        if (u8_cycle_time > duty.entries[0].value * 240 / 100) {
             u8_out_prim = 0;
         } else {
             u8_out_prim = 255;
@@ -237,13 +240,28 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
         u8_out_prim = wvform_data[u8_cycle_time % 120];
     }
 
+    /*
     uint16_t dac_out_val =
-        (((uint16_t)u8_out_prim * 255 / 240) << 8) / (ampl.entries[0].max - ampl.entries[0].value) / 2 * 3;
-    write_DAC(dac_out_val);
+        (((uint16_t)u8_out_prim * 255 / 240) << 8) / (ampl.entries[0].max - ampl.entries[0].value + 1) / 2 * 3;
+    */
+
+    u32_dac_val = u8_out_prim * 255; // Scale the waveform up to maximum
+
+    // value/max but amplitude has an off-by-one for < 1.5V and not for > 1.5V
+    u32_dac_val *= (ampl.entries[0].value <= 15) ? ampl.entries[0].value - 1 : ampl.entries[0].value;
+    u32_dac_val /= ampl.entries[0].max; // Scale waveform down to ratio of amplitude
+
+    // u32_dac_val /= 240; //Divide by the number of points in the waveform
+    // u32_dac_val << 8; //shift over the most significant parts
+    // u32_dac_val *= ampl.entries[0].value;
+
+    write_DAC(u32_dac_val);
 
     u8_cycle_time = (u8_cycle_time + 1) % 240;
 
-    PR4 = 60000 / freq.entries[0].value * 240;
+    //PR4 = 0x0001; // run as fast as possible
+    PR4 = 1000 / freq.entries[0].value; //FIXME
+
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
 }
 
@@ -445,18 +463,12 @@ void user_init()
     esos_RegisterTask(update_ds1631);
     ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T4, ESOS_USER_IRQ_LEVEL2, _T4Interrupt);
 
-    // Ensure that Timer2,3 configured as separate timers.
-    T4CONbits.T32 = 0; // 32-bit mode off
-                       // T3CON set like this for documentation purposes.
+    T4CONbits.T32 = 0;
     T4CON = T4_PS_1_8 | T4_SOURCE_INT;
-    // Subtract 1 from ticks value assigned to PR3 because period is PRx + 1.
     TMR4 = 0;
     PR4 = 1000;
-    // Start with a cleared timer2 value.
     TMR4 = 0;
-    // Enable Timer3 interrupts.
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
-    // Start the timer only after all timer-related configuration is complete.
     T4CONbits.TON = 1;
 
     ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T4);
