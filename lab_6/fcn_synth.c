@@ -14,7 +14,15 @@
 static BOOL b_updateLM60;
 static BOOL b_updateDS1631;
 
-static uint8_t wvform_data[128];
+static uint16_t wvform_data[128];
+
+#define SINE_WVFORM_ADDR 0
+#define USER_WVFORM_ADDR 128
+
+#define TRI_WVFORM 0
+#define SQUARE_WVFORM 1
+#define SINE_WVFORM 2
+#define USER_WVFORM 3
 
 /*TODO: Ctrl+F replace all instances of mm with a name that abides
         by the coding standards.
@@ -24,7 +32,7 @@ static esos_menu_longmenu_t main_menu = {
     .u8_choice = 0, // Default
     .ast_items =
         {
-            { "Set", "wvform", 0},
+            { "Set", "wvform", 0 },
             { "Set", "freq", 0 },
             { "Set", "ampltd", 0 },
             { "Set", "duty", 1 },
@@ -207,28 +215,56 @@ ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
 }
 
-ESOS_CHILD_TASK(update_wvform, uint8_t u8_type)
+ESOS_CHILD_TASK(update_wvform, uint8_t u8_type, uint8_t u8_duty, uint8_t u8_ampl)
 {
     ESOS_TASK_BEGIN();
 
     static uint16_t u16_addr;
-    static uint8_t u8_data;
+    static uint16_t u16_scaledData;
+    static uint16_t u8_rawData;
     static uint16_t i;
 
-    if (u8_type == 2 || u8_type == 3) {
-        if (u8_type == 2) {
-            u16_addr = 8; // sine wave data start at 8
-        } else {
-            u16_addr = 136; // noise wave data starts at 136
-        }
+    uint8_t u8_currAmplitude = u8_ampl * UINT8_MAX / 30;
 
-        for (i = 0; i < 120; i++) {
+    // gen tri wave
+    if (u8_type == TRI_WVFORM) {
+        for (i = 0; i < 128; i++) {
+            if (i < 64) {
+                u8_rawData = i * 4;
+            } else if (i == 64) {
+                u8_rawData = UINT8_MAX;
+            } else {
+                u8_rawData = i * 4 - 256;
+            }
+            u16_scaledData = u8_rawData * u8_currAmplitude / UINT8_MAX;
+            wvform_data[i] = u16_scaledData;
+        }
+    }
+    // gen square wave w duty
+    if (u8_type == SQUARE_WVFORM) {
+        // turn duty cycle into fraction of the 128 points per wave period
+        u8_duty = 128 * u8_duty / 100;
+        for (i = 0; i < 128; i++) {
+            u8_rawData = (i < u8_duty) ? 255 : 0;
+            u16_scaledData = u8_rawData * u8_currAmplitude / UINT8_MAX;
+            wvform_data[i] = u16_scaledData;
+        }
+    }
+    // fetch sine or user waves
+    if (u8_type == SINE_WVFORM || u8_type == USER_WVFORM) {
+        if (u8_type == SINE_WVFORM) {
+            u16_addr = SINE_WVFORM_ADDR;
+        } else {
+            u16_addr = USER_WVFORM_ADDR;
+        }
+        for (i = 0; i < 128; i++) {
             ESOS_TASK_WAIT_ON_AVAILABLE_I2C();
             ESOS_TASK_WAIT_ON_WRITE1I2C1(AT24C02D_ADDR, u16_addr + i);
-            ESOS_TASK_WAIT_ON_READ1I2C1(AT24C02D_ADDR, u8_data);
+            ESOS_TASK_WAIT_ON_READ1I2C1(AT24C02D_ADDR, u8_rawData);
             ESOS_TASK_SIGNAL_AVAILABLE_I2C();
 
-            wvform_data[i] = u8_data;
+            u16_scaledData = u8_rawData * u8_currAmplitude / UINT8_MAX;
+            wvform_data[i] = u16_scaledData;
         }
     }
 
@@ -259,7 +295,7 @@ ESOS_USER_TASK(lcd_menu)
         if (main_menu.u8_choice == 0) {
             ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
             ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice);
+            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
 
         } else if (main_menu.u8_choice == 1) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
@@ -268,6 +304,7 @@ ESOS_USER_TASK(lcd_menu)
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl);
         } else if (main_menu.u8_choice == 3) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(duty);
+            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
         } else if (main_menu.u8_choice == 4) {
             b_updateLM60 = 1;
             ESOS_TASK_WAIT_ESOS_MENU_SLIDERBAR(lm60);
