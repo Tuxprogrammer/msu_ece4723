@@ -230,16 +230,14 @@ ESOS_USER_TASK(esos_menu_task)
                 esos_lcd44780_init_custom_chars_bar();
             }
 
-            // ESOS_TASK_WAIT_TICKS(1); // give the characters time to save
-
-            esos_lcd44780_writeString(0, 0, pst_menu->lines[0]);
-            esos_lcd44780_writeString(1, 0, pst_menu->lines[1]);
-            ESOS_TASK_WAIT_ON_LCD44780_REFRESH();
-
-            // ESOS_TASK_WAIT_TICKS(1); // give the characters time to save
+            ESOS_TASK_WAIT_TICKS(1); // give the characters time to save
 
             // Wait for the user to press a button.
             while (TRUE) {
+                esos_lcd44780_writeString(0, 0, pst_menu->lines[0]);
+                esos_lcd44780_writeString(1, 0, pst_menu->lines[1]);
+
+                ESOS_TASK_WAIT_TICKS(1); // give the characters time to save
                 // Draw the slider or bargraph.
                 if (pst_menu->type == 0) {
                     // slider
@@ -346,9 +344,9 @@ ESOS_USER_TASK(esos_menu_task)
                     // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(u8_barBottom);
                     // ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
 
-                    esos_lcd44780_writeChar(0, 6, u8_barTop);
-                    esos_lcd44780_writeChar(1, 6, u8_barBottom);
-                    ESOS_TASK_WAIT_ON_LCD44780_REFRESH();
+                    //ESOS_TASK_WAIT_TICKS(1);
+                    esos_lcd44780_writeChar(0, 7, u8_barTop);
+                    esos_lcd44780_writeChar(1, 7, u8_barBottom);
                 }
 
                 if (esos_uiF14_isSW3Pressed() || esos_uiF14_isSW1Pressed() || esos_uiF14_isSW2Pressed()) {
