@@ -14,7 +14,7 @@
 static BOOL b_updateLM60;
 static BOOL b_updateDS1631;
 
-static uint8_t wvform_data[120];
+static uint8_t wvform_data[128];
 
 /*TODO: Ctrl+F replace all instances of mm with a name that abides
         by the coding standards.
@@ -195,73 +195,15 @@ void write_DAC(uint16_t u16_data)
 
     u16_data = 0x3000 | (u16_data >> 4);
 
-    /*
-    ESOS_TASK_WAIT_ON_SEND_STRING("_WRITE_DAC_AB: ");
-    ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_data);
-    ESOS_TASK_WAIT_ON_SEND_STRING("\n");
-    */
     SLAVE_ENABLE();
-    // ESOS_TASK_WAIT_ON_WRITE1SPI1(u16_data);
     writeSPI(&u16_data, NULLPTR, 1);
-    // __builtin_nop();
     SLAVE_DISABLE();
 }
 
-static uint8_t u8_cycle_time = 0;
-static uint16_t u8_out_prim = 0;
-static uint32_t u32_dac_val = 0;
+static uint8_t u8_wvform_idx = 0;
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
 {
-    if (wvform.u8_choice == 0) { // triangle wave
-        if (u8_cycle_time < 120) {
-            u8_out_prim += 2;
-        } else {
-            u8_out_prim -= 2;
-        }
-    } else if (wvform.u8_choice == 1) {
-        // if the cycle time is greater than the percentage of the 240 samples that are during the duty cycle
-        if (u8_cycle_time > duty.entries[0].value * 240 / 100) {
-            u8_out_prim = 0;
-        } else {
-            u8_out_prim = 255;
-        }
-    } else if (wvform.u8_choice == 2) {
-        if (u8_cycle_time < 60) {
-            u8_out_prim = (wvform_data[(u8_cycle_time % 60) * 3 / 2] / 2) + 126;
-        } else if (u8_cycle_time < 120) {
-            u8_out_prim = (wvform_data[((60 - (u8_cycle_time % 60)) * 3 / 2)] / 2) + 126;
-        } else if (u8_cycle_time < 180) {
-            u8_out_prim = (-wvform_data[(u8_cycle_time % 60) * 3 / 2] / 2) - 127;
-        } else {
-            u8_out_prim = (-wvform_data[((60 - (u8_cycle_time % 60)) * 3 / 2)] / 2) - 127;
-        }
-
-    } else if (wvform.u8_choice == 3) {
-        u8_out_prim = wvform_data[u8_cycle_time % 120];
-    }
-
-    /*
-    uint16_t dac_out_val =
-        (((uint16_t)u8_out_prim * 255 / 240) << 8) / (ampl.entries[0].max - ampl.entries[0].value + 1) / 2 * 3;
-    */
-
-    u32_dac_val = u8_out_prim * 255; // Scale the waveform up to maximum
-
-    // value/max but amplitude has an off-by-one for < 1.5V and not for > 1.5V
-    u32_dac_val *= (ampl.entries[0].value <= 15) ? ampl.entries[0].value - 1 : ampl.entries[0].value;
-    u32_dac_val /= ampl.entries[0].max; // Scale waveform down to ratio of amplitude
-
-    // u32_dac_val /= 240; //Divide by the number of points in the waveform
-    // u32_dac_val << 8; //shift over the most significant parts
-    // u32_dac_val *= ampl.entries[0].value;
-
-    write_DAC(u32_dac_val);
-
-    u8_cycle_time = (u8_cycle_time + 1) % 240;
-
-    //PR4 = 0x0001; // run as fast as possible
-    PR4 = 1000 / freq.entries[0].value; //FIXME
-
+    write_DAC(wvform_data[u8_wvform_idx++] << 8);
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
 }
 
@@ -321,6 +263,7 @@ ESOS_USER_TASK(lcd_menu)
 
         } else if (main_menu.u8_choice == 1) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
+            PR4 = (1000000 / (128 * freq.entries[0].value)) * CYCLES_PER_US;
         } else if (main_menu.u8_choice == 2) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl);
         } else if (main_menu.u8_choice == 3) {
