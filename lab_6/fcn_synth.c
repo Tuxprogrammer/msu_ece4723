@@ -211,7 +211,8 @@ void write_DAC(uint16_t u16_data)
 static uint8_t u8_wvform_idx = 0;
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
 {
-    write_DAC(wvform_data[u8_wvform_idx++] << 8);
+    write_DAC(wvform_data[u8_wvform_idx] << 8);
+    u8_wvform_idx = ++u8_wvform_idx % 128;
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
 }
 
@@ -302,6 +303,7 @@ ESOS_USER_TASK(lcd_menu)
             PR4 = (1000000 / (128 * freq.entries[0].value)) * CYCLES_PER_US;
         } else if (main_menu.u8_choice == 2) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl);
+            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
         } else if (main_menu.u8_choice == 3) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(duty);
             ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
