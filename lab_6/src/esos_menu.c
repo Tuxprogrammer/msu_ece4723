@@ -192,6 +192,10 @@ ESOS_USER_TASK(esos_menu_task)
                             pst_entry->value -= 100;
                         else if (esos_uiF14_isRPGTurningMedium())
                             pst_entry->value -= 20;
+                        else if (esos_uiF14_isSW1Pressed())
+                            pst_entry->value -= 100;
+                        else if (esos_uiF14_isSW2Pressed())
+                            pst_entry->value -= 10;
                         else
                             pst_entry->value -= 1;
                         break;
@@ -201,7 +205,11 @@ ESOS_USER_TASK(esos_menu_task)
                         if (esos_uiF14_isRPGTurningFast())
                             pst_entry->value += 100;
                         else if (esos_uiF14_isRPGTurningMedium())
-                            pst_entry->value += 20;
+                            pst_entry->value += 40;
+                        else if (esos_uiF14_isSW1Pressed())
+                            pst_entry->value += 100;
+                        else if (esos_uiF14_isSW2Pressed())
+                            pst_entry->value += 10;
                         else
                             pst_entry->value += 1;
                         break;

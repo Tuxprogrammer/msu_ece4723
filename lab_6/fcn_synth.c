@@ -104,7 +104,7 @@ static esos_menu_sliderbar_t _1631 = {
 static esos_menu_staticmenu_t about = {
     .u8_numlines = 2,
     .u8_currentline = 0,
-    .lines = { { "its abt" }, { "time" } },
+    .lines = { { "team" }, { "gg" } },
 };
 
 void configSPI1(void)
@@ -211,7 +211,7 @@ void write_DAC(uint16_t u16_data)
 static uint8_t u8_wvform_idx = 0;
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
 {
-    write_DAC(wvform_data[u8_wvform_idx] << 8);
+    write_DAC(wvform_data[u8_wvform_idx]);
     u8_wvform_idx = ++u8_wvform_idx % 128;
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
 }
@@ -220,25 +220,28 @@ ESOS_CHILD_TASK(update_wvform, uint8_t u8_type, uint8_t u8_duty, uint8_t u8_ampl
 {
     ESOS_TASK_BEGIN();
 
-    static uint16_t u16_addr;
+    static uint8_t u16_addr;
     static uint16_t u16_scaledData;
-    static uint16_t u8_rawData;
+    static uint8_t u8_rawData;
     static uint16_t i;
 
-    uint8_t u8_currAmplitude = u8_ampl * UINT8_MAX / 30;
+    static uint8_t u8_currAmplitude;
+    u8_currAmplitude = u8_ampl * UINT8_MAX / 30;
 
     // gen tri wave
     if (u8_type == TRI_WVFORM) {
-        for (i = 0; i < 128; i++) {
-            if (i < 64) {
-                u8_rawData = i * 4;
-            } else if (i == 64) {
-                u8_rawData = UINT8_MAX;
-            } else {
-                u8_rawData = i * 4 - 256;
-            }
-            u16_scaledData = u8_rawData * u8_currAmplitude / UINT8_MAX;
-            wvform_data[i] = u16_scaledData;
+        // up
+        for (i = 0; i < 64; i++) {
+            u8_rawData = i * 2;
+            u16_scaledData = u8_rawData * u8_currAmplitude;
+            wvform_data[i] = u16_scaledData * 2;
+        }
+
+        // down
+        for (i = 64; i > 0; i--) {
+            u8_rawData = i * 2;
+            u16_scaledData = u8_rawData * u8_currAmplitude;
+            wvform_data[64 + (64 - i)] = u16_scaledData * 2;
         }
     }
     // gen square wave w duty
@@ -247,7 +250,8 @@ ESOS_CHILD_TASK(update_wvform, uint8_t u8_type, uint8_t u8_duty, uint8_t u8_ampl
         u8_duty = 128 * u8_duty / 100;
         for (i = 0; i < 128; i++) {
             u8_rawData = (i < u8_duty) ? 255 : 0;
-            u16_scaledData = u8_rawData * u8_currAmplitude / UINT8_MAX;
+            u16_scaledData = u8_rawData * u8_currAmplitude;
+
             wvform_data[i] = u16_scaledData;
         }
     }
@@ -258,15 +262,22 @@ ESOS_CHILD_TASK(update_wvform, uint8_t u8_type, uint8_t u8_duty, uint8_t u8_ampl
         } else {
             u16_addr = USER_WVFORM_ADDR;
         }
+        ESOS_DISABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T4);
         for (i = 0; i < 128; i++) {
             ESOS_TASK_WAIT_ON_AVAILABLE_I2C();
             ESOS_TASK_WAIT_ON_WRITE1I2C1(AT24C02D_ADDR, u16_addr + i);
+            // ESOS_TASK_WAIT_TICKS(1);
             ESOS_TASK_WAIT_ON_READ1I2C1(AT24C02D_ADDR, u8_rawData);
             ESOS_TASK_SIGNAL_AVAILABLE_I2C();
+            ESOS_TASK_WAIT_TICKS(1);
 
-            u16_scaledData = u8_rawData * u8_currAmplitude / UINT8_MAX;
+            uint16_t a = u8_rawData;
+            uint16_t b = u8_currAmplitude;
+            u16_scaledData = a * b;
+
             wvform_data[i] = u16_scaledData;
         }
+        ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T4);
     }
 
     ESOS_TASK_YIELD();
@@ -277,36 +288,39 @@ ESOS_USER_TASK(lcd_menu)
 {
     static ESOS_TASK_HANDLE update_hdl;
     ESOS_TASK_BEGIN();
+    ESOS_ALLOCATE_CHILD_TASK(update_hdl);
+    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
+
     while (TRUE) {
         // Display main menu until the user presses SW3 to choose a selection
 
-        // // couldn't get the menu switching to work with pointers for cleaner code
-        // // TODO: determine if possible and refactor if so
-        // esos_menu_longmenu_t *menu = &main_menu;
-        // if (wvform.u8_choice == 2) {
-        //     menu = &main_menu_with_duty;
-        // }
-
         // if square wave selected, show duty cycle
-        if (wvform.u8_choice == 2) {
+        if (wvform.u8_choice == 1) {
             main_menu.ast_items[3].b_hidden = FALSE;
+        } else {
+            main_menu.ast_items[3].b_hidden = TRUE;
         }
 
         ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(main_menu);
         if (main_menu.u8_choice == 0) {
             ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
             ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
+            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value,
+                                     ampl.entries[0].value);
 
         } else if (main_menu.u8_choice == 1) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
-            PR4 = (1000000 / (128 * freq.entries[0].value)) * CYCLES_PER_US;
+            PR4 = FCY / 8 / 128 / freq.entries[0].value;
+            ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(PR4);
+            ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
         } else if (main_menu.u8_choice == 2) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl);
-            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
+            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value,
+                                     ampl.entries[0].value);
         } else if (main_menu.u8_choice == 3) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(duty);
-            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
+            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value,
+                                     ampl.entries[0].value);
         } else if (main_menu.u8_choice == 4) {
             b_updateLM60 = 1;
             ESOS_TASK_WAIT_ESOS_MENU_SLIDERBAR(lm60);
@@ -367,6 +381,11 @@ ESOS_USER_TASK(update_lm60)
             convert_uint32_t_to_str(temp32_ipart, temp32_str, 12, 10);
             temp32_str[2] = '.';
             convert_uint32_t_to_str(temp32_fpart, temp32_str + 3, 8, 10);
+            if (temp32_fpart >= 0 && temp32_fpart <= 9) {
+                temp32_str[4] = temp32_str[3];
+                temp32_str[3] = '0';
+            }
+
             temp32_str[5] = 'C';
 
             for (i = 0; i < 8; i++) {
@@ -404,7 +423,13 @@ ESOS_USER_TASK(update_ds1631)
 
             convert_uint32_t_to_str(u8_hi, temp32_str, 12, 10);
             temp32_str[2] = '.';
+            u8_lo = u8_lo * 100 / 256;
             convert_uint32_t_to_str(u8_lo, temp32_str + 3, 8, 10);
+            if (u8_lo >= 0 && u8_lo <= 9) {
+                temp32_str[4] = temp32_str[3];
+                temp32_str[3] = '0';
+            }
+
             temp32_str[5] = 'C';
 
             // ESOS_TASK_WAIT_ON_SEND_STRING("DS1631 ");
@@ -448,7 +473,7 @@ void user_init()
     T4CONbits.T32 = 0;
     T4CON = T4_PS_1_8 | T4_SOURCE_INT;
     TMR4 = 0;
-    PR4 = 1000;
+    PR4 = FCY / 8 / 128 / freq.entries[0].value;
     TMR4 = 0;
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
     T4CONbits.TON = 1;
