@@ -4,7 +4,7 @@
  * Will Carroll (woc17@msstate.edu), Landon Casey (lec426@msstate.edu)
  * Jack Fletcher (jdf469@msstate.edu)
  *
- * temperature_sensor.c - ESOS LCD Temperature Sensor
+ * temperature_lcd.c - ESOS LCD Temperature Sensor
  */
 
 //#define ESOS_LCD44780_NIBBLE_MODE
