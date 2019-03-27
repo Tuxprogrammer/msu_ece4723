@@ -81,7 +81,8 @@ PIC24_LIB_FILES = [
     "../../../pic24lib_all/lib/src/pic24_util.c",
     "../../../pic24lib_all/lib/src/pic24_serial.c",
     "../../../pic24lib_all/lib/src/pic24_uart.c",
-    "../../../pic24lib_all/lib/src/pic24_adc.c"]
+    "../../../pic24lib_all/lib/src/pic24_adc.c",
+    "../../../pic24lib_all/lib/src/pic24_ecan.c"]
 
 ESOS_LIB_FILES = ["../../../pic24lib_all/esos/src/esos.c",
                   "../../../pic24lib_all/esos/src/esos_comm.c",
@@ -89,11 +90,13 @@ ESOS_LIB_FILES = ["../../../pic24lib_all/esos/src/esos.c",
                   "../../../pic24lib_all/esos/src/esos_mail.c",
                   # "../../../pic24lib_all/esos/src/esos_sensor.c",
                   # "../../../pic24lib_all/esos/src/esos_lcd44780.c",
+                  "../../../pic24lib_all/esos/src/esos_ecan.c",
                   "../../../pic24lib_all/esos/src/pic24/esos_pic24_i2c.c",
                   "../../../pic24lib_all/esos/src/pic24/esos_pic24_irq.c",
                   "../../../pic24lib_all/esos/src/pic24/esos_pic24_rs232.c",
                   "../../../pic24lib_all/esos/src/pic24/esos_pic24_spi.c",
-                  "../../../pic24lib_all/esos/src/pic24/esos_pic24_tick.c"]
+                  "../../../pic24lib_all/esos/src/pic24/esos_pic24_tick.c",
+                  "../../../pic24lib_all/esos/src/pic24/esos_pic24_ecan.c"]
 
 SHARED_LIB_FILES = Glob("./lib/src/*.c", True, True, True)
 

@@ -52,6 +52,12 @@ static esos_menu_longmenu_t main_menu = {
         },
 };
 
+static esos_menu_longmenu_t network_menu = {
+    .u8_numitems = 0,
+    .u8_choice = 0,
+    .ast_items = { 0 },
+};
+
 // TODO: determine if this is the correct type of entry for the wvform
 static esos_menu_longmenu_t wvform = {
     .u8_numitems = 4,
