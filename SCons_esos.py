@@ -44,9 +44,13 @@ SHARED_LIB_COPY = [
     ("../../lab_5/src/esos_lcd44780.c", "../../lib/src/esos_lcd44780.c"),
     ("../../lab_5/src/esos_pic24_lcd44780.c", "../../lib/src/esos_pic24_lcd44780.c"),
     ("../../lab_6/include/revF14.h", "../../lib/include/revF14.h"),
+    ("../../lab_6/include/esos_at24c02d.h", "../../lib/include/esos_at24c02d.h"),
     ("../../lab_6/include/fall17lib.h", "../../lib/include/fall17lib.h"),
     ("../../lab_6/include/esos_menu.h", "../../lib/include/esos_menu.h"),
+    ("../../lab_6/src/fall17lib.c", "../../lib/src/fall17lib.c"),
     ("../../lab_6/src/esos_menu.c", "../../lib/src/esos_menu.c"),
+    ("../../lab_7/include/esos_ecan.h", "../../lib/include/esos_ecan.h"),
+    ("../../lab_7/src/esos_ecan.c", "../../lib/src/esos_ecan.c"),
 
 
 ]
@@ -90,7 +94,6 @@ ESOS_LIB_FILES = ["../../../pic24lib_all/esos/src/esos.c",
                   "../../../pic24lib_all/esos/src/esos_mail.c",
                   # "../../../pic24lib_all/esos/src/esos_sensor.c",
                   # "../../../pic24lib_all/esos/src/esos_lcd44780.c",
-                  "../../../pic24lib_all/esos/src/esos_ecan.c",
                   "../../../pic24lib_all/esos/src/pic24/esos_pic24_i2c.c",
                   "../../../pic24lib_all/esos/src/pic24/esos_pic24_irq.c",
                   "../../../pic24lib_all/esos/src/pic24/esos_pic24_rs232.c",
