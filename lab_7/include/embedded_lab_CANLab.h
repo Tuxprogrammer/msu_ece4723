@@ -36,14 +36,14 @@ typedef struct {
 // CAN ID Table
 const CAN_ID aCANID_IDs[NUM_OF_IDS] = {
     //"Name", "netID", teamID, memberID, // Array Index
-    { "BA Bowlin", "bab615", 1, 1 }, // 0
-    { "DD Daniel", "ddd212", 1, 2 }, // 1
-    { "KA Pace", "kap389", 1, 3 }, // 2
-    { "CM Prehn", "cmp465", 1, 4 }, // 3
-    { "JK Aulds", "jka87", 2, 1 }, // 4
-    { "ED Farmer", "edf63", 2, 2 }, // 5
-    { "B Han", "bh439", 2, 3 }, // 6
-    { "JL Long", "jll574", 2, 4 }, // 7
+    { "CB Bush", "cbb330", 1, 1 }, // 0
+    { "S Callicot", "sc2257", 1, 2 }, // 1
+    { "LE Casey", "lec426", 1, 3 }, // 2
+    { "WO Carroll", "woc17", 1, 4 }, // 3
+    { "JD Fletcher", "jdf469", 1, 5 }, // 4
+    { "ED Farmer", "edf63", 2, 1 }, // 5
+    { "B Han", "bh439", 2, 2 }, // 6
+    { "JL Long", "jll574", 2, 3 }, // 7
     { "JR Johnson", "jrj309", 3, 1 }, // 8
     { "VD Kingma", "vdk20", 3, 2 }, // 9
     { "NP Lokhande", "npl25", 3, 3 }, // 10
