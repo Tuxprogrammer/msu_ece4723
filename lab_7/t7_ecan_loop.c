@@ -15,6 +15,8 @@
 #include "esos_pic24_ecan.h"
 #include "pic24_ecan.h"
 
+#define ESOS_DEBUG_FLAG ESOS_USER_FLAG_F
+
 ESOS_USER_TIMER(heartbeat_LED)
 {
     esos_uiF14_toggleLED3();
@@ -76,6 +78,7 @@ ESOS_USER_TASK(ecan_receiver)
 void user_init(void)
 {
     config_esos_uiF14();
+    esos_SetUserFlag(ESOS_DEBUG_FLAG); // To resemble figure 13.29
 
     esos_RegisterTimer(heartbeat_LED, 500);
     esos_RegisterTask(CANFactory);

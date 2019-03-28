@@ -12,7 +12,7 @@ typedef struct {
 } CAN_ID;
 
 // TODO: redefine to fit our class members
-#define NUM_OF_IDS 17 // 8 Students + 1 TA + 1 Professor
+#define NUM_OF_IDS 22 // 20 Students + 1 TA + 1 Professor
 
 #define teamIDMask 0b0000011100000000 // eight teams
 #define memberIDMask 0b0000000011100000 // eight members
@@ -37,22 +37,27 @@ typedef struct {
 const CAN_ID aCANID_IDs[NUM_OF_IDS] = {
     //"Name", "netID", teamID, memberID, // Array Index
     { "CB Bush", "cbb330", 1, 1 }, // 0
-    { "S Callicot", "sc2257", 1, 2 }, // 1
+    { "SC Callicot", "sc2257", 1, 2 }, // 1
     { "LE Casey", "lec426", 1, 3 }, // 2
     { "WO Carroll", "woc17", 1, 4 }, // 3
     { "JD Fletcher", "jdf469", 1, 5 }, // 4
-    { "ED Farmer", "edf63", 2, 1 }, // 5
-    { "B Han", "bh439", 2, 2 }, // 6
-    { "JL Long", "jll574", 2, 3 }, // 7
-    { "JR Johnson", "jrj309", 3, 1 }, // 8
-    { "VD Kingma", "vdk20", 3, 2 }, // 9
-    { "NP Lokhande", "npl25", 3, 3 }, // 10
-    { "MJ McConville", "mjm719", 3, 4 }, // 11
-    { "JW Hastings", "jwb522", 4, 1 }, // 12
-    { "S Pacharne", "sp931", 4, 2 }, // 13
-    { "AB Powell", "abp168", 4, 3 }, // 14
-    { "BC Joiner", "bcj162", 7, 1 }, // 15
-    { "JW Bruce", "jwbruce", 7, 7 } // 16
+    { "JT Nguyen", "jtn136", 2, 1 }, // 5
+    { "NR Siano", "nrs171", 2, 2 }, // 6
+    { "IG Herbert", "igh9", 2, 3 }, // 7
+    { "LA Ward", "law448", 2, 4 }, // 8
+    { "RK Hunter", "rkh134", 2, 5 }, // 9
+    { "G Singh", "gs656", 3, 1 }, // 10
+    { "LR Haugh", "lrh282", 3, 2 }, // 11
+    { "RE Omalley", "reo74", 3, 3 }, // 12
+    { "BM Fritzhugh", "bmf151", 3, 4 }, // 13
+    { "RF Jensen", "rfj18", 3, 5 }, // 14
+    { "D Chapagain", "dc2274", 4, 1 }, // 15
+    { "MA Merlin", "mam1218", 4, 2 }, // 16
+    { "M Farhad", "mf1413", 4, 3 }, // 17
+    { "BC Wilkinson", "bcw253", 4, 4 }, // 18
+    { "JM Prather", "jmp784", 4, 5 }, // 19
+    { "BC Joyner", "bcj162", 7, 1 }, // 20
+    { "V Marojevic", "Vuk", 7, 2 } // 21
 };
 
 #define MY_ID 16 // Look above for your array index
