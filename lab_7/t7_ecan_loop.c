@@ -8,6 +8,7 @@
  */
 
 #include <string.h>
+#include "esos_comm.h"
 #include "esos.h"
 #include "esos_f14ui.h"
 #include "esos_pic24.h"
@@ -82,15 +83,13 @@ ESOS_USER_TASK(ecan_receiver)
 
         ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
         ESOS_TASK_WAIT_ON_SEND_STRING("Message ID: ");
-        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_can_id);
+        ESOS_TASK_WAIT_ON_SEND_UINT12_AS_HEX_STRING(u16_can_id);
         ESOS_TASK_WAIT_ON_SEND_STRING(", ");
         ESOS_TASK_WAIT_ON_SEND_STRING("Out: ");
-        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(buf[0]);
-        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(buf[1]);
+        ESOS_TASK_WAIT_ON_SEND_UINT64_AS_HEX_STRING(buf[0], buf[1]);
         ESOS_TASK_WAIT_ON_SEND_STRING(", ");
         ESOS_TASK_WAIT_ON_SEND_STRING("In: ");
-        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u32_dataHigh);
-        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u32_dataLow);
+        ESOS_TASK_WAIT_ON_SEND_UINT64_AS_HEX_STRING(u32_dataHigh, u32_dataLow);
         ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
         ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 

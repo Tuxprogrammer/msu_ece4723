@@ -39,6 +39,7 @@
 
 /*** I N C L U D E S *************************************************/
 #include    <string.h>
+#include    "esos_comm.h"
 #include    "esos.h"
 #include    "esos_ecan.h"
 #include    "pic24/esos_pic24_ecan.h"
@@ -126,7 +127,7 @@ ESOS_USER_TASK ( CANFactory ) {
 						ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(u16_rx_buff_id);
 						ESOS_TASK_WAIT_ON_SEND_STRING(" ");
 						ESOS_TASK_WAIT_ON_SEND_STRING("Message ID: ");
-						ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_msg_id);
+						ESOS_TASK_WAIT_ON_SEND_UINT12_AS_HEX_STRING(u16_msg_id);
 						ESOS_TASK_WAIT_ON_SEND_STRING(" rejected by acceptance filter.\n");
 						ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 					}
