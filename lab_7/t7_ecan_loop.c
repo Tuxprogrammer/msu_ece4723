@@ -15,7 +15,21 @@
 #include "esos_pic24_ecan.h"
 #include "pic24_ecan.h"
 
-#define ESOS_DEBUG_FLAG ESOS_USER_FLAG_F
+#define ECAN_MSG_ID 0x7A0
+#define ECAN_MSG_ID_MASK 0x7FC
+
+static uint32_t u32_dataHigh;
+static uint32_t u32_dataLow;
+
+uint32_t rrot32(uint32_t u32_x)
+{
+    if (u32_x & 0x1) {
+        u32_x = u32_x >> 1;
+        u32_x = u32_x | 0x80000000;
+    } else
+        u32_x = u32_x >> 1;
+    return u32_x;
+}
 
 ESOS_USER_TIMER(heartbeat_LED)
 {
@@ -24,22 +38,25 @@ ESOS_USER_TIMER(heartbeat_LED)
 
 ESOS_USER_TASK(ecan_sender)
 {
-    uint8_t buf[2];
+    static uint32_t buf[2] = { 0 };
+    static uint8_t u8_i = 0;
 
     ESOS_TASK_BEGIN();
+    u32_dataHigh = 0xFEDCBA98;
+    u32_dataLow = 0x76543210;
 
     while (TRUE) {
-        buf[0] = esos_uiF14_isSW1Released();
-        buf[1] = esos_uiF14_isSW2Released();
+        buf[0] = u32_dataHigh;
+        buf[1] = u32_dataLow;
 
-        if (buf[0]) esos_uiF14_turnLED1On();
-        else esos_uiF14_turnLED1Off();
-        if (buf[1]) esos_uiF14_turnLED2On();
-        else esos_uiF14_turnLED2Off();
+        ESOS_ECAN_SEND(ECAN_MSG_ID + u8_i, buf, 8);
 
-        ESOS_ECAN_SEND(0x7a0, buf, 2);
+        if (++u8_i == 8)
+            u8_i = 0;
 
-        ESOS_TASK_WAIT_TICKS(10);
+        ESOS_TASK_WAIT_TICKS(1000);
+
+        // ESOS_TASK_YIELD();
     }
 
     ESOS_TASK_END();
@@ -47,29 +64,38 @@ ESOS_USER_TASK(ecan_sender)
 
 ESOS_USER_TASK(ecan_receiver)
 {
-    uint8_t buf[8] = { 0 };
-    uint8_t u8_len;
-    uint16_t u16_can_id;
+    static uint32_t buf[2] = { 0 };
+    static uint8_t u8_len;
+    static uint16_t u16_can_id;
+    static MAILMESSAGE msg;
 
     ESOS_TASK_BEGIN();
 
-    esos_ecan_canfactory_subscribe(__pstSelf, 0x7a0, 0xffff, MASKCONTROL_FIELD_NONZERO);
+    esos_ecan_canfactory_subscribe(__pstSelf, ECAN_MSG_ID, ECAN_MSG_ID_MASK, MASKCONTROL_FIELD_NONZERO);
 
     while (TRUE) {
-        static MAILMESSAGE msg;
-
         ESOS_TASK_WAIT_FOR_MAIL();
         ESOS_TASK_GET_NEXT_MESSAGE(&msg);
         u16_can_id = msg.au16_Contents[0];
-        u8_len = ESOS_GET_PMSG_DATA_LENGTH((&msg - sizeof(uint16_t)));
+        u8_len = ESOS_GET_PMSG_DATA_LENGTH((&msg)) - sizeof(uint16_t);
         memcpy(buf, &msg.au8_Contents[sizeof(uint16_t)], u8_len);
 
-        if (buf[0]) esos_uiF14_turnLED1On();
-        else esos_uiF14_turnLED1Off();
-        if (buf[1]) esos_uiF14_turnLED2On();
-        else esos_uiF14_turnLED2Off();
+        ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+        ESOS_TASK_WAIT_ON_SEND_STRING("Message ID: ");
+        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_can_id);
+        ESOS_TASK_WAIT_ON_SEND_STRING(", ");
+        ESOS_TASK_WAIT_ON_SEND_STRING("Out: ");
+        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(buf[0]);
+        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(buf[1]);
+        ESOS_TASK_WAIT_ON_SEND_STRING(", ");
+        ESOS_TASK_WAIT_ON_SEND_STRING("In: ");
+        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u32_dataHigh);
+        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u32_dataLow);
+        ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+        ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
-        ESOS_TASK_YIELD();
+        u32_dataHigh = rrot32(u32_dataHigh);
+        u32_dataLow = rrot32(u32_dataLow);
     }
 
     ESOS_TASK_END();
@@ -78,7 +104,6 @@ ESOS_USER_TASK(ecan_receiver)
 void user_init(void)
 {
     config_esos_uiF14();
-    esos_SetUserFlag(ESOS_DEBUG_FLAG); // To resemble figure 13.29
 
     esos_RegisterTimer(heartbeat_LED, 500);
     esos_RegisterTask(CANFactory);
@@ -88,4 +113,5 @@ void user_init(void)
     __esos_ecan_hw_config_ecan();
 
     CHANGE_MODE_ECAN1(ECAN_MODE_LOOPBACK);
+    ENABLE_DEBUG_MODE();
 }
