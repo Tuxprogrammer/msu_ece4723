@@ -9,10 +9,13 @@
 
 #include "revF14.h"
 #include "fall17lib.h"
+#include "embedded_lab_CANLab.h"
+#include "esos_ecan.h"
 #include "esos_menu.h"
 #include "esos_f14ui.h"
 #include "esos_sensor.h"
 #include "esos_pic24.h"
+#include "esos_pic24_ecan.h"
 #include "esos_pic24_sensor.h"
 #include "esos_pic24_spi.h"
 #include "esos_pic24_i2c.h"
@@ -33,11 +36,34 @@ static uint16_t wvform_data[128];
 #define SINE_WVFORM 2
 #define USER_WVFORM 3
 
+// #define ECAN_BEACON_INTERVAL 30000
+// #define ECAN_CLEAN_INTERVAL 120000
+#define ECAN_BEACON_INTERVAL 3000
+#define ECAN_CLEAN_INTERVAL 10000
+
+#define CONFIG_FCNSYN_TIMER()                                                                                          \
+    {                                                                                                                  \
+        T4CONbits.T32 = 0;                                                                                             \
+        T4CON = T4_PS_1_8 | T4_SOURCE_INT;                                                                             \
+        TMR4 = 0;                                                                                                      \
+        PR4 = FCY / 8 / 128 / freq.entries[0].value;                                                                   \
+        TMR4 = 0;                                                                                                      \
+        T4CONbits.TON = 1;                                                                                             \
+    }
+
+typedef struct {
+    CAN_ID can_id;
+    uint32_t tick;
+    uint16_t temp;
+} network_member;
+
+network_member network[NUM_OF_IDS] = { 0 };
+
 /*TODO: Ctrl+F replace all instances of mm with a name that abides
         by the coding standards.
 */
 static esos_menu_longmenu_t main_menu = {
-    .u8_numitems = 8,
+    .u8_numitems = 9,
     .u8_choice = 0, // Default
     .ast_items =
         {
@@ -49,14 +75,47 @@ static esos_menu_longmenu_t main_menu = {
             { "Read", "1631", 0 },
             { "Set", "LEDs", 0 },
             { "", "About...", 0 },
+            { "Browse", "Network", 0 },
         },
 };
 
+// static esos_menu_longmenu_item_t network_id_menu_list[NUM_OF_IDS];
 static esos_menu_longmenu_t network_menu = {
-    .u8_numitems = 0,
-    .u8_choice = 0,
-    .ast_items = { 0 },
+    .u8_numitems = NUM_OF_IDS,
+    .u8_choice = MY_ID,
+    .ast_items =
+        {
+            { "cbb330", "1", 1 },  { "sc2257", "1", 0 }, { "lec426", "1", 1 }, { "woc17", "1", 1 },
+            { "jdf469", "1", 1 },  { "jtn136", "2", 1 }, { "nrs171", "2", 1 }, { "igh9", "2", 1 },
+            { "law448", "2", 1 },  { "rkh134", "2", 1 }, { "gs656", "3", 1 },  { "lrh282", "3", 1 },
+            { "reo74", "3", 1 },   { "bmf151", "3", 1 }, { "rfj18", "3", 1 },  { "dc2274", "4", 1 },
+            { "mam1218", "4", 1 }, { "mf1413", "4", 1 }, { "bcw253", "4", 1 }, { "jmp784", "4", 1 },
+            { "bcj162", "7", 1 },  { "Vuk", "7", 1 },
+        },
 };
+
+void initialize_network_menu_list()
+{
+    uint8_t u8_i, u8_j;
+    for (u8_i = 0; u8_i < NUM_OF_IDS; u8_i++) {
+        for (u8_j = 0; u8_j < 8; u8_j++) {
+            network_menu.ast_items[u8_i].ac_line1[u8_j] = aCANID_IDs[u8_i].psz_netID[u8_j];
+            if (aCANID_IDs[u8_i].psz_netID[u8_j] == '\0')
+                break;
+        }
+        // utoa(aCANID""_IDs[u8_i].u8_teamID, network_menu.ast_items[u8_i].ac_line2, 10);
+        network_menu.ast_items[u8_i].ac_line2[0] = 'h';
+        network_menu.ast_items[u8_i].ac_line2[1] = 'e';
+        network_menu.ast_items[u8_i].ac_line2[2] = 'l';
+        network_menu.ast_items[u8_i].ac_line2[3] = 'p';
+        network_menu.ast_items[u8_i].ac_line2[4] = 'p';
+        network_menu.ast_items[u8_i].ac_line2[5] = 'l';
+        network_menu.ast_items[u8_i].ac_line2[6] = 's';
+        network_menu.ast_items[u8_i].ac_line2[7] = '\0';
+        network_menu.ast_items[u8_i].b_hidden = u8_i != MY_ID;
+        // network_menu.ast_items[u8_i] = network_id_menu_list[u8_i];
+    }
+}
 
 // TODO: determine if this is the correct type of entry for the wvform
 static esos_menu_longmenu_t wvform = {
@@ -348,6 +407,8 @@ ESOS_USER_TASK(lcd_menu)
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
         } else if (main_menu.u8_choice == 7) {
             ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(about);
+        } else if (main_menu.u8_choice == 8) {
+            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(network_menu);
         }
     }
     ESOS_TASK_END();
@@ -470,8 +531,123 @@ ESOS_USER_TASK(update_ds1631)
     ESOS_TASK_END();
 }
 
+ESOS_USER_TASK(ecan_receiver)
+{
+    static uint8_t buf[2] = { 0 };
+    static uint8_t u8_len;
+    static uint16_t u16_can_id;
+    static uint8_t u8_msg_type;
+    static uint8_t u8_team_ID;
+    static uint8_t u8_member_ID;
+    static MAILMESSAGE msg;
+
+    ESOS_TASK_BEGIN();
+
+    esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_BEACON, 0x0001, MASKCONTROL_FIELD_NONZERO);
+
+    while (TRUE) {
+        ESOS_TASK_WAIT_FOR_MAIL();
+        ESOS_TASK_GET_NEXT_MESSAGE(&msg);
+        u16_can_id = msg.au16_Contents[0];
+        u8_team_ID = stripTeamID(u16_can_id);
+        u8_msg_type = stripTypeID(u16_can_id);
+        u8_member_ID = stripMemberID(u16_can_id);
+        u8_len = ESOS_GET_PMSG_DATA_LENGTH((&msg)) - sizeof(uint16_t);
+        memcpy(buf, &msg.au8_Contents[sizeof(uint16_t)], u8_len);
+
+        if (u8_msg_type == CANMSG_TYPE_BEACON) {
+            int8_t i8_i = getArrayIndexFromMsgID(u16_can_id);
+            if (i8_i >= 0) {
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                if (network[i8_i].tick == 0) {
+                    ESOS_TASK_WAIT_ON_SEND_STRING("Adding board: ");
+                    network_menu.ast_items[i8_i].b_hidden = FALSE;
+                } else {
+                    ESOS_TASK_WAIT_ON_SEND_STRING("Refreshing board: ");
+                }
+                ESOS_TASK_WAIT_ON_SEND_STRING(network[i8_i].can_id.psz_name);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                network[i8_i].tick = esos_GetSystemTick();
+            }
+        }
+
+        ESOS_TASK_YIELD();
+    }
+
+    ESOS_TASK_END();
+}
+
+ESOS_USER_TASK(ecan_beacon_network)
+{
+    ESOS_TASK_BEGIN();
+
+    while (TRUE) {
+        ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+        ESOS_TASK_WAIT_ON_SEND_STRING("BEACONING\n");
+        ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+        ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_BEACON), 0, 0);
+        // ESOS_ECAN_SEND(0x7A0, 0, 0);
+        ESOS_TASK_WAIT_TICKS(ECAN_BEACON_INTERVAL);
+    }
+
+    ESOS_TASK_END();
+}
+
+ESOS_USER_TASK(ecan_clean_network)
+{
+    ESOS_TASK_BEGIN();
+
+    while (TRUE) {
+        ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+        ESOS_TASK_WAIT_ON_SEND_STRING("Cleaned network\n");
+        ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+        // remove network members with currentTick - tick > ECAN_CLEAN_INTERVAL
+        static uint32_t u32_curr_tick;
+        static uint8_t u8_i;
+        for (u8_i = 0; u8_i < NUM_OF_IDS; u8_i++) {
+            u32_curr_tick = esos_GetSystemTick();
+            // skip if this board or other has board never been online
+            if (u8_i == MY_ID || network[u8_i].tick == 0) {
+                continue;
+            } else if (u32_curr_tick - network[u8_i].tick > ECAN_CLEAN_INTERVAL) {
+                network[u8_i].tick = 0;
+                network_menu.ast_items[u8_i].b_hidden = TRUE;
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("Removing ");
+                ESOS_TASK_WAIT_ON_SEND_STRING(network[u8_i].can_id.psz_name);
+                ESOS_TASK_WAIT_ON_SEND_STRING("'s board from network.\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+            }
+            ESOS_TASK_YIELD();
+        }
+        ESOS_TASK_WAIT_TICKS(1000);
+    }
+
+    ESOS_TASK_END();
+}
+
+void initialize_network()
+{
+    uint8_t u8_i;
+    for (u8_i = 0; u8_i < NUM_OF_IDS; u8_i++) {
+        network[u8_i].can_id = aCANID_IDs[u8_i];
+        if (u8_i == MY_ID) {
+            network[u8_i].tick = esos_GetSystemTick();
+        } else {
+            network[u8_i].tick = 0;
+        }
+        network[u8_i].temp = 0;
+    }
+}
+
 void user_init()
 {
+    __esos_unsafe_PutString(HELLO_MSG);
+
     // This is all called in esos_menu_init
     // config_esos_uiF14();
     // esos_lcd44780_configDisplay();
@@ -479,19 +655,22 @@ void user_init()
     esos_menu_init();
     esos_pic24_configI2C1(400);
     configSPI1();
+    __esos_ecan_hw_config_ecan();
+    initialize_network();
+    // initialize_network_menu_list();
+    network_menu.ast_items[MY_ID].b_hidden = 0;
+
     esos_RegisterTask(lcd_menu);
     esos_RegisterTask(set_led);
     esos_RegisterTask(update_lm60);
     esos_RegisterTask(update_ds1631);
+    esos_RegisterTask(CANFactory);
+    esos_RegisterTask(ecan_receiver);
+    esos_RegisterTask(ecan_beacon_network);
+    esos_RegisterTask(ecan_clean_network);
+    CHANGE_MODE_ECAN1(ECAN_MODE_NORMAL);
+
     ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T4, ESOS_USER_IRQ_LEVEL2, _T4Interrupt);
-
-    T4CONbits.T32 = 0;
-    T4CON = T4_PS_1_8 | T4_SOURCE_INT;
-    TMR4 = 0;
-    PR4 = FCY / 8 / 128 / freq.entries[0].value;
-    TMR4 = 0;
-    ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
-    T4CONbits.TON = 1;
-
+    CONFIG_FCNSYN_TIMER();
     ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T4);
 }
