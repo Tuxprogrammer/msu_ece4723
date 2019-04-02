@@ -48,8 +48,32 @@ ESOS_USER_TASK(esos_menu_task)
             esos_lcd44780_writeString(0, 0, pst_menu->ast_items[pst_menu->u8_choice].ac_line1);
             esos_lcd44780_writeString(1, 0, pst_menu->ast_items[pst_menu->u8_choice].ac_line2);
 
-            b_firstMenu = (pst_menu->u8_choice == 0);
-            b_lastMenu = (pst_menu->u8_choice >= pst_menu->u8_numitems - 1);
+            // b_firstMenu = (pst_menu->u8_choice == 0);
+            // b_lastMenu = (pst_menu->u8_choice >= pst_menu->u8_numitems - 1);
+
+            // calculate first menu
+            uint8_t u8_i = 0;
+            while (pst_menu->ast_items[u8_i].b_hidden == 1) {
+                if (u8_i == pst_menu->u8_numitems - 1) {
+                    // TODO: handle when no menus visible
+                    // pst_menu->u8_choice = u8_current; // the rest of the menus are all hidden
+                } else {
+                    u8_i++;
+                }
+            }
+            b_firstMenu = (pst_menu->u8_choice == u8_i);
+
+            // calculate last menu
+            u8_i = pst_menu->u8_numitems - 1;
+            while (pst_menu->ast_items[u8_i].b_hidden == 1) {
+                if (u8_i == 0) {
+                    // TODO: handle when no menus visible
+                    // pst_menu->u8_choice = u8_current; // the rest of the menus are all hidden
+                } else {
+                    u8_i--;
+                }
+            }
+            b_lastMenu = (pst_menu->u8_choice == u8_i);
 
             // Draw the arrows.
             if (!b_firstMenu)
