@@ -13,6 +13,8 @@
  */
 """
 
+# https://keyboardinterrupt.org/catching-a-keyboardinterrupt-signal/
+
 import serial
 import keyboard
 
@@ -22,7 +24,14 @@ from queue import Queue
 import sys
 from glob import glob
 
+from collections import namedtuple
+
+CanMsg = namedtuple("CanMsg", "type canid data")
+
 baud = 230400
+port = "/dev/ttyUSB0"
+output_state = True
+mask_choice = None
 
 
 def gather_ports():
@@ -54,59 +63,83 @@ def choose_pic_port(ports):
         print(x, '. ', ports[x], sep='')
 
     port_choice = int(input("Choose the pic port:\n"))
-    
+
     if port_choice > len(ports):
         print("Choice out of bounds.")
         exit()
-    
+
     return port_choice
-    
 
-def choose_mask_num(event):
+
+def choose_mask_num():
+    global output_state, mask_choice
     """ Ask the user for choice in mask, not entirely sure what mask format is"""
-    mask_choice = int(input("\nChoose mask num:\n"))
-    
-    return mask_choice
+    output_state = False
+    mask_input = input("\nChoose mask num:\n")
+    if mask_input == '':
+        mask_choice = None
+    else:
+        mask_choice = int(mask_input, 16)
+    output_state = True
 
 
-def data_handler(q, mask):
+def data_handler(q):
+    global output_state, mask_choice
     # TODO: get message from queue, filter based on incoming message type, and user choice of filter, print
     # switch on mask....
-    #q.get() then ->
-    #q.task_done()
-    return
+    msg = q.get()
+    if output_state is True:
+        try:
+            msg = msg.decode('utf-8')
+            if mask_choice is not None:
+                if '0x{0:08X}'.format(mask_choice) in msg:
+                    print(msg, end='\n')
+                else:
+                    print('Doesnt match mask')
+            else:
+                print(msg, end='\n')
+        except:
+            pass
 
 
 def read_from_port(q, ser):
     while True:
-        bytes_in = ser.inWaiting()
-        q.put(ser.read(bytes_in))
+        msg = ser.readline()
+        while b'Msg Type:' not in msg:
+            msg = ser.readline()
+
+        #
+        # four lines for standard message
+
+        q.put(msg)
 
 
 def main():
     """Main terminal app."""
-    ports = gather_ports()
-    port = choose_pic_port(ports);
 
     # connect chosen port
-    ser = serial.Serial(ports[port])
-    
+    ser = serial.Serial(port, baud, timeout=2)
+    ser.setRTS(1)
+    time.sleep(0.01)  # sleep 1 ms
+    ser.setRTS(0)
+
     # serial data queue
     q = Queue(maxsize=0)
-    
+
     # set up thread for receiving data
     reader = Thread(target=read_from_port, args=(q, ser))
     reader.start()
 
     # set up keyboard interrupt for mask choice
-    print("Remember: Press SHIFT key to reset mask...")
-    keyboard.on_press_key(42,choose_mask_num)
+    print("Remember: Press CTRL+F key to reset mask...")
+    keyboard.add_hotkey('ctrl+f', choose_mask_num)
 
-    mask = None
     while True:
-        time.sleep(1)
-        data_handler(q, mask)
-        
+        time.sleep(50.0/1000)
+        data_handler(q)
+
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        port = sys.argv[2]
     main()
