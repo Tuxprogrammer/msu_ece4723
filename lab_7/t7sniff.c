@@ -30,7 +30,7 @@ ESOS_USER_TASK(ecan_receiver)
     ESOS_TASK_BEGIN();
 
     // not sure if this line is correct
-    esos_ecan_canfactory_subscribe(__pstSelf, NULL, NULL, MASKCONTROL_FIELD_NONZERO);
+    esos_ecan_canfactory_subscribe(__pstSelf, NULL, 0x0000, MASKCONTROL_FIELD_NONZERO);
 
     while (TRUE) {
         static MAILMESSAGE msg;
@@ -61,7 +61,7 @@ ESOS_USER_TASK(ecan_receiver)
             }
         }
 
-        ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+        ESOS_TASK_WAIT_ON_SEND_STRING("\nEND\n");
 
         ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
