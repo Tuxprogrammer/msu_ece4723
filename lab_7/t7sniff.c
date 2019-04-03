@@ -50,8 +50,8 @@ ESOS_USER_TASK(ecan_receiver)
         ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(u8_msg_type);
         ESOS_TASK_WAIT_ON_SEND_STRING("\n\tMsg ID: ");
         ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_msg_id);
+        ESOS_TASK_WAIT_ON_SEND_STRING("\n\tBytes recvd: \n");
         if (u8_len > 0) {
-            ESOS_TASK_WAIT_ON_SEND_STRING("\n\tBytes recvd: \n");
             uint8_t u8_num;
             for (u8_num = 0; u8_num < u8_len; u8_num++) {
                 ESOS_TASK_WAIT_ON_SEND_UINT8('\t');
@@ -60,6 +60,8 @@ ESOS_USER_TASK(ecan_receiver)
                 ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[u8_num]);
                 ESOS_TASK_WAIT_ON_SEND_STRING('\n');
             }
+        } else {
+            ESOS_TASK_WAIT_ON_SEND_STRING("\t");
         }
 
         ESOS_TASK_WAIT_ON_SEND_STRING("\nEND\n");
