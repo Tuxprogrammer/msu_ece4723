@@ -164,7 +164,7 @@ static esos_menu_entry_t leds = {
 static esos_menu_sliderbar_t lm60 = {
     .value = 2500,
     .min = 2000,
-    .max = 3500,
+    .max = 3200,
     .div = 100,
     .type = 1,
     .lines = { { "LM60" }, { "       " } },
@@ -552,19 +552,6 @@ ESOS_USER_TASK(update_ds1631)
     ESOS_TASK_END();
 }
 
-// ESOS_CHILD_TASK(update_wvform, uint8_t u8_type, uint8_t u8_duty, uint8_t u8_ampl)
-// {
-//     ESOS_TASK_BEGIN();
-
-//     static uint8_t u16_addr;
-//     static uint16_t u16_scaledData;
-//     static uint8_t u8_rawData;
-//     static uint16_t i;
-
-//     ESOS_TASK_YIELD();
-//     ESOS_TASK_END();
-// }
-
 ESOS_USER_TASK(request_temp)
 {
     static uint32_t u32_temp_request_tick = 0;
@@ -616,7 +603,7 @@ ESOS_USER_TASK(ecan_receiver)
 
     ESOS_TASK_BEGIN();
 
-    esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_BEACON, 0x0001, MASKCONTROL_FIELD_NONZERO);
+    esos_ecan_canfactory_subscribe(__pstSelf, MY_MSG_ID(CANMSG_TYPE_BEACON), 0x0000, MASKCONTROL_FIELD_NONZERO);
 
     while (TRUE) {
         ESOS_TASK_WAIT_FOR_MAIL();
@@ -645,10 +632,6 @@ ESOS_USER_TASK(ecan_receiver)
                 network[i8_i].tick = esos_GetSystemTick();
             }
         } else if (u8_msg_type == CANMSG_TYPE_TEMPERATURE1) {
-            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-            ESOS_TASK_WAIT_ON_SEND_STRING("Received CANMSG_TYPE_TEMPERATURE1\n");
-            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-
             if (u8_buf_len == 2) {
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("Storing LM60 data from another board\n");
@@ -672,53 +655,47 @@ ESOS_USER_TASK(ecan_receiver)
                     for (u8_index = 0; u8_index < 8; u8_index++) {
                         lm60.lines[1][u8_index] = tmp[u8_index];
                     }
+
+                    lm60.value = buf[0] * 100 + buf[1];
                 }
-                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                ESOS_TASK_WAIT_ON_SEND_STRING("new temp: ");
-                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING((uint16_t)i16_temp);
-                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
-                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
             } else if (u8_buf_len == 0 && i8_i == MY_ID) {
-                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                ESOS_TASK_WAIT_ON_SEND_STRING("Responding to LM60 data request\n");
-                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                ESOS_ALLOCATE_CHILD_TASK(read_temp);
+                ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_ON_AVAILABLE_SENSOR, TEMP_CHANNEL, ESOS_SENSOR_VREF_3V0);
+                ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_SENSOR_READ, &u16_out, ESOS_SENSOR_ONE_SHOT,
+                                         ESOS_SENSOR_FORMAT_VOLTAGE);
+                ESOS_SENSOR_CLOSE();
 
-                // ESOS_ALLOCATE_CHILD_TASK(read_temp);
-                // ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_ON_AVAILABLE_SENSOR, TEMP_CHANNEL, ESOS_SENSOR_VREF_3V0);
-                // ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_SENSOR_READ, &u16_out, ESOS_SENSOR_ONE_SHOT,
-                //                          ESOS_SENSOR_FORMAT_VOLTAGE);
-                // ESOS_SENSOR_CLOSE();
-
-                // u32_out = (uint32_t)u16_out * 1000; // convert to not use decimals
+                u32_out = (uint32_t)u16_out * 1000; // convert to not use decimals
                 // u32_out = (u32_out - 424000) / 625; // millimillivolts to temp
-
-                // network[MY_ID].temp_lm60 = (int16_t)u32_out;
-
-                // buf[0] = network[MY_ID].temp_lm60 >> 8;
-                // buf[1] = network[MY_ID].temp_lm60;
-
-                // static char tmp[12] = { 0 };
-                // convert_uint32_t_to_str(buf[0], tmp, 12, 10);
-                // tmp[2] = '.';
-                // buf[1] = buf[1] * 100 / 256;
-                // convert_uint32_t_to_str(buf[1], tmp + 3, 8, 10);
-                // if (buf[1] >= 0 && buf[1] <= 9) {
-                //     tmp[4] = tmp[3];
-                //     tmp[3] = '0';
-                // }
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("sending temp: ");
-                // ESOS_TASK_WAIT_ON_SEND_STRING(tmp);
+                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u32_out);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                u32_out = (u32_out - 424000) / 625; // millimillivolts to temp
+                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u32_out);
+                int8_t ipart = u32_out / 100;
+                uint16_t fpart = u32_out - ipart * 100;
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(ipart);
+                ESOS_TASK_WAIT_ON_SEND_STRING(".");
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(fpart);
+                fpart = fpart * 0xFF;
+                fpart = fpart / 100;
+                uint8_t newfpart = (uint8_t)fpart;
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_WAIT_ON_SEND_STRING("newfpart: ");
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(newfpart);
                 ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                network[MY_ID].temp_lm60 = (int16_t)((ipart << 8) | newfpart);
+
+                buf[0] = network[MY_ID].temp_lm60 >> 8;
+                buf[1] = network[MY_ID].temp_lm60;
 
                 ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_TEMPERATURE1), buf, 2);
             }
         } else if (u8_msg_type == CANMSG_TYPE_TEMPERATURE2) {
-            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-            ESOS_TASK_WAIT_ON_SEND_STRING("Received CANMSG_TYPE_TEMPERATURE2\n");
-            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-
             if (u8_buf_len == 2) {
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("Storing DS1631 data from another board\n");
@@ -730,7 +707,7 @@ ESOS_USER_TASK(ecan_receiver)
                     static char tmp[12] = { 0 };
                     convert_uint32_t_to_str(buf[0], tmp, 12, 10);
                     tmp[2] = '.';
-                    buf[1] = buf[1] * 100 / 256;
+                    // buf[1] = buf[1] * 100 / 256;
                     convert_uint32_t_to_str(buf[1], tmp + 3, 8, 10);
                     if (buf[1] >= 0 && buf[1] <= 9) {
                         tmp[4] = tmp[3];
@@ -743,8 +720,7 @@ ESOS_USER_TASK(ecan_receiver)
                         _1631.lines[1][u8_index] = tmp[u8_index];
                     }
 
-                    // _1631.lines[1][0] = 'D';
-                    // _1631.lines[1][1] = 'S';
+                    _1631.value = buf[0];
                 }
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("new temp: ");
@@ -792,9 +768,9 @@ ESOS_USER_TASK(ecan_beacon_network)
     ESOS_TASK_BEGIN();
 
     while (TRUE) {
-        ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-        ESOS_TASK_WAIT_ON_SEND_STRING("BEACONING\n");
-        ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+        // ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+        // ESOS_TASK_WAIT_ON_SEND_STRING("BEACONING\n");
+        // ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
         ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_BEACON), 0, 0);
         // ESOS_ECAN_SEND(0x7A0, 0, 0);
