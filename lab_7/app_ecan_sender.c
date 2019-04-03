@@ -82,7 +82,7 @@ ESOS_USER_TASK ( heartbeat_LED ) {
     ESOS_TASK_END();
 }
 
-ESOS_USER_TASK ( ecan_sender ) {
+ESOS_USER_TASK ( app_ecan_sender ) {
     uint8_t buf[2];
     
     ESOS_TASK_BEGIN();
@@ -117,5 +117,5 @@ void user_init ( void ) {
     
     esos_RegisterTask( heartbeat_LED );
     esos_RegisterTask( CANFactory );
-    esos_RegisterTask( ecan_sender );
+    esos_RegisterTask( app_ecan_sender );
 }

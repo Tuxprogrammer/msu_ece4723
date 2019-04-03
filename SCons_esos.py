@@ -51,6 +51,17 @@ SHARED_LIB_COPY = [
     ("../../lab_6/src/esos_menu.c", "../../lib/src/esos_menu.c"),
     ("../../lab_7/include/esos_comm.h", "../../lib/include/esos_comm.h"),
     ("../../lab_7/src/esos_comm.c", "../../lib/src/esos_comm.c"),
+    ("../../lab_7/include/esos_ecan.h", "../../lib/include/esos_ecan.h"),
+    ("../../lab_7/include/t7synth.h", "../../lib/include/t7synth.h"),
+    ("../../lab_7/include/esos_spi_utils.h", "../../lib/include/esos_spi_utils.h"),
+    ("../../lab_7/src/esos_spi_utils.c", "../../lib/include/esos_spi_utils.c"),
+    ("../../lab_7/src/esos_ecan.c", "../../lib/src/esos_ecan.c"),
+    ("../../lab_7/include/t7menu.h", "../../lib/include/t7menu.h"),
+    ("../../lab_7/src/t7menu.c", "../../lib/src/t7menu.c"),
+    ("../../lab_7/include/t7sensors.h", "../../lib/include/t7sensors.h"),
+    ("../../lab_7/src/t7sensors.c", "../../lib/src/t7sensors.c"),
+    ("../../lab_7/include/t7ecan.h", "../../lib/include/t7ecan.h"),
+    ("../../lab_7/src/t7ecan.c", "../../lib/src/t7ecan.c"),
 ]
 
 SHARED_LIB_NOTE = \
@@ -89,7 +100,6 @@ PIC24_LIB_FILES = [
 ESOS_LIB_FILES = ["../../../pic24lib_all/esos/src/esos.c",
                   "../../../pic24lib_all/esos/src/esos_comm.c",
                   "../../../pic24lib_all/esos/src/esos_cb.c",
-                  "../../../pic24lib_all/esos/src/esos_ecan.c",
                   "../../../pic24lib_all/esos/src/esos_mail.c",
                   # "../../../pic24lib_all/esos/src/esos_sensor.c",
                   # "../../../pic24lib_all/esos/src/esos_lcd44780.c",

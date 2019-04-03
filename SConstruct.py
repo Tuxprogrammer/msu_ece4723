@@ -100,7 +100,7 @@ env = Environment(
         CCCOM = '$CC -c -o $TARGET $CFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES',
         CCCCOMSTR = 'Compiling $SOURCES',
         # The warnings provide some lint-like checking. Omitted options: -Wstrict-prototypes -Wold-style-definition complains about void foo(), which should be void foo(void), but isn't worth the work to change.
-        CCFLAGS = '-mcpu=${MCU} -O1 -msmart-io=1 -omf=elf -Wall -Wextra -Wdeclaration-after-statement -Wlong-long -Wno-unknown-pragmas -fdiagnostics-show-option -Wno-unused-variable -Wno-unused-parameter -Wno-overflow -Wno-return-type -Wno-declaration-after-statement -Wno-type-limits',
+        CCFLAGS = '-mcpu=${MCU} -O1 -msmart-io=1 -omf=elf -Wall -Wextra -Wdeclaration-after-statement -Wlong-long -Wno-unknown-pragmas -fdiagnostics-show-option -Wno-unused-variable -Wno-unused-parameter -Wno-overflow -Wno-return-type -Wno-declaration-after-statement -Wno-type-limits -Wno-missing-field-initializers',
         LINKFLAGS = '-mcpu=${MCU} -omf=elf -Wl,--heap=100,--script="$LINKERSCRIPT",--stack=16,--check-sections,--data-init,--pack-data,--handles,--isr,--no-gc-sections,--fill-upper=0,--stackguard=16,--no-force-link,--smart-io',
         LINKERSCRIPT = '../../../pic24lib_all/lib/lkr/p${MCU}_bootldr.gld',
         ARFLAGS = 'rcs',

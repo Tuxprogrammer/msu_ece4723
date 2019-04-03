@@ -22,7 +22,7 @@ ESOS_USER_TIMER(heartbeat_LED)
     esos_uiF14_toggleLED3();
 }
 
-ESOS_USER_TASK(ecan_receiver)
+ESOS_USER_TASK(sniff_ecan_receiver)
 {
     uint8_t buf[8] = { 0 };
     uint8_t u8_len;
@@ -75,7 +75,7 @@ void user_init(void)
 
     esos_RegisterTimer(heartbeat_LED, 500);
     esos_RegisterTask(CANFactory);
-    esos_RegisterTask(ecan_receiver);
+    esos_RegisterTask(sniff_ecan_receiver);
 
     __esos_ecan_hw_config_ecan();
 
