@@ -58,7 +58,7 @@ ESOS_USER_TASK(ecan_receiver)
                 ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(u8_num);
                 ESOS_TASK_WAIT_ON_SEND_STRING(": ");
                 ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[u8_num]);
-                ESOS_TASK_WAIT_ON_SEND_STRING('\n');
+                ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
             }
         } else {
             ESOS_TASK_WAIT_ON_SEND_STRING("\t");
