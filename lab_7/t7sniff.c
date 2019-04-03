@@ -43,12 +43,13 @@ ESOS_USER_TASK(ecan_receiver)
         memcpy(buf, &msg.au8_Contents[sizeof(uint16_t)], u8_len);
 
         uint8_t u8_msg_type = stripTypeID(u16_can_id);
+        uint16_t u16_msg_id = (stripMemberID(u16_can_id) << 8) | stripTeamID(u16_can_id);
 
         ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
         ESOS_TASK_WAIT_ON_SEND_STRING("Msg Type: ");
         ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(u8_msg_type);
-        ESOS_TASK_WAIT_ON_SEND_STRING("\n\tCan ID: ");
-        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_can_id);
+        ESOS_TASK_WAIT_ON_SEND_STRING("\n\tMsg ID: ");
+        ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_msg_id);
         if (u8_len > 0) {
             ESOS_TASK_WAIT_ON_SEND_STRING("\n\tBytes recvd: \n");
             uint8_t u8_num;

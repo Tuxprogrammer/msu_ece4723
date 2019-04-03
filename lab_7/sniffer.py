@@ -71,9 +71,9 @@ class CanMsg:
 
     def __str__(self):
         if len(self.data) != 0:
-            return "Msg Type: %d\n\tCan ID: %s\n\tBytes recvd:\n%s" % (self.type, '0x{0:08X}'.format(self.id), str(self.data))
+            return "Msg Type: %d\n\tMsg ID: %s\n\tBytes recvd:\n%s" % (self.type, '0x{0:08X}'.format(self.id), str(self.data))
         else:
-            return "Msg Type: %d\n\tCan ID: %s\n" % (self.type, '0x{0:08X}'.format(self.id))
+            return "Msg Type: %d\n\tMsg ID: %s\n" % (self.type, '0x{0:08X}'.format(self.id))
 
 
 baud = 230400
@@ -156,7 +156,7 @@ def read_from_port(q, ser):
 
     # Example Message
     # Msg Type: 0
-    #   Can ID: 0x000007A0
+    #   Msg ID: 0x000007A0
     #   Bytes recvd:
     #   0x00: 0x00
     #   0x01: 0x00
@@ -176,7 +176,7 @@ def read_from_port(q, ser):
             except:
                 pass
             canmsg.setType(msgtype)
-        elif '\tCan ID: ' in newline:
+        elif '\tMsg ID: ' in newline:
             canid = 0x00
             try:
                 canid = int(newline.split(':')[1].strip(), 0)
