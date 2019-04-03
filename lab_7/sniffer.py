@@ -100,7 +100,7 @@ def gather_ports():
             ser.close()
             result.append(port)
         except (OSError, serial.SerialException):
-            print(serial.SerialException)
+            # print(serial.SerialException)
             pass
     return result
 
