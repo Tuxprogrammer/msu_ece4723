@@ -287,6 +287,19 @@ void write_DAC(uint16_t u16_data)
     SLAVE_DISABLE();
 }
 
+char* i7point8toa(uint8_t buffer[2], char result[8], BOOL decimal_fpart) {
+    convert_uint32_t_to_str(buffer[0], result, 8, 10);
+    result[2] = '.';
+    if (!decimal_fpart)
+        buffer[1] = buffer[1] * 100 / 256;
+    convert_uint32_t_to_str(buffer[1], result + 3, 5, 10);
+    if (buffer[1] >= 0 && buffer[1] <= 9) {
+        result[4] = result[3];
+            result[3] = '0';
+    }
+    return result;
+}
+
 static uint8_t u8_wvform_idx = 0;
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
 {
@@ -473,14 +486,8 @@ ESOS_USER_TASK(update_lm60)
             temp32_ipart = u32_out / 100; // convert to get the integer part
             temp32_fpart = u32_out - temp32_ipart * 100; // subtract out the integer part to get the decimal part
 
-            convert_uint32_t_to_str(temp32_ipart, temp32_str, 12, 10);
-            temp32_str[2] = '.';
-            convert_uint32_t_to_str(temp32_fpart, temp32_str + 3, 8, 10);
-            if (temp32_fpart >= 0 && temp32_fpart <= 9) {
-                temp32_str[4] = temp32_str[3];
-                temp32_str[3] = '0';
-            }
-
+            uint8_t buf[2] = { temp32_ipart, temp32_fpart };
+            i7point8toa(buf, temp32_str, 1);
             temp32_str[5] = 'C';
 
             for (i = 0; i < 8; i++) {
@@ -489,8 +496,6 @@ ESOS_USER_TASK(update_lm60)
 
             network[MY_ID].temp_lm60 = (int16_t)u32_out;
             lm60.value = u32_out;
-
-            // We could update the menu with text on line 2 here
         }
         ESOS_TASK_WAIT_TICKS(125);
     }
@@ -517,15 +522,8 @@ ESOS_USER_TASK(update_ds1631)
             ESOS_TASK_WAIT_ON_READ2I2C1(DS1631ADDR, u8_hi, u8_lo);
             ESOS_TASK_SIGNAL_AVAILABLE_I2C();
 
-            convert_uint32_t_to_str(u8_hi, temp32_str, 12, 10);
-            temp32_str[2] = '.';
-            u8_lo = u8_lo * 100 / 256;
-            convert_uint32_t_to_str(u8_lo, temp32_str + 3, 8, 10);
-            if (u8_lo >= 0 && u8_lo <= 9) {
-                temp32_str[4] = temp32_str[3];
-                temp32_str[3] = '0';
-            }
-
+            uint8_t buf[2] = {u8_hi, u8_lo};
+            i7point8toa(buf, temp32_str, 0);
             temp32_str[5] = 'C';
 
             // ESOS_TASK_WAIT_ON_SEND_STRING("DS1631 ");
@@ -562,18 +560,18 @@ ESOS_USER_TASK(request_temp)
             static uint16_t u16_request;
             if (b_requestLM60) {
                 u16_request = CANMSG_TYPE_TEMPERATURE1 | calcMsgID(network_menu.u8_choice);
-                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                ESOS_TASK_WAIT_ON_SEND_STRING("Requesting LM60: ");
-                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_request);
-                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
-                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                // ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                // ESOS_TASK_WAIT_ON_SEND_STRING("Requesting LM60: ");
+                // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_request);
+                // ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                // ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
             } else if (b_requestDS1631) {
                 u16_request = CANMSG_TYPE_TEMPERATURE2 | calcMsgID(network_menu.u8_choice);
-                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                ESOS_TASK_WAIT_ON_SEND_STRING("Requesting DS1631: ");
-                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_request);
-                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
-                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                // ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                // ESOS_TASK_WAIT_ON_SEND_STRING("Requesting DS1631: ");
+                // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_request);
+                // ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                // ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
             }
 
             ESOS_ECAN_SEND(u16_request, 0, 0);
@@ -640,20 +638,13 @@ ESOS_USER_TASK(ecan_receiver)
                 i16_temp = buf[0] << 8 | buf[1];
                 network[i8_i].temp_lm60 = i16_temp;
                 if (i8_i == network_menu.u8_choice && b_requestLM60) {
-                    static char tmp[12] = { 0 };
-                    convert_uint32_t_to_str(buf[0], tmp, 12, 10);
-                    tmp[2] = '.';
-                    buf[1] = buf[1] * 100 / 256;
-                    convert_uint32_t_to_str(buf[1], tmp + 3, 8, 10);
-                    if (buf[1] >= 0 && buf[1] <= 9) {
-                        tmp[4] = tmp[3];
-                        tmp[3] = '0';
-                    }
-                    tmp[5] = 'C';
+                    static char temp[12] = { 0 };
+                    i7point8toa(buf, temp, 0);
+                    temp[5] = 'C';
 
                     uint8_t u8_index = 0;
                     for (u8_index = 0; u8_index < 8; u8_index++) {
-                        lm60.lines[1][u8_index] = tmp[u8_index];
+                        lm60.lines[1][u8_index] = temp[u8_index];
                     }
 
                     lm60.value = buf[0] * 100 + buf[1];
@@ -738,18 +729,11 @@ ESOS_USER_TASK(ecan_receiver)
                 ESOS_TASK_WAIT_ON_READ2I2C1(DS1631ADDR, buf[0], buf[1]);
                 ESOS_TASK_SIGNAL_AVAILABLE_I2C();
 
-                static char tmp[12] = { 0 };
-                convert_uint32_t_to_str(buf[0], tmp, 12, 10);
-                tmp[2] = '.';
-                buf[1] = buf[1] * 100 / 256;
-                convert_uint32_t_to_str(buf[1], tmp + 3, 8, 10);
-                if (buf[1] >= 0 && buf[1] <= 9) {
-                    tmp[4] = tmp[3];
-                    tmp[3] = '0';
-                }
+                static char temp[9] = { 0 };
+                i7point8toa(buf, temp, 0);
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("sending temp: ");
-                ESOS_TASK_WAIT_ON_SEND_STRING(tmp);
+                ESOS_TASK_WAIT_ON_SEND_STRING(temp);
                 ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
@@ -768,12 +752,7 @@ ESOS_USER_TASK(ecan_beacon_network)
     ESOS_TASK_BEGIN();
 
     while (TRUE) {
-        // ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-        // ESOS_TASK_WAIT_ON_SEND_STRING("BEACONING\n");
-        // ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-
         ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_BEACON), 0, 0);
-        // ESOS_ECAN_SEND(0x7A0, 0, 0);
         ESOS_TASK_WAIT_TICKS(ECAN_BEACON_INTERVAL);
     }
 
@@ -785,10 +764,6 @@ ESOS_USER_TASK(ecan_clean_network)
     ESOS_TASK_BEGIN();
 
     while (TRUE) {
-        // ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-        // ESOS_TASK_WAIT_ON_SEND_STRING("Cleaned network\n");
-        // ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-
         // remove network members with currentTick - tick > ECAN_CLEAN_INTERVAL
         static uint32_t u32_curr_tick;
         static uint8_t u8_i;
