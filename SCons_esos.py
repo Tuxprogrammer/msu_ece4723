@@ -49,10 +49,10 @@ SHARED_LIB_COPY = [
     ("../../lab_6/include/esos_menu.h", "../../lib/include/esos_menu.h"),
     ("../../lab_6/src/fall17lib.c", "../../lib/src/fall17lib.c"),
     ("../../lab_6/src/esos_menu.c", "../../lib/src/esos_menu.c"),
-    ("../../lab_7/include/esos_ecan.h", "../../lib/include/esos_ecan.h"),
-    ("../../lab_7/src/esos_ecan.c", "../../lib/src/esos_ecan.c"),
     ("../../lab_7/include/esos_comm.h", "../../lib/include/esos_comm.h"),
     ("../../lab_7/src/esos_comm.c", "../../lib/src/esos_comm.c"),
+    ("../../lab_7/include/esos_ecan.h", "../../lib/include/esos_ecan.h"),
+    ("../../lab_7/src/esos_ecan.c", "../../lib/src/esos_ecan.c"),
 ]
 
 SHARED_LIB_NOTE = \
@@ -89,8 +89,9 @@ PIC24_LIB_FILES = [
     "../../../pic24lib_all/lib/src/pic24_ecan.c"]
 
 ESOS_LIB_FILES = ["../../../pic24lib_all/esos/src/esos.c",
-                  # "../../../pic24lib_all/esos/src/esos_comm.c",
+                  "../../../pic24lib_all/esos/src/esos_comm.c",
                   "../../../pic24lib_all/esos/src/esos_cb.c",
+                  #"../../../pic24lib_all/esos/src/esos_ecan.c",
                   "../../../pic24lib_all/esos/src/esos_mail.c",
                   # "../../../pic24lib_all/esos/src/esos_sensor.c",
                   # "../../../pic24lib_all/esos/src/esos_lcd44780.c",

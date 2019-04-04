@@ -9,10 +9,13 @@
 
 #include "revF14.h"
 #include "fall17lib.h"
+#include "embedded_lab_CANLab.h"
+#include "esos_ecan.h"
 #include "esos_menu.h"
 #include "esos_f14ui.h"
 #include "esos_sensor.h"
 #include "esos_pic24.h"
+#include "esos_pic24_ecan.h"
 #include "esos_pic24_sensor.h"
 #include "esos_pic24_spi.h"
 #include "esos_pic24_i2c.h"
@@ -21,7 +24,9 @@
 #include "pic24_timer.h"
 
 static BOOL b_updateLM60;
+static BOOL b_requestLM60;
 static BOOL b_updateDS1631;
+static BOOL b_requestDS1631;
 
 static uint16_t wvform_data[128];
 
@@ -33,11 +38,37 @@ static uint16_t wvform_data[128];
 #define SINE_WVFORM 2
 #define USER_WVFORM 3
 
+#define ECAN_BEACON_INTERVAL 30000
+#define ECAN_CLEAN_INTERVAL 120000
+// #define ECAN_BEACON_INTERVAL 3000
+// #define ECAN_CLEAN_INTERVAL 10000
+
+#define TEMP_REQUEST_INTERVAL 1000
+
+#define CONFIG_FCNSYN_TIMER()                                                                                          \
+    {                                                                                                                  \
+        T4CONbits.T32 = 0;                                                                                             \
+        T4CON = T4_PS_1_8 | T4_SOURCE_INT;                                                                             \
+        TMR4 = 0;                                                                                                      \
+        PR4 = FCY / 8 / 128 / freq.entries[0].value;                                                                   \
+        TMR4 = 0;                                                                                                      \
+        T4CONbits.TON = 1;                                                                                             \
+    }
+
+typedef struct {
+    CAN_ID can_id;
+    uint32_t tick;
+    int16_t temp_lm60;
+    int16_t temp_1631;
+} network_member;
+
+network_member network[NUM_OF_IDS] = { 0 };
+
 /*TODO: Ctrl+F replace all instances of mm with a name that abides
         by the coding standards.
 */
 static esos_menu_longmenu_t main_menu = {
-    .u8_numitems = 8,
+    .u8_numitems = 9,
     .u8_choice = 0, // Default
     .ast_items =
         {
@@ -49,14 +80,47 @@ static esos_menu_longmenu_t main_menu = {
             { "Read", "1631", 0 },
             { "Set", "LEDs", 0 },
             { "", "About...", 0 },
+            { "Browse", "Network", 0 },
         },
 };
 
+// static esos_menu_longmenu_item_t network_id_menu_list[NUM_OF_IDS];
 static esos_menu_longmenu_t network_menu = {
-    .u8_numitems = 0,
-    .u8_choice = 0,
-    .ast_items = { 0 },
+    .u8_numitems = NUM_OF_IDS,
+    .u8_choice = MY_ID,
+    .ast_items =
+        {
+            { "cbb330", "1", 1 },  { "sc2257", "1", 1 }, { "lec426", "1", 1 }, { "woc17", "1", 1 },
+            { "jdf469", "1", 1 },  { "jtn136", "2", 1 }, { "nrs171", "2", 1 }, { "igh9", "2", 1 },
+            { "law448", "2", 1 },  { "rkh134", "2", 1 }, { "gs656", "3", 1 },  { "lrh282", "3", 1 },
+            { "reo74", "3", 1 },   { "bmf151", "3", 1 }, { "rfj18", "3", 1 },  { "dc2274", "4", 1 },
+            { "mam1218", "4", 1 }, { "mf1413", "4", 1 }, { "bcw253", "4", 1 }, { "jmp784", "4", 1 },
+            { "bcj162", "7", 1 },  { "Vuk", "7", 1 },
+        },
 };
+
+void initialize_network_menu_list()
+{
+    uint8_t u8_i, u8_j;
+    for (u8_i = 0; u8_i < NUM_OF_IDS; u8_i++) {
+        for (u8_j = 0; u8_j < 8; u8_j++) {
+            network_menu.ast_items[u8_i].ac_line1[u8_j] = aCANID_IDs[u8_i].psz_netID[u8_j];
+            if (aCANID_IDs[u8_i].psz_netID[u8_j] == '\0')
+                break;
+        }
+        // utoa(aCANID""_IDs[u8_i].u8_teamID, network_menu.ast_items[u8_i].ac_line2, 10);
+        network_menu.ast_items[u8_i].ac_line2[0] = 'h';
+        network_menu.ast_items[u8_i].ac_line2[1] = 'e';
+        network_menu.ast_items[u8_i].ac_line2[2] = 'l';
+        network_menu.ast_items[u8_i].ac_line2[3] = 'p';
+        network_menu.ast_items[u8_i].ac_line2[4] = 'p';
+        network_menu.ast_items[u8_i].ac_line2[5] = 'l';
+        network_menu.ast_items[u8_i].ac_line2[6] = 's';
+        network_menu.ast_items[u8_i].ac_line2[7] = '\0';
+        network_menu.ast_items[u8_i].b_hidden = u8_i != MY_ID;
+        // network_menu.ast_items[u8_i] = network_id_menu_list[u8_i];
+    }
+}
 
 // TODO: determine if this is the correct type of entry for the wvform
 static esos_menu_longmenu_t wvform = {
@@ -100,7 +164,7 @@ static esos_menu_entry_t leds = {
 static esos_menu_sliderbar_t lm60 = {
     .value = 2500,
     .min = 2000,
-    .max = 3500,
+    .max = 3200,
     .div = 100,
     .type = 1,
     .lines = { { "LM60" }, { "       " } },
@@ -223,6 +287,19 @@ void write_DAC(uint16_t u16_data)
     SLAVE_DISABLE();
 }
 
+char* i7point8toa(uint8_t buffer[2], char result[8], BOOL decimal_fpart) {
+    convert_uint32_t_to_str(buffer[0], result, 8, 10);
+    result[2] = '.';
+    if (!decimal_fpart)
+        buffer[1] = buffer[1] * 100 / 256;
+    convert_uint32_t_to_str(buffer[1], result + 3, 5, 10);
+    if (buffer[1] >= 0 && buffer[1] <= 9) {
+        result[4] = result[3];
+            result[3] = '0';
+    }
+    return result;
+}
+
 static uint8_t u8_wvform_idx = 0;
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
 {
@@ -337,17 +414,30 @@ ESOS_USER_TASK(lcd_menu)
             ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value,
                                      ampl.entries[0].value);
         } else if (main_menu.u8_choice == 4) {
-            b_updateLM60 = 1;
+            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(network_menu);
+            if (network_menu.u8_choice == MY_ID)
+                b_updateLM60 = 1;
+            else
+                b_requestLM60 = 1;
+            // TODO: propagate updates to lm60 menu item...
             ESOS_TASK_WAIT_ESOS_MENU_SLIDERBAR(lm60);
             b_updateLM60 = 0;
+            b_requestLM60 = 0;
         } else if (main_menu.u8_choice == 5) {
-            b_updateDS1631 = 1;
+            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(network_menu);
+            if (network_menu.u8_choice == MY_ID)
+                b_updateDS1631 = 1;
+            else
+                b_requestDS1631 = 1;
             ESOS_TASK_WAIT_ESOS_MENU_SLIDERBAR(_1631);
             b_updateDS1631 = 0;
+            b_requestDS1631 = 0;
         } else if (main_menu.u8_choice == 6) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
         } else if (main_menu.u8_choice == 7) {
             ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(about);
+        } else if (main_menu.u8_choice == 8) {
+            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(network_menu);
         }
     }
     ESOS_TASK_END();
@@ -371,9 +461,10 @@ ESOS_USER_TASK(set_led)
 
 ESOS_USER_TASK(update_lm60)
 {
+    // TODO: make this task read local LM60 and assign a signed 7.8 format temp to network[MY_ID].temp_lm60
     static ESOS_TASK_HANDLE read_temp;
-    static uint16_t pu16_out;
-    static uint32_t pu32_out, temp32_ipart, temp32_fpart;
+    static uint16_t u16_out;
+    static uint32_t u32_out, temp32_ipart, temp32_fpart;
     static char temp32_str[12];
     static uint8_t i;
 
@@ -383,33 +474,28 @@ ESOS_USER_TASK(update_lm60)
         if (b_updateLM60) {
             ESOS_ALLOCATE_CHILD_TASK(read_temp);
             ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_ON_AVAILABLE_SENSOR, TEMP_CHANNEL, ESOS_SENSOR_VREF_3V0);
-            ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_SENSOR_READ, &pu16_out, ESOS_SENSOR_ONE_SHOT,
+            ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_SENSOR_READ, &u16_out, ESOS_SENSOR_ONE_SHOT,
                                      ESOS_SENSOR_FORMAT_VOLTAGE);
             ESOS_SENSOR_CLOSE();
 
-            pu32_out = (uint32_t)pu16_out * 1000; // convert to not use decimals
-            pu32_out = (pu32_out - 424000) / 625; // millimillivolts to temp
+            u32_out = (uint32_t)u16_out * 1000; // convert to not use decimals
+            u32_out = (u32_out - 424000) / 625; // millimillivolts to temp
 
-            temp32_ipart = pu32_out / 100; // convert to get the integer part
-            temp32_fpart = pu32_out - temp32_ipart * 100; // subtract out the integer part to get the decimal part
+            network[MY_ID].temp_lm60 = (int16_t)u32_out;
 
-            convert_uint32_t_to_str(temp32_ipart, temp32_str, 12, 10);
-            temp32_str[2] = '.';
-            convert_uint32_t_to_str(temp32_fpart, temp32_str + 3, 8, 10);
-            if (temp32_fpart >= 0 && temp32_fpart <= 9) {
-                temp32_str[4] = temp32_str[3];
-                temp32_str[3] = '0';
-            }
+            temp32_ipart = u32_out / 100; // convert to get the integer part
+            temp32_fpart = u32_out - temp32_ipart * 100; // subtract out the integer part to get the decimal part
 
+            uint8_t buf[2] = { temp32_ipart, temp32_fpart };
+            i7point8toa(buf, temp32_str, 1);
             temp32_str[5] = 'C';
 
             for (i = 0; i < 8; i++) {
                 lm60.lines[1][i] = temp32_str[i];
             }
 
-            lm60.value = pu32_out;
-
-            // We could update the menu with text on line 2 here
+            network[MY_ID].temp_lm60 = (int16_t)u32_out;
+            lm60.value = u32_out;
         }
         ESOS_TASK_WAIT_TICKS(125);
     }
@@ -436,15 +522,8 @@ ESOS_USER_TASK(update_ds1631)
             ESOS_TASK_WAIT_ON_READ2I2C1(DS1631ADDR, u8_hi, u8_lo);
             ESOS_TASK_SIGNAL_AVAILABLE_I2C();
 
-            convert_uint32_t_to_str(u8_hi, temp32_str, 12, 10);
-            temp32_str[2] = '.';
-            u8_lo = u8_lo * 100 / 256;
-            convert_uint32_t_to_str(u8_lo, temp32_str + 3, 8, 10);
-            if (u8_lo >= 0 && u8_lo <= 9) {
-                temp32_str[4] = temp32_str[3];
-                temp32_str[3] = '0';
-            }
-
+            uint8_t buf[2] = {u8_hi, u8_lo};
+            i7point8toa(buf, temp32_str, 0);
             temp32_str[5] = 'C';
 
             // ESOS_TASK_WAIT_ON_SEND_STRING("DS1631 ");
@@ -459,6 +538,7 @@ ESOS_USER_TASK(update_ds1631)
                 _1631.lines[1][i] = temp32_str[i];
             }
 
+            network[MY_ID].temp_1631 = (int16_t)(((uint16_t)u8_hi << 8) | u8_lo);
             _1631.value = u8_hi;
 
             ESOS_TASK_WAIT_TICKS(750); // The Temp sensor can only poll at 750ms with 12 bit mode
@@ -470,8 +550,264 @@ ESOS_USER_TASK(update_ds1631)
     ESOS_TASK_END();
 }
 
+ESOS_USER_TASK(request_temp)
+{
+    static uint32_t u32_temp_request_tick = 0;
+    ESOS_TASK_BEGIN();
+    while (TRUE) {
+        if ((b_requestLM60 || b_requestDS1631) && network_menu.u8_choice != MY_ID &&
+            esos_GetSystemTick() - u32_temp_request_tick > TEMP_REQUEST_INTERVAL) {
+            static uint16_t u16_request;
+            if (b_requestLM60) {
+                u16_request = CANMSG_TYPE_TEMPERATURE1 | calcMsgID(network_menu.u8_choice);
+                // ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                // ESOS_TASK_WAIT_ON_SEND_STRING("Requesting LM60: ");
+                // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_request);
+                // ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                // ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+            } else if (b_requestDS1631) {
+                u16_request = CANMSG_TYPE_TEMPERATURE2 | calcMsgID(network_menu.u8_choice);
+                // ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                // ESOS_TASK_WAIT_ON_SEND_STRING("Requesting DS1631: ");
+                // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_request);
+                // ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                // ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+            }
+
+            ESOS_ECAN_SEND(u16_request, 0, 0);
+            u32_temp_request_tick = esos_GetSystemTick();
+            ESOS_TASK_WAIT_TICKS(TEMP_REQUEST_INTERVAL);
+        }
+        ESOS_TASK_YIELD();
+    }
+    ESOS_TASK_END();
+}
+
+ESOS_USER_TASK(ecan_receiver)
+{
+    static uint8_t buf[2] = { 0 };
+    static uint8_t u8_buf_len;
+    static uint16_t u16_can_id;
+    static uint8_t u8_msg_type;
+    static uint8_t u8_team_ID;
+    static uint8_t u8_member_ID;
+    static int8_t i8_i;
+    static MAILMESSAGE msg;
+
+    static ESOS_TASK_HANDLE read_temp;
+    static uint16_t u16_out;
+    static uint32_t u32_out;
+    static int16_t i16_temp;
+
+    ESOS_TASK_BEGIN();
+
+    esos_ecan_canfactory_subscribe(__pstSelf, MY_MSG_ID(CANMSG_TYPE_BEACON), 0x0000, MASKCONTROL_FIELD_NONZERO);
+
+    while (TRUE) {
+        ESOS_TASK_WAIT_FOR_MAIL();
+        ESOS_TASK_GET_NEXT_MESSAGE(&msg);
+        u16_can_id = msg.au16_Contents[0];
+        u8_team_ID = stripTeamID(u16_can_id);
+        u8_msg_type = stripTypeID(u16_can_id);
+        u8_member_ID = stripMemberID(u16_can_id);
+        int8_t i8_i = getArrayIndexFromMsgID(u16_can_id);
+        u8_buf_len = ESOS_GET_PMSG_DATA_LENGTH((&msg)) - sizeof(uint16_t);
+        memcpy(buf, &msg.au8_Contents[sizeof(uint16_t)], u8_buf_len);
+
+        if (u8_msg_type == CANMSG_TYPE_BEACON) {
+            if (i8_i >= 0) {
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                if (network[i8_i].tick == 0) {
+                    ESOS_TASK_WAIT_ON_SEND_STRING("Adding board: ");
+                    network_menu.ast_items[i8_i].b_hidden = FALSE;
+                } else {
+                    ESOS_TASK_WAIT_ON_SEND_STRING("Refreshing board: ");
+                }
+                ESOS_TASK_WAIT_ON_SEND_STRING(network[i8_i].can_id.psz_name);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                network[i8_i].tick = esos_GetSystemTick();
+            }
+        } else if (u8_msg_type == CANMSG_TYPE_TEMPERATURE1) {
+            if (u8_buf_len == 2) {
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("Storing LM60 data from another board\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                i16_temp = buf[0] << 8 | buf[1];
+                network[i8_i].temp_lm60 = i16_temp;
+                if (i8_i == network_menu.u8_choice && b_requestLM60) {
+                    static char temp[12] = { 0 };
+                    i7point8toa(buf, temp, 0);
+                    temp[5] = 'C';
+
+                    uint8_t u8_index = 0;
+                    for (u8_index = 0; u8_index < 8; u8_index++) {
+                        lm60.lines[1][u8_index] = temp[u8_index];
+                    }
+
+                    lm60.value = buf[0] * 100 + buf[1];
+                }
+            } else if (u8_buf_len == 0 && i8_i == MY_ID) {
+                ESOS_ALLOCATE_CHILD_TASK(read_temp);
+                ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_ON_AVAILABLE_SENSOR, TEMP_CHANNEL, ESOS_SENSOR_VREF_3V0);
+                ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_SENSOR_READ, &u16_out, ESOS_SENSOR_ONE_SHOT,
+                                         ESOS_SENSOR_FORMAT_VOLTAGE);
+                ESOS_SENSOR_CLOSE();
+
+                u32_out = (uint32_t)u16_out * 1000; // convert to not use decimals
+                // u32_out = (u32_out - 424000) / 625; // millimillivolts to temp
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("sending temp: ");
+                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u32_out);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                u32_out = (u32_out - 424000) / 625; // millimillivolts to temp
+                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u32_out);
+                int8_t ipart = u32_out / 100;
+                uint16_t fpart = u32_out - ipart * 100;
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(ipart);
+                ESOS_TASK_WAIT_ON_SEND_STRING(".");
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(fpart);
+                fpart = fpart * 0xFF;
+                fpart = fpart / 100;
+                uint8_t newfpart = (uint8_t)fpart;
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_WAIT_ON_SEND_STRING("newfpart: ");
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(newfpart);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                network[MY_ID].temp_lm60 = (int16_t)((ipart << 8) | newfpart);
+
+                buf[0] = network[MY_ID].temp_lm60 >> 8;
+                buf[1] = network[MY_ID].temp_lm60;
+
+                ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_TEMPERATURE1), buf, 2);
+            }
+        } else if (u8_msg_type == CANMSG_TYPE_TEMPERATURE2) {
+            if (u8_buf_len == 2) {
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("Storing DS1631 data from another board\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                i16_temp = buf[0] << 8 | buf[1];
+                network[i8_i].temp_1631 = i16_temp;
+                if (i8_i == network_menu.u8_choice && b_requestDS1631) {
+                    static char tmp[12] = { 0 };
+                    convert_uint32_t_to_str(buf[0], tmp, 12, 10);
+                    tmp[2] = '.';
+                    // buf[1] = buf[1] * 100 / 256;
+                    convert_uint32_t_to_str(buf[1], tmp + 3, 8, 10);
+                    if (buf[1] >= 0 && buf[1] <= 9) {
+                        tmp[4] = tmp[3];
+                        tmp[3] = '0';
+                    }
+                    tmp[5] = 'C';
+
+                    uint8_t u8_index = 0;
+                    for (u8_index = 0; u8_index < 8; u8_index++) {
+                        _1631.lines[1][u8_index] = tmp[u8_index];
+                    }
+
+                    _1631.value = buf[0];
+                }
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("new temp: ");
+                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING((uint16_t)i16_temp);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+            } else if (u8_buf_len == 0 && i8_i == MY_ID) {
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("Responding to DS1631 data request\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                ESOS_TASK_WAIT_ON_AVAILABLE_I2C();
+                ESOS_TASK_WAIT_ON_WRITE1I2C1(DS1631ADDR, 0xAA); // Send READ command
+                ESOS_TASK_WAIT_ON_READ2I2C1(DS1631ADDR, buf[0], buf[1]);
+                ESOS_TASK_SIGNAL_AVAILABLE_I2C();
+
+                static char temp[9] = { 0 };
+                i7point8toa(buf, temp, 0);
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("sending temp: ");
+                ESOS_TASK_WAIT_ON_SEND_STRING(temp);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_TEMPERATURE2), buf, 2);
+            }
+        }
+
+        ESOS_TASK_YIELD();
+    }
+
+    ESOS_TASK_END();
+}
+
+ESOS_USER_TASK(ecan_beacon_network)
+{
+    ESOS_TASK_BEGIN();
+
+    while (TRUE) {
+        ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_BEACON), 0, 0);
+        ESOS_TASK_WAIT_TICKS(ECAN_BEACON_INTERVAL);
+    }
+
+    ESOS_TASK_END();
+}
+
+ESOS_USER_TASK(ecan_clean_network)
+{
+    ESOS_TASK_BEGIN();
+
+    while (TRUE) {
+        // remove network members with currentTick - tick > ECAN_CLEAN_INTERVAL
+        static uint32_t u32_curr_tick;
+        static uint8_t u8_i;
+        for (u8_i = 0; u8_i < NUM_OF_IDS; u8_i++) {
+            u32_curr_tick = esos_GetSystemTick();
+            // skip if this board or other has board never been online
+            if (u8_i == MY_ID || network[u8_i].tick == 0) {
+                continue;
+            } else if (u32_curr_tick - network[u8_i].tick > ECAN_CLEAN_INTERVAL) {
+                network[u8_i].tick = 0;
+                network_menu.ast_items[u8_i].b_hidden = TRUE;
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("Removing ");
+                ESOS_TASK_WAIT_ON_SEND_STRING(network[u8_i].can_id.psz_name);
+                ESOS_TASK_WAIT_ON_SEND_STRING("'s board from network.\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+            }
+            ESOS_TASK_YIELD();
+        }
+        ESOS_TASK_WAIT_TICKS(1000);
+    }
+
+    ESOS_TASK_END();
+}
+
+void initialize_network()
+{
+    uint8_t u8_i;
+    for (u8_i = 0; u8_i < NUM_OF_IDS; u8_i++) {
+        network[u8_i].can_id = aCANID_IDs[u8_i];
+        if (u8_i == MY_ID) {
+            network[u8_i].tick = esos_GetSystemTick();
+        } else {
+            network[u8_i].tick = 0;
+        }
+        network[u8_i].temp_lm60 = 0;
+        network[u8_i].temp_1631 = 0;
+    }
+}
+
 void user_init()
 {
+    __esos_unsafe_PutString(HELLO_MSG);
+
     // This is all called in esos_menu_init
     // config_esos_uiF14();
     // esos_lcd44780_configDisplay();
@@ -479,19 +815,23 @@ void user_init()
     esos_menu_init();
     esos_pic24_configI2C1(400);
     configSPI1();
+    __esos_ecan_hw_config_ecan();
+    initialize_network();
+    // initialize_network_menu_list();
+    network_menu.ast_items[MY_ID].b_hidden = 0;
+
     esos_RegisterTask(lcd_menu);
     esos_RegisterTask(set_led);
     esos_RegisterTask(update_lm60);
     esos_RegisterTask(update_ds1631);
+    esos_RegisterTask(CANFactory);
+    esos_RegisterTask(ecan_receiver);
+    esos_RegisterTask(ecan_beacon_network);
+    esos_RegisterTask(ecan_clean_network);
+    esos_RegisterTask(request_temp);
+    CHANGE_MODE_ECAN1(ECAN_MODE_NORMAL);
+
     ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T4, ESOS_USER_IRQ_LEVEL2, _T4Interrupt);
-
-    T4CONbits.T32 = 0;
-    T4CON = T4_PS_1_8 | T4_SOURCE_INT;
-    TMR4 = 0;
-    PR4 = FCY / 8 / 128 / freq.entries[0].value;
-    TMR4 = 0;
-    ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
-    T4CONbits.TON = 1;
-
+    CONFIG_FCNSYN_TIMER();
     ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T4);
 }
