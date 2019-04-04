@@ -89,7 +89,7 @@ PIC24_LIB_FILES = [
     "../../../pic24lib_all/lib/src/pic24_ecan.c"]
 
 ESOS_LIB_FILES = ["../../../pic24lib_all/esos/src/esos.c",
-                  "../../../pic24lib_all/esos/src/esos_comm.c",
+                  #"../../../pic24lib_all/esos/src/esos_comm.c",
                   "../../../pic24lib_all/esos/src/esos_cb.c",
                   #"../../../pic24lib_all/esos/src/esos_ecan.c",
                   "../../../pic24lib_all/esos/src/esos_mail.c",
