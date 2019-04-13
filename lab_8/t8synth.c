@@ -72,15 +72,15 @@ static esos_menu_longmenu_t main_menu = {
     .u8_choice = 0, // Default
     .ast_items =
         {
-            { "Set", "wvform", 0 },
-            { "Set", "freq", 0 },
-            { "Set", "ampltd", 0 },
-            { "Set", "duty", 1 },
-            { "Read", "LM60", 0 },
-            { "Read", "1631", 0 },
-            { "Set", "LEDs", 0 },
-            { "", "About...", 0 },
-            { "Browse", "Network", 0 },
+            { "Set", "Board", 0 },
+            { "0  Set", "wvform", 0 },
+            { "0  Set", "freq", 0 },
+            { "0  Set", "ampltd", 0 },
+            { "0  Set", "duty", 1 },
+            { "0  Read", "LM60", 0 },
+            { "0  Read", "1631", 0 },
+            { "0  Set", "LEDs", 0 },
+            { "", "About...", 0 }
         },
 };
 
@@ -300,6 +300,23 @@ char* i7point8toa(uint8_t buffer[2], char result[8], BOOL decimal_fpart) {
     return result;
 }
 
+// update the main menu strings to reflect the board choice
+void update_board_choice(esos_menu_longmenu_t *ps_menu, uint8_t u8_choice) {
+    // 2 index max for the menu, 1 index for null terminator
+    char str_choice[3];
+    itoa(u8_choice, str_choice, 10);
+
+    uint8_t u8_i = 1;
+    uint8_t u8_j = 0;
+    for (; u8_i < ps_menu->u8_numitems - 1; u8_i++) {
+        while(str_choice[u8_j] != '\0') {
+            ps_menu->ast_items[u8_i].ac_line1[u8_j] = str_choice[u8_j];
+            u8_j++;
+        }
+        u8_j = 0;
+    }
+}
+
 static uint8_t u8_wvform_idx = 0;
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
 {
@@ -395,25 +412,28 @@ ESOS_USER_TASK(lcd_menu)
 
         ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(main_menu);
         if (main_menu.u8_choice == 0) {
+            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(network_menu);
+            update_board_choice(&main_menu, network_menu.u8_choice);
+        } else if (main_menu.u8_choice == 1) {
             ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
             ESOS_ALLOCATE_CHILD_TASK(update_hdl);
             ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value,
                                      ampl.entries[0].value);
 
-        } else if (main_menu.u8_choice == 1) {
+        } else if (main_menu.u8_choice == 2) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
             PR4 = FCY / 8 / 128 / freq.entries[0].value;
             ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(PR4);
             ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
-        } else if (main_menu.u8_choice == 2) {
+        } else if (main_menu.u8_choice == 3) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl);
             ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value,
                                      ampl.entries[0].value);
-        } else if (main_menu.u8_choice == 3) {
+        } else if (main_menu.u8_choice == 4) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(duty);
             ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value,
                                      ampl.entries[0].value);
-        } else if (main_menu.u8_choice == 4) {
+        } else if (main_menu.u8_choice == 5) {
             ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(network_menu);
             if (network_menu.u8_choice == MY_ID)
                 b_updateLM60 = 1;
@@ -423,7 +443,7 @@ ESOS_USER_TASK(lcd_menu)
             ESOS_TASK_WAIT_ESOS_MENU_SLIDERBAR(lm60);
             b_updateLM60 = 0;
             b_requestLM60 = 0;
-        } else if (main_menu.u8_choice == 5) {
+        } else if (main_menu.u8_choice == 6) {
             ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(network_menu);
             if (network_menu.u8_choice == MY_ID)
                 b_updateDS1631 = 1;
@@ -432,12 +452,10 @@ ESOS_USER_TASK(lcd_menu)
             ESOS_TASK_WAIT_ESOS_MENU_SLIDERBAR(_1631);
             b_updateDS1631 = 0;
             b_requestDS1631 = 0;
-        } else if (main_menu.u8_choice == 6) {
-            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
         } else if (main_menu.u8_choice == 7) {
-            ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(about);
+            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
         } else if (main_menu.u8_choice == 8) {
-            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(network_menu);
+            ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(about);
         }
     }
     ESOS_TASK_END();

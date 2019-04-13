@@ -60,7 +60,7 @@ const CAN_ID aCANID_IDs[NUM_OF_IDS] = {
     { "V Marojevic", "Vuk", 7, 2 } // 21
 };
 
-#define MY_ID 1 // Look above for your array index
+#define MY_ID 2 // Look above for your array index
 #define MY_NAME (aCANID_IDs[MY_ID].psz_name)
 #define MY_NETID (aCANID_IDs[MY_ID].psz_netID)
 #define MY_TEAM_ID (aCANID_IDs[MY_ID].u8_teamID)
