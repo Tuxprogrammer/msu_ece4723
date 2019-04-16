@@ -49,9 +49,12 @@ static uint16_t wvform_dataB[128];
 #define MENU_TYPE_ABOUT 8
 #define MENU_TYPE_SET_BOARD 0
 
-// #define ECAN_BEACON_INTERVAL 30000
+// #define ECAN_BEACON_INTERVAL 60000
+// #define ECAN_BEACON_TEMP_INTERVAL 30000
 // #define ECAN_CLEAN_INTERVAL 120000
-#define ECAN_BEACON_INTERVAL 3000
+
+#define ECAN_BEACON_INTERVAL 6000
+#define ECAN_BEACON_TEMP_INTERVAL 3000
 #define ECAN_CLEAN_INTERVAL 10000
 
 #define TEMP_REQUEST_INTERVAL 1000
@@ -71,6 +74,10 @@ typedef struct {
     uint32_t tick;
     int16_t temp_lm60;
     int16_t temp_1631;
+    uint8_t wvform;
+    uint8_t potentiometer;
+    uint16_t freq;
+    uint8_t ampl;
 } network_member;
 
 network_member network[NUM_OF_IDS] = { 0 };
@@ -442,10 +449,25 @@ ESOS_USER_TASK(lcd_menu)
 
         ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(main_menu);
         if (main_menu.u8_choice == MENU_TYPE_SET_WAVEFORM) {
+            if (network_menu.u8_choice == MY_ID) {
             ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
             ESOS_ALLOCATE_CHILD_TASK(update_hdl);
             ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
                                      ampl.entries[0].value);
+            } else {
+                //ESOS_ECAN_SEND(CANMSG_TYPE_WAVEFORM | calcMsgID(network_menu.u8_choice), 0, 0);
+                //the code below should update the local menuitem
+                static uint8_t tempval;
+                tempval = wvform.u8_choice;
+                wvform.u8_choice = network[network_menu.u8_choice].wvform;
+                ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
+                static uint8_t buf[1];
+                buf[0] = wvform.u8_choice;
+                ESOS_ECAN_SEND(CANMSG_TYPE_WAVEFORM | calcMsgID(network_menu.u8_choice), buf, 1);
+                // TODO:
+                // update the array value here for w8_choice
+                wvform.u8_choice = tempval;
+            }
 
         } else if (main_menu.u8_choice == MENU_TYPE_SET_FREQ) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
@@ -834,6 +856,53 @@ ESOS_USER_TASK(ecan_beacon_network)
     ESOS_TASK_END();
 }
 
+ESOS_USER_TASK(ecan_beacon_temp)
+{
+    static uint32_t u32_out;
+    static uint16_t u16_out;
+    static uint8_t buf[2];
+    static ESOS_TASK_HANDLE read_temp;
+
+    ESOS_TASK_BEGIN();
+
+    while (TRUE) {
+        /* lm60 */
+        ESOS_ALLOCATE_CHILD_TASK(read_temp);
+        ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_ON_AVAILABLE_SENSOR, TEMP_CHANNEL, ESOS_SENSOR_VREF_3V0);
+        ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_SENSOR_READ, &u16_out, ESOS_SENSOR_ONE_SHOT,
+                                 ESOS_SENSOR_FORMAT_VOLTAGE);
+        ESOS_SENSOR_CLOSE();
+
+        u32_out = (uint32_t)u16_out * 1000; // convert to not use decimals
+        // u32_out = (u32_out - 424000) / 625; // millimillivolts to temp
+        u32_out = (u32_out - 424000) / 625; // millimillivolts to temp
+        static int8_t ipart;
+        ipart = u32_out / 100;
+        static uint16_t fpart;
+        fpart = u32_out - ipart * 100;
+        fpart = fpart * 0xFF;
+        fpart = fpart / 100;
+        static uint8_t newfpart;
+        newfpart = (uint8_t)fpart;
+        network[MY_ID].temp_lm60 = (int16_t)((ipart << 8) | newfpart);
+
+        buf[0] = network[MY_ID].temp_lm60 >> 8;
+        buf[1] = network[MY_ID].temp_lm60;
+
+        ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_TEMPERATURE1), buf, 2);
+        ESOS_TASK_WAIT_TICKS(ECAN_BEACON_TEMP_INTERVAL);
+        /* ds1631 */
+        ESOS_TASK_WAIT_ON_AVAILABLE_I2C();
+        ESOS_TASK_WAIT_ON_WRITE1I2C1(DS1631ADDR, 0xAA); // Send READ command
+        ESOS_TASK_WAIT_ON_READ2I2C1(DS1631ADDR, buf[0], buf[1]);
+        ESOS_TASK_SIGNAL_AVAILABLE_I2C();
+        ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_TEMPERATURE2), buf, 2);
+        ESOS_TASK_WAIT_TICKS(ECAN_BEACON_TEMP_INTERVAL);
+    }
+
+    ESOS_TASK_END();
+}
+
 ESOS_USER_TASK(ecan_clean_network)
 {
     ESOS_TASK_BEGIN();
@@ -902,6 +971,7 @@ void user_init()
     esos_RegisterTask(CANFactory);
     esos_RegisterTask(ecan_receiver);
     esos_RegisterTask(ecan_beacon_network);
+    esos_RegisterTask(ecan_beacon_temp);
     esos_RegisterTask(ecan_clean_network);
     esos_RegisterTask(request_temp);
     CHANGE_MODE_ECAN1(ECAN_MODE_NORMAL);
