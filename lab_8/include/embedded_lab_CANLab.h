@@ -12,7 +12,7 @@ typedef struct {
 } CAN_ID;
 
 // TODO: redefine to fit our class members
-#define NUM_OF_IDS 22 // 20 Students + 1 TA + 1 Professor
+#define NUM_OF_IDS 23 // 20 Students + 1 TA + 1 Professor
 
 #define teamIDMask 0b0000011100000000 // eight teams
 #define memberIDMask 0b0000000011100000 // eight members
@@ -36,6 +36,7 @@ typedef struct {
 // CAN ID Table
 const CAN_ID aCANID_IDs[NUM_OF_IDS] = {
     //"Name", "netID", teamID, memberID, // Array Index
+    { "Local", "local", 0, 0 },
     { "CB Bush", "cbb330", 1, 1 }, // 0
     { "SC Callicot", "sc2257", 1, 2 }, // 1
     { "LE Casey", "lec426", 1, 3 }, // 2
@@ -60,7 +61,7 @@ const CAN_ID aCANID_IDs[NUM_OF_IDS] = {
     { "V Marojevic", "Vuk", 7, 2 } // 21
 };
 
-#define MY_ID 2 // Look above for your array index
+#define MY_ID 1 // Look above for your array index
 #define MY_NAME (aCANID_IDs[MY_ID].psz_name)
 #define MY_NETID (aCANID_IDs[MY_ID].psz_netID)
 #define MY_TEAM_ID (aCANID_IDs[MY_ID].u8_teamID)
