@@ -283,6 +283,11 @@ void write_DAC(uint16_t u16_dataA, uint16_t u16_dataB)
 
     SLAVE_ENABLE();
     writeSPI(&u16_dataA, NULLPTR, 1);
+    SLAVE_DISABLE();
+
+    DELAY_US(1);
+
+    SLAVE_ENABLE();
     writeSPI(&u16_dataB, NULLPTR, 1);
     SLAVE_DISABLE();
 }
@@ -342,7 +347,7 @@ ESOS_CHILD_TASK(update_wvform, uint8_t u8_dacAB, uint8_t u8_type, uint8_t u8_dut
     static uint8_t u8_currAmplitude;
     u8_currAmplitude = u8_ampl * UINT8_MAX / 30;
 
-    wvform_data = (u8_dacAB) ? wvform_dataB : wvform_dataA;
+    wvform_data = (u8_dacAB == 1) ? wvform_dataB : wvform_dataA;
 
     // gen tri wave
     if (u8_type == TRI_WVFORM) {
