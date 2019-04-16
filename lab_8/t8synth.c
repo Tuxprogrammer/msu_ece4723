@@ -27,7 +27,6 @@ static BOOL b_updateLM60;
 static BOOL b_requestLM60;
 static BOOL b_updateDS1631;
 static BOOL b_requestDS1631;
-static BOOL b_updateLEDs;
 
 static uint16_t wvform_dataA[128];
 static uint16_t wvform_dataB[128];
@@ -423,9 +422,11 @@ ESOS_USER_TASK(lcd_menu)
     static ESOS_TASK_HANDLE update_hdl;
     ESOS_TASK_BEGIN();
     ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
+    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
+                             ampl.entries[0].value);
     ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
+    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, wvform.u8_choice, duty.entries[0].value,
+                             ampl.entries[0].value);
     ESOS_ALLOCATE_CHILD_TASK(update_hdl);
     ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_board_choice, &main_menu, network_menu.u8_choice);
 
@@ -477,18 +478,16 @@ ESOS_USER_TASK(lcd_menu)
             b_updateDS1631 = 0;
             b_requestDS1631 = 0;
         } else if (main_menu.u8_choice == MENU_TYPE_SET_LEDS) {
-            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
-            if (network_menu.u8_choice == 0) {
+            if (network_menu.u8_choice == MY_ID) {
                 // set boolean to update led display
-                b_updateLEDs = 1;
                 ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
-                b_updateLEDs = 0;
             } else {
-                uint32_t tempval = leds.entries[0].value;
+                static uint32_t tempval;
+                tempval = leds.entries[0].value;
                 ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
-                uint8_t buf[2];
+                static uint8_t buf[1];
                 buf[0] = leds.entries[0].value;
-                ESOS_ECAN_SEND(calcMsgID(network_menu.u8_choice), buf, 1);
+                ESOS_ECAN_SEND(CANMSG_TYPE_LEDS | calcMsgID(network_menu.u8_choice), buf, 1);
                 leds.entries[0].value = tempval;
             }
         } else if (main_menu.u8_choice == MENU_TYPE_ABOUT) {
@@ -515,12 +514,10 @@ ESOS_USER_TASK(set_led)
     LED2_OFF();
     LED3_HB_OFF();
     while (TRUE) {
-        if (b_updateLEDs == 1) {
-            // Note that LED3_HB is negated because the pin goes high when LED3 is off
-            LED1 = (leds.entries[0].value & 0b100) == 0b100;
-            LED2 = (leds.entries[0].value & 0b010) == 0b010;
-            LED3_HB = (leds.entries[0].value & 0b001) != 0b001;
-        }
+        // Note that LED3_HB is negated because the pin goes high when LED3 is off
+        LED1 = (leds.entries[0].value & 0b100) == 0b100;
+        LED2 = (leds.entries[0].value & 0b010) == 0b010;
+        LED3_HB = (leds.entries[0].value & 0b001) != 0b001;
         ESOS_TASK_WAIT_TICKS(50);
     }
     ESOS_TASK_END();
@@ -817,7 +814,6 @@ ESOS_USER_TASK(ecan_receiver)
                 ESOS_TASK_WAIT_ON_SEND_STRING("Settings LEDs to request\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                 leds.entries[0].value = buf[0];
-                b_updateLEDs = 1;
                 ESOS_TASK_WAIT_TICKS(1);
             }
         }
