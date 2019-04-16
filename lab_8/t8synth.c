@@ -29,7 +29,8 @@ static BOOL b_updateDS1631;
 static BOOL b_requestDS1631;
 static BOOL b_updateLEDs;
 
-static uint16_t wvform_data[128];
+static uint16_t wvform_dataA[128];
+static uint16_t wvform_dataB[128];
 
 #define SINE_WVFORM_ADDR 0
 #define USER_WVFORM_ADDR 128
@@ -282,16 +283,23 @@ void writeSPI(uint16_t *pu16_out, uint16_t *pu16_in, uint16_t u16_cnt)
     } // end for()
 }
 
-void write_DAC(uint16_t u16_data)
+void write_DAC(uint16_t u16_dataA, uint16_t u16_dataB)
 {
     // WRITE COMMAND
     // 0b<a/b><buf><GA><SHDN><d11:0>
     // 0b0011 | 16-bit number
 
-    u16_data = 0x3000 | (u16_data >> 4);
+    u16_dataA = 0x3000 | (u16_dataA >> 4);
+    u16_dataB = 0xB000 | (u16_dataB >> 4);
 
     SLAVE_ENABLE();
-    writeSPI(&u16_data, NULLPTR, 1);
+    writeSPI(&u16_dataA, NULLPTR, 1);
+    SLAVE_DISABLE();
+
+    DELAY_US(1);
+
+    SLAVE_ENABLE();
+    writeSPI(&u16_dataB, NULLPTR, 1);
     SLAVE_DISABLE();
 }
 
@@ -309,10 +317,11 @@ char *i7point8toa(uint8_t buffer[2], char result[8], BOOL decimal_fpart)
     return result;
 }
 
+// Update DACs
 static uint8_t u8_wvform_idx = 0;
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
 {
-    write_DAC(wvform_data[u8_wvform_idx]);
+    write_DAC(wvform_dataA[u8_wvform_idx], wvform_dataB[u8_wvform_idx]);
     u8_wvform_idx = ++u8_wvform_idx % 128;
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
 }
@@ -337,9 +346,11 @@ ESOS_CHILD_TASK(update_board_choice, esos_menu_longmenu_t *ps_menu, uint8_t u8_c
     ESOS_TASK_END();
 }
 
-ESOS_CHILD_TASK(update_wvform, uint8_t u8_type, uint8_t u8_duty, uint8_t u8_ampl)
+ESOS_CHILD_TASK(update_wvform, uint8_t u8_dacAB, uint8_t u8_type, uint8_t u8_duty, uint8_t u8_ampl)
 {
     ESOS_TASK_BEGIN();
+
+    static uint16_t *wvform_data;
 
     static uint8_t u16_addr;
     static uint16_t u16_scaledData;
@@ -348,6 +359,8 @@ ESOS_CHILD_TASK(update_wvform, uint8_t u8_type, uint8_t u8_duty, uint8_t u8_ampl
 
     static uint8_t u8_currAmplitude;
     u8_currAmplitude = u8_ampl * UINT8_MAX / 30;
+
+    wvform_data = (u8_dacAB == 1) ? wvform_dataB : wvform_dataA;
 
     // gen tri wave
     if (u8_type == TRI_WVFORM) {
@@ -410,7 +423,9 @@ ESOS_USER_TASK(lcd_menu)
     static ESOS_TASK_HANDLE update_hdl;
     ESOS_TASK_BEGIN();
     ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
+    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
+    ESOS_ALLOCATE_CHILD_TASK(update_hdl);
+    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, wvform.u8_choice, duty.entries[0].value, ampl.entries[0].value);
     ESOS_ALLOCATE_CHILD_TASK(update_hdl);
     ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_board_choice, &main_menu, network_menu.u8_choice);
 
@@ -428,7 +443,7 @@ ESOS_USER_TASK(lcd_menu)
         if (main_menu.u8_choice == MENU_TYPE_SET_WAVEFORM) {
             ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
             ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value,
+            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
                                      ampl.entries[0].value);
 
         } else if (main_menu.u8_choice == MENU_TYPE_SET_FREQ) {
@@ -438,11 +453,11 @@ ESOS_USER_TASK(lcd_menu)
             ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
         } else if (main_menu.u8_choice == MENU_TYPE_SET_AMPLTD) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl);
-            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value,
+            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
                                      ampl.entries[0].value);
         } else if (main_menu.u8_choice == MENU_TYPE_SET_DUTY) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(duty);
-            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, wvform.u8_choice, duty.entries[0].value,
+            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
                                      ampl.entries[0].value);
         } else if (main_menu.u8_choice == MENU_TYPE_READ_LM60) {
             if (network_menu.u8_choice == MY_ID)
