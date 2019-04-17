@@ -83,6 +83,7 @@ typedef struct {
     uint8_t potentiometer;
     uint16_t freq;
     uint8_t ampl;
+    uint8_t leds;
 } network_member;
 
 static network_member network[NUM_OF_IDS] = { 0 };
@@ -586,18 +587,13 @@ ESOS_USER_TASK(lcd_menu)
             b_updateDS1631 = 0;
             b_requestDS1631 = 0;
         } else if (main_menu.u8_choice == MENU_TYPE_SET_LEDS) {
-            if (u8_selected_board_ID == MY_ID) {
-                // set boolean to update led display
-                ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
-            } else {
-                static uint32_t tempval;
-                tempval = leds.entries[0].value;
-                ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
-                static uint8_t buf[1];
-                buf[0] = leds.entries[0].value;
-                ESOS_ECAN_SEND(CANMSG_TYPE_LEDS | calcMsgID(u8_selected_board_ID), buf, 1);
-                leds.entries[0].value = tempval;
-            }
+            leds.entries[0].value = network[u8_selected_board_ID].leds; // read led value we have stored
+            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
+            network[u8_selected_board_ID].leds = leds.entries[0].value; // set local cache with new value
+            static uint8_t buf[1];
+            buf[0] = network[u8_selected_board_ID].leds;
+            ESOS_ECAN_SEND(CANMSG_TYPE_LEDS | calcMsgID(u8_selected_board_ID), buf, 1);
+            leds.entries[0].value = network[MY_ID].leds; // reset led display to local board
         } else if (main_menu.u8_choice == MENU_TYPE_ABOUT) {
             ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(about);
         } else if (main_menu.u8_choice == MENU_TYPE_SET_BOARD) {
@@ -617,6 +613,8 @@ ESOS_USER_TASK(lcd_menu)
             ESOS_ECAN_SEND(CANMSG_TYPE_FREQUENCY | calcMsgID(u8_selected_board_ID), 0, 0);
             ESOS_TASK_WAIT_TICKS(1);
             ESOS_ECAN_SEND(CANMSG_TYPE_AMPLITUDE | calcMsgID(u8_selected_board_ID), 0, 0);
+            ESOS_TASK_WAIT_TICKS(1);
+            ESOS_ECAN_SEND(CANMSG_TYPE_LEDS | calcMsgID(u8_selected_board_ID), 0, 0);
         }
     }
     ESOS_TASK_END();
@@ -1049,12 +1047,23 @@ ESOS_USER_TASK(ecan_receiver)
             }
         } else if (u8_msg_type == CANMSG_TYPE_LEDS) {
             // 1 byte led display value
-            if (u8_buf_len == 1 && i8_i == MY_ID) {
+            if (u8_buf_len == 1) {
+                network[i8_i].leds = buf[0];
+                if (i8_i == MY_ID) {
+                    leds.entries[0].value = buf[0];
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("Settings LEDs to request\n");
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                }
+            } else if (u8_buf_len == 0 && i8_i == MY_ID) {
+                buf[0] = network[MY_ID].leds;
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                ESOS_TASK_WAIT_ON_SEND_STRING("Settings LEDs to request\n");
+                ESOS_TASK_WAIT_ON_SEND_STRING("sending leds: ");
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[0]);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-                leds.entries[0].value = buf[0];
-                ESOS_TASK_WAIT_TICKS(1);
+
+                ESOS_ECAN_SEND(CANMSG_TYPE_LEDS | calcMsgID(MY_ID), buf, 1);
             }
         }
         ESOS_TASK_YIELD();
@@ -1166,9 +1175,10 @@ void initialize_network()
         network[u8_i].temp_lm60 = 0;
         network[u8_i].temp_1631 = 0;
     }
-    network[MY_ID].wvform = 0;
-    network[MY_ID].freq = 1000;
-    network[MY_ID].ampl = 10;
+    network[MY_ID].wvform = wvform.u8_choice;
+    network[MY_ID].freq = freq.entries[0].value;
+    network[MY_ID].ampl = ampl.entries[0].value;
+    network[MY_ID].leds = leds.entries[0].value;
 }
 
 void user_init()
