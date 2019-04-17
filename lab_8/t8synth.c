@@ -550,7 +550,9 @@ ESOS_USER_TASK(lcd_menu)
 
             static uint8_t buf[1];
             buf[0] = network[u8_selected_board_ID].ampl;
+            buf[0] = dtou3p5(buf[0] / 10, buf[0] % 10);
             ESOS_ECAN_SEND(CANMSG_TYPE_AMPLITUDE | calcMsgID(u8_selected_board_ID), buf, 1);
+
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
             ESOS_TASK_WAIT_ON_SEND_STRING("sending ampl: ");
             ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[0]);
@@ -1006,12 +1008,12 @@ ESOS_USER_TASK(ecan_receiver)
             }
         } else if (u8_msg_type == CANMSG_TYPE_AMPLITUDE) {
             if (u8_buf_len == 1) { // message contains data, so store it and update accordingly
+                buf[0] = u3p5toipart(buf[0]) * 10 + u3p5tofpart(buf[0]); // format from 3p5 to deci
                 network[i8_i].ampl = buf[0]; // set new waveform selection to local storage
                 if (i8_i == MY_ID) {
                     // if message targets our board, store data in wvform menu and update daca
                     ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                     ESOS_TASK_WAIT_ON_SEND_STRING("updating my ampl: ");
-                    // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
                     ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(network[i8_i].ampl);
                     ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                     ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
@@ -1022,8 +1024,7 @@ ESOS_USER_TASK(ecan_receiver)
                 } else if (i8_i == network_menu.u8_choice) {
                     ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                     ESOS_TASK_WAIT_ON_SEND_STRING("updating ampl: ");
-                    // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
-                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(network[i8_i].ampl);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(network[i8_i].ampl);
                     ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                     ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                     // if message is updating the board that this board is subscribed to, update dacb
@@ -1033,9 +1034,10 @@ ESOS_USER_TASK(ecan_receiver)
                 }
             } else if (u8_buf_len == 0 && i8_i == MY_ID) { // if message is a request @ us
                 buf[0] = network[MY_ID].ampl;
+                buf[0] = dtou3p5(buf[0] / 10, buf[0] % 10); // format deci to 3p5
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("sending ampl: ");
-                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[0]);
                 ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
