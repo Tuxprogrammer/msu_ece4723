@@ -54,7 +54,7 @@ static uint16_t wvform_dataB[128];
 // #define ECAN_CLEAN_INTERVAL 120000
 
 #define ECAN_BEACON_INTERVAL 6000
-#define ECAN_BEACON_TEMP_INTERVAL 3000
+#define ECAN_BEACON_TEMP_INTERVAL 300000
 #define ECAN_CLEAN_INTERVAL 10000
 
 #define TEMP_REQUEST_INTERVAL 1000
@@ -67,6 +67,11 @@ static uint16_t wvform_dataB[128];
         PR4 = FCY / 8 / 128 / freq.entries[0].value;                                                                   \
         TMR4 = 0;                                                                                                      \
         T4CONbits.TON = 1;                                                                                             \
+        T5CON = T5_PS_1_8 | T5_SOURCE_INT;                                                                             \
+        TMR5 = 0;                                                                                                      \
+        PR5 = FCY / 8 / 128 / freq.entries[0].value;                                                                   \
+        TMR5 = 0;                                                                                                      \
+        T5CONbits.TON = 1;                                                                                             \
     }
 
 typedef struct {
@@ -80,7 +85,7 @@ typedef struct {
     uint8_t ampl;
 } network_member;
 
-network_member network[NUM_OF_IDS] = { 0 };
+static network_member network[NUM_OF_IDS] = { 0 };
 
 /*TODO: Ctrl+F replace all instances of mm with a name that abides
         by the coding standards.
@@ -289,23 +294,16 @@ void writeSPI(uint16_t *pu16_out, uint16_t *pu16_in, uint16_t u16_cnt)
     } // end for()
 }
 
-void write_DAC(uint16_t u16_dataA, uint16_t u16_dataB)
+void write_DAC(uint16_t u16_data, uint8_t u8_dacAB)
 {
     // WRITE COMMAND
     // 0b<a/b><buf><GA><SHDN><d11:0>
     // 0b0011 | 16-bit number
 
-    u16_dataA = 0x3000 | (u16_dataA >> 4);
-    u16_dataB = 0xB000 | (u16_dataB >> 4);
+    u16_data = ((u8_dacAB == 1) ? 0xB000 : 0x3000) | (u16_data >> 4);
 
     SLAVE_ENABLE();
-    writeSPI(&u16_dataA, NULLPTR, 1);
-    SLAVE_DISABLE();
-
-    DELAY_US(1);
-
-    SLAVE_ENABLE();
-    writeSPI(&u16_dataB, NULLPTR, 1);
+    writeSPI(&u16_data, NULLPTR, 1);
     SLAVE_DISABLE();
 }
 
@@ -324,12 +322,20 @@ char *i7point8toa(uint8_t buffer[2], char result[8], BOOL decimal_fpart)
 }
 
 // Update DACs
-static uint8_t u8_wvform_idx = 0;
+static uint8_t u8_wvformA_idx = 0;
 ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T4)
 {
-    write_DAC(wvform_dataA[u8_wvform_idx], wvform_dataB[u8_wvform_idx]);
-    u8_wvform_idx = ++u8_wvform_idx % 128;
+    write_DAC(wvform_dataA[u8_wvformA_idx], 0);
+    u8_wvformA_idx = ++u8_wvformA_idx % 128;
     ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T4);
+}
+
+static uint8_t u8_wvformB_idx = 0;
+ESOS_USER_INTERRUPT(ESOS_IRQ_PIC24_T5)
+{
+    write_DAC(wvform_dataB[u8_wvformB_idx], 1);
+    u8_wvformB_idx = ++u8_wvformB_idx % 128;
+    ESOS_MARK_PIC24_USER_INTERRUPT_SERVICED(ESOS_IRQ_PIC24_T5);
 }
 
 // update the main menu strings to reflect the board choice
@@ -426,6 +432,7 @@ ESOS_CHILD_TASK(update_wvform, uint8_t u8_dacAB, uint8_t u8_type, uint8_t u8_dut
 
 ESOS_USER_TASK(lcd_menu)
 {
+    static uint8_t u8_selected_board_ID = MY_ID;
     static ESOS_TASK_HANDLE update_hdl;
     ESOS_TASK_BEGIN();
     ESOS_ALLOCATE_CHILD_TASK(update_hdl);
@@ -439,6 +446,7 @@ ESOS_USER_TASK(lcd_menu)
 
     while (TRUE) {
         // Display main menu until the user presses SW3 to choose a selection
+        u8_selected_board_ID = network_menu.u8_choice;
 
         // if square wave selected, show duty cycle
         if (wvform.u8_choice == 1) {
@@ -449,41 +457,113 @@ ESOS_USER_TASK(lcd_menu)
 
         ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(main_menu);
         if (main_menu.u8_choice == MENU_TYPE_SET_WAVEFORM) {
-            if (network_menu.u8_choice == MY_ID) {
-            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
-            ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
-                                     ampl.entries[0].value);
+            static uint8_t tempval;
+            tempval = wvform.u8_choice;
+            wvform.u8_choice = network[u8_selected_board_ID].wvform; // read waveform we have stored
+
+            ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform); // display waveform menu with above setting as default
+
+            network[u8_selected_board_ID].wvform = wvform.u8_choice;
+            if (u8_selected_board_ID == MY_ID) {
+                ESOS_ALLOCATE_CHILD_TASK(update_hdl);
+                ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
+                                         ampl.entries[0].value);
             } else {
-                //ESOS_ECAN_SEND(CANMSG_TYPE_WAVEFORM | calcMsgID(network_menu.u8_choice), 0, 0);
-                //the code below should update the local menuitem
-                static uint8_t tempval;
-                tempval = wvform.u8_choice;
-                wvform.u8_choice = network[network_menu.u8_choice].wvform;
-                ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform);
-                static uint8_t buf[1];
-                buf[0] = wvform.u8_choice;
-                ESOS_ECAN_SEND(CANMSG_TYPE_WAVEFORM | calcMsgID(network_menu.u8_choice), buf, 1);
-                // TODO:
-                // update the array value here for w8_choice
+                ESOS_ALLOCATE_CHILD_TASK(update_hdl);
+                ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[u8_selected_board_ID].wvform, 50,
+                                         network[u8_selected_board_ID].ampl);
                 wvform.u8_choice = tempval;
             }
 
+            static uint8_t buf[1];
+            buf[0] = network[u8_selected_board_ID].wvform;
+            ESOS_ECAN_SEND(CANMSG_TYPE_WAVEFORM | calcMsgID(u8_selected_board_ID), buf, 1);
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING("sending wvform: ");
+            ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
+            ESOS_TASK_WAIT_ON_SEND_STRING(" to board: ");
+            ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(u8_selected_board_ID);
+            ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
         } else if (main_menu.u8_choice == MENU_TYPE_SET_FREQ) {
-            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
-            PR4 = FCY / 8 / 128 / freq.entries[0].value;
-            ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(PR4);
-            ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+            // ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq);
+            // PR4 = FCY / 8 / 128 / freq.entries[0].value;
+            // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(PR4);
+            // ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+
+            static int16_t tempval;
+            tempval = freq.entries[0].value;
+            freq.entries[0].value = network[u8_selected_board_ID].freq; // read waveform we have stored
+            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq); // display waveform menu with above setting as default
+
+            network[u8_selected_board_ID].freq = freq.entries[0].value; // set new waveform selection to local storage
+            if (u8_selected_board_ID == MY_ID) {
+                // if message targets our board, store data in freq menu and update daca
+                PR4 = FCY / 8 / 128 / freq.entries[0].value;
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("Setting PR4: ");
+                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(PR4);
+                ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+            } else {
+                PR5 = FCY / 8 / 128 / freq.entries[0].value;
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("Setting PR5: ");
+                ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(PR5);
+                ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                freq.entries[0].value = tempval;
+            }
+            static uint8_t buf[2];
+            static uint16_t u16_freq;
+            u16_freq = network[u8_selected_board_ID].freq;
+            buf[0] = (uint8_t)(u16_freq >> 8);
+            buf[1] = (uint8_t)(u16_freq & 0xFF);
+
+            ESOS_ECAN_SEND(CANMSG_TYPE_FREQUENCY | calcMsgID(u8_selected_board_ID), buf, 2);
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING("sending freq: ");
+            ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[0]);
+            ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[1]);
+            ESOS_TASK_WAIT_ON_SEND_STRING(" to board: ");
+            ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(u8_selected_board_ID);
+            ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
         } else if (main_menu.u8_choice == MENU_TYPE_SET_AMPLTD) {
-            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl);
-            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
-                                     ampl.entries[0].value);
+            static uint8_t tempval;
+            tempval = ampl.entries[0].value;
+            ampl.entries[0].value = network[u8_selected_board_ID].ampl; // read waveform we have stored
+
+            ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl); // display waveform menu with above setting as default
+
+            network[u8_selected_board_ID].ampl = ampl.entries[0].value;
+            if (u8_selected_board_ID == MY_ID) {
+                ESOS_ALLOCATE_CHILD_TASK(update_hdl);
+                ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
+                                         ampl.entries[0].value);
+            } else {
+                ESOS_ALLOCATE_CHILD_TASK(update_hdl);
+                ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[u8_selected_board_ID].wvform, 50,
+                                         network[u8_selected_board_ID].ampl);
+                ampl.entries[0].value = tempval;
+            }
+
+            static uint8_t buf[1];
+            buf[0] = network[u8_selected_board_ID].ampl;
+            ESOS_ECAN_SEND(CANMSG_TYPE_AMPLITUDE | calcMsgID(u8_selected_board_ID), buf, 1);
+            ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+            ESOS_TASK_WAIT_ON_SEND_STRING("sending ampl: ");
+            ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[0]);
+            ESOS_TASK_WAIT_ON_SEND_STRING(" to board: ");
+            ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(u8_selected_board_ID);
+            ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+            ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
         } else if (main_menu.u8_choice == MENU_TYPE_SET_DUTY) {
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(duty);
             ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
                                      ampl.entries[0].value);
         } else if (main_menu.u8_choice == MENU_TYPE_READ_LM60) {
-            if (network_menu.u8_choice == MY_ID)
+            if (u8_selected_board_ID == MY_ID)
                 b_updateLM60 = 1;
             else
                 b_requestLM60 = 1;
@@ -492,7 +572,7 @@ ESOS_USER_TASK(lcd_menu)
             b_updateLM60 = 0;
             b_requestLM60 = 0;
         } else if (main_menu.u8_choice == MENU_TYPE_READ_1631) {
-            if (network_menu.u8_choice == MY_ID)
+            if (u8_selected_board_ID == MY_ID)
                 b_updateDS1631 = 1;
             else
                 b_requestDS1631 = 1;
@@ -500,7 +580,7 @@ ESOS_USER_TASK(lcd_menu)
             b_updateDS1631 = 0;
             b_requestDS1631 = 0;
         } else if (main_menu.u8_choice == MENU_TYPE_SET_LEDS) {
-            if (network_menu.u8_choice == MY_ID) {
+            if (u8_selected_board_ID == MY_ID) {
                 // set boolean to update led display
                 ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
             } else {
@@ -509,21 +589,28 @@ ESOS_USER_TASK(lcd_menu)
                 ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
                 static uint8_t buf[1];
                 buf[0] = leds.entries[0].value;
-                ESOS_ECAN_SEND(CANMSG_TYPE_LEDS | calcMsgID(network_menu.u8_choice), buf, 1);
+                ESOS_ECAN_SEND(CANMSG_TYPE_LEDS | calcMsgID(u8_selected_board_ID), buf, 1);
                 leds.entries[0].value = tempval;
             }
         } else if (main_menu.u8_choice == MENU_TYPE_ABOUT) {
             ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(about);
         } else if (main_menu.u8_choice == MENU_TYPE_SET_BOARD) {
             ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(network_menu);
+            u8_selected_board_ID = network_menu.u8_choice;
             ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_board_choice, &main_menu, network_menu.u8_choice);
+            ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_board_choice, &main_menu, u8_selected_board_ID);
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-            // TODO: add mod math to show correct menu number
-            ESOS_TASK_WAIT_ON_SEND_STRING("Choosing board: ");
-            ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(network_menu.u8_choice);
+            ESOS_TASK_WAIT_ON_SEND_STRING("Choosing board ");
+            ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u8_selected_board_ID);
+            ESOS_TASK_WAIT_ON_SEND_STRING(" and grabbing its data");
             ESOS_TASK_WAIT_ON_SEND_STRING("\n");
             ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+            ESOS_ECAN_SEND(CANMSG_TYPE_WAVEFORM | calcMsgID(u8_selected_board_ID), 0, 0);
+            ESOS_TASK_WAIT_TICKS(1);
+            ESOS_ECAN_SEND(CANMSG_TYPE_FREQUENCY | calcMsgID(u8_selected_board_ID), 0, 0);
+            ESOS_TASK_WAIT_TICKS(1);
+            ESOS_ECAN_SEND(CANMSG_TYPE_AMPLITUDE | calcMsgID(u8_selected_board_ID), 0, 0);
         }
     }
     ESOS_TASK_END();
@@ -681,13 +768,26 @@ ESOS_USER_TASK(ecan_receiver)
     static MAILMESSAGE msg;
 
     static ESOS_TASK_HANDLE read_temp;
+    static ESOS_TASK_HANDLE update_hdl;
     static uint16_t u16_out;
     static uint32_t u32_out;
     static int16_t i16_temp;
+    static uint16_t u16_freq;
 
     ESOS_TASK_BEGIN();
 
-    esos_ecan_canfactory_subscribe(__pstSelf, MY_MSG_ID(CANMSG_TYPE_BEACON), 0x0000, MASKCONTROL_FIELD_NONZERO);
+    // esos_ecan_canfactory_subscribe(__pstSelf, MY_MSG_ID(CANMSG_TYPE_BEACON), 0x0000, MASKCONTROL_FIELD_NONZERO);
+    // esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_BEACON, 0x0001, MASKCONTROL_FIELD_NONZERO);
+    // esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_TEMPERATURE1, 0x0002, MASKCONTROL_FIELD_NONZERO);
+    // esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_TEMPERATURE2, 0x0003, MASKCONTROL_FIELD_NONZERO);
+    // esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_WAVEFORM, 0x0004, MASKCONTROL_FIELD_NONZERO);
+    // esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_POTENTIOMETER, 0x0005, MASKCONTROL_FIELD_NONZERO);
+    // esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_FREQUENCY, 0x0006, MASKCONTROL_FIELD_NONZERO);
+    // esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_AMPLITUDE, 0x0007, MASKCONTROL_FIELD_NONZERO);
+    // esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_DUTYCYCLE, 0x0008, MASKCONTROL_FIELD_NONZERO);
+    // esos_ecan_canfactory_subscribe(__pstSelf, CANMSG_TYPE_LEDS, 0x0009, MASKCONTROL_FIELD_NONZERO);
+
+    esos_ecan_canfactory_subscribe(__pstSelf, NULL, 0x0000, MASKCONTROL_FIELD_NONZERO);
 
     while (TRUE) {
         ESOS_TASK_WAIT_FOR_MAIL();
@@ -699,6 +799,12 @@ ESOS_USER_TASK(ecan_receiver)
         int8_t i8_i = getArrayIndexFromMsgID(u16_can_id);
         u8_buf_len = ESOS_GET_PMSG_DATA_LENGTH((&msg)) - sizeof(uint16_t);
         memcpy(buf, &msg.au8_Contents[sizeof(uint16_t)], u8_buf_len);
+
+        // ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+        // ESOS_TASK_WAIT_ON_SEND_STRING("MSG POSTMARK: ");
+        // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(msg.u32_Postmark);
+        // ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+        // ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
         if (u8_msg_type == CANMSG_TYPE_BEACON) {
             if (i8_i >= 0) {
@@ -769,8 +875,7 @@ ESOS_USER_TASK(ecan_receiver)
 
                 buf[0] = network[MY_ID].temp_lm60 >> 8;
                 buf[1] = network[MY_ID].temp_lm60;
-
-                ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_TEMPERATURE1), buf, 2);
+                ESOS_ECAN_SEND(CANMSG_TYPE_TEMPERATURE1 | calcMsgID(MY_ID), buf, 2);
             }
         } else if (u8_msg_type == CANMSG_TYPE_TEMPERATURE2) {
             if (u8_buf_len == 2) {
@@ -823,12 +928,119 @@ ESOS_USER_TASK(ecan_receiver)
                 ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
-                ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_TEMPERATURE2), buf, 2);
+                ESOS_ECAN_SEND(CANMSG_TYPE_TEMPERATURE2 | calcMsgID(MY_ID), buf, 2);
             }
         } else if (u8_msg_type == CANMSG_TYPE_WAVEFORM) {
+            if (u8_buf_len == 1) { // message contains data, so store it and update accordingly
+                network[i8_i].wvform = buf[0]; // set new waveform selection to local storage
+                if (i8_i == MY_ID) {
+                    // if message targets our board, store data in wvform menu and update daca
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("updating my wvform: ");
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(network[i8_i].wvform);
+                    ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                    wvform.u8_choice = buf[0];
+                    ESOS_ALLOCATE_CHILD_TASK(update_hdl);
+                    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
+                                             ampl.entries[0].value);
+                } else if (i8_i == network_menu.u8_choice) {
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("updating wvform: ");
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(network[i8_i].wvform);
+                    ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                    // if message is updating the board that this board is subscribed to, update dacb
+                    ESOS_ALLOCATE_CHILD_TASK(update_hdl);
+                    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[i8_i].wvform, 50,
+                                             network[i8_i].ampl);
+                }
+            } else if (u8_buf_len == 0 && i8_i == MY_ID) { // if message is a request @ us
+                buf[0] = network[MY_ID].wvform;
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("sending wvform: ");
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[0]);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                ESOS_ECAN_SEND(CANMSG_TYPE_WAVEFORM | calcMsgID(MY_ID), buf, 1);
+            }
         } else if (u8_msg_type == CANMSG_TYPE_POTENTIOMETER) {
         } else if (u8_msg_type == CANMSG_TYPE_FREQUENCY) {
+            if (u8_buf_len == 2) { // message contains data, so store it and update accordingly
+                u16_freq = buf[0] << 8 | buf[1];
+                network[i8_i].freq = u16_freq; // set new waveform selection to local storage
+                if (i8_i == MY_ID) {
+                    // if message targets our board, store data in freq menu and update daca
+                    freq.entries[0].value = u16_freq;
+                    PR4 = FCY / 8 / 128 / u16_freq;
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("PR4: ");
+                    ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(PR4);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                } else if (i8_i == network_menu.u8_choice) {
+                    // if message is updating the board that this board is subscribed to, update dacb
+                    PR5 = FCY / 8 / 128 / u16_freq;
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("PR5: ");
+                    ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(PR5);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                }
+            } else if (u8_buf_len == 0 && i8_i == MY_ID) { // if message is a request @ us
+                u16_freq = network[MY_ID].freq;
+                buf[0] = (uint8_t)(u16_freq >> 8);
+                buf[1] = (uint8_t)(u16_freq & 0xFF);
+
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("sending freq: ");
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[0]);
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[1]);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                ESOS_ECAN_SEND(CANMSG_TYPE_FREQUENCY | calcMsgID(MY_ID), buf, 2);
+            }
         } else if (u8_msg_type == CANMSG_TYPE_AMPLITUDE) {
+            if (u8_buf_len == 1) { // message contains data, so store it and update accordingly
+                network[i8_i].ampl = buf[0]; // set new waveform selection to local storage
+                if (i8_i == MY_ID) {
+                    // if message targets our board, store data in wvform menu and update daca
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("updating my ampl: ");
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(network[i8_i].ampl);
+                    ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                    ampl.entries[0].value = buf[0];
+                    ESOS_ALLOCATE_CHILD_TASK(update_hdl);
+                    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
+                                             ampl.entries[0].value);
+                } else if (i8_i == network_menu.u8_choice) {
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("updating ampl: ");
+                    // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(network[i8_i].ampl);
+                    ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                    // if message is updating the board that this board is subscribed to, update dacb
+                    ESOS_ALLOCATE_CHILD_TASK(update_hdl);
+                    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[i8_i].wvform, 50,
+                                             network[i8_i].ampl);
+                }
+            } else if (u8_buf_len == 0 && i8_i == MY_ID) { // if message is a request @ us
+                buf[0] = network[MY_ID].ampl;
+                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                ESOS_TASK_WAIT_ON_SEND_STRING("sending ampl: ");
+                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
+                ESOS_TASK_WAIT_ON_SEND_STRING("\n");
+                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+
+                ESOS_ECAN_SEND(CANMSG_TYPE_AMPLITUDE | calcMsgID(MY_ID), buf, 1);
+            }
         } else if (u8_msg_type == CANMSG_TYPE_LEDS) {
             // 1 byte led display value
             if (u8_buf_len == 1 && i8_i == MY_ID) {
@@ -839,11 +1051,13 @@ ESOS_USER_TASK(ecan_receiver)
                 ESOS_TASK_WAIT_TICKS(1);
             }
         }
+        ESOS_TASK_YIELD();
     }
 
     ESOS_TASK_END();
 }
 
+// TODO: make discovering a board request its current waveform settings
 ESOS_USER_TASK(ecan_beacon_network)
 {
     ESOS_TASK_BEGIN();
@@ -946,11 +1160,15 @@ void initialize_network()
         network[u8_i].temp_lm60 = 0;
         network[u8_i].temp_1631 = 0;
     }
+    network[MY_ID].wvform = 0;
+    network[MY_ID].freq = 1000;
+    network[MY_ID].ampl = 10;
 }
 
 void user_init()
 {
     __esos_unsafe_PutString(HELLO_MSG);
+    // ENABLE_DEBUG_MODE();
 
     // This is all called in esos_menu_init
     // config_esos_uiF14();
@@ -977,6 +1195,8 @@ void user_init()
     CHANGE_MODE_ECAN1(ECAN_MODE_NORMAL);
 
     ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T4, ESOS_USER_IRQ_LEVEL2, _T4Interrupt);
+    ESOS_REGISTER_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T5, ESOS_USER_IRQ_LEVEL2, _T5Interrupt);
     CONFIG_FCNSYN_TIMER();
     ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T4);
+    ESOS_ENABLE_PIC24_USER_INTERRUPT(ESOS_IRQ_PIC24_T5);
 }
