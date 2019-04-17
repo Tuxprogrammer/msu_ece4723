@@ -460,9 +460,13 @@ ESOS_USER_TASK(lcd_menu)
             static uint8_t tempval;
             tempval = wvform.u8_choice;
             wvform.u8_choice = network[u8_selected_board_ID].wvform; // read waveform we have stored
-
+            if (u8_selected_board_ID != MY_ID) {
+                wvform.ast_items[3].b_hidden = 1;
+            }
             ESOS_TASK_WAIT_ESOS_MENU_LONGMENU(wvform); // display waveform menu with above setting as default
-
+            if (u8_selected_board_ID != MY_ID) {
+                wvform.ast_items[3].b_hidden = 0;
+            }
             network[u8_selected_board_ID].wvform = wvform.u8_choice;
             if (u8_selected_board_ID == MY_ID) {
                 ESOS_ALLOCATE_CHILD_TASK(update_hdl);
@@ -933,7 +937,7 @@ ESOS_USER_TASK(ecan_receiver)
                 ESOS_ECAN_SEND(CANMSG_TYPE_TEMPERATURE2 | calcMsgID(MY_ID), buf, 2);
             }
         } else if (u8_msg_type == CANMSG_TYPE_WAVEFORM) {
-            if (u8_buf_len == 1) { // message contains data, so store it and update accordingly
+            if (u8_buf_len == 1 && buf[0] <= 2) { // message contains data, so store it and update accordingly
                 network[i8_i].wvform = buf[0]; // set new waveform selection to local storage
                 if (i8_i == MY_ID) {
                     // if message targets our board, store data in wvform menu and update daca
