@@ -37,9 +37,9 @@ typedef struct {
 const CAN_ID aCANID_IDs[NUM_OF_IDS] = {
     //"Name", "netID", teamID, memberID, // Array Index
     { "CB Bush", "cbb330", 1, 1 }, // 0
-    { "SC Callicot", "sc2257", 1, 2 }, // 1
+    { "WO Carroll", "woc17", 1, 2 }, // 1
     { "LE Casey", "lec426", 1, 3 }, // 2
-    { "WO Carroll", "woc17", 1, 4 }, // 3
+    { "SC Callicot", "sc2257", 1, 4 }, //3 
     { "JD Fletcher", "jdf469", 1, 5 }, // 4
     { "JT Nguyen", "jtn136", 2, 1 }, // 5
     { "NR Siano", "nrs171", 2, 2 }, // 6
@@ -60,7 +60,7 @@ const CAN_ID aCANID_IDs[NUM_OF_IDS] = {
     { "V Marojevic", "Vuk", 7, 2 } // 21
 };
 
-#define MY_ID 4 // Look above for your array index
+#define MY_ID 0 // Look above for your array index
 #define MY_NAME (aCANID_IDs[MY_ID].psz_name)
 #define MY_NETID (aCANID_IDs[MY_ID].psz_netID)
 #define MY_TEAM_ID (aCANID_IDs[MY_ID].u8_teamID)
