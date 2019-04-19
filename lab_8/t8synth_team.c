@@ -53,9 +53,9 @@ static uint16_t wvform_dataB[128];
 // #define ECAN_BEACON_TEMP_INTERVAL 30000
 // #define ECAN_CLEAN_INTERVAL 120000
 
-#define ECAN_BEACON_INTERVAL 60000
-#define ECAN_BEACON_TEMP_INTERVAL 30000
-#define ECAN_CLEAN_INTERVAL 120000
+#define ECAN_BEACON_INTERVAL 6000
+#define ECAN_BEACON_TEMP_INTERVAL 3000
+#define ECAN_CLEAN_INTERVAL 12000
 
 #define TEMP_REQUEST_INTERVAL 1000
 
@@ -86,7 +86,8 @@ typedef struct {
     uint8_t leds;
 } network_member;
 
-static network_member network[NUM_OF_IDS] = { 0 };
+static network_member network_boards[NUM_OF_IDS] = { 0 };
+static network_member network[NUM_OF_TEAMS] = { 0 };
 
 /*TODO: Ctrl+F replace all instances of mm with a name that abides
         by the coding standards.
@@ -111,7 +112,7 @@ static esos_menu_longmenu_t network_menu = {
     .u8_choice = MY_ID,
     .ast_items =
         {
-            { "cbb330", "1", 1 }, { "woc17", "1", 1 }, { "lec426", "1", 1 }, { "sc2257", "1", 1 },
+            { "cbb330", "1", 1 },  { "sc2257", "1", 1 }, { "lec426", "1", 1 }, { "woc17", "1", 1 },
             { "jdf469", "1", 1 },  { "jtn136", "2", 1 }, { "nrs171", "2", 1 }, { "igh9", "2", 1 },
             { "law448", "2", 1 },  { "rkh134", "2", 1 }, { "gs656", "3", 1 },  { "lrh282", "3", 1 },
             { "reo74", "3", 1 },   { "bmf151", "3", 1 }, { "rfj18", "3", 1 },  { "dc2274", "4", 1 },
@@ -345,12 +346,12 @@ ESOS_CHILD_TASK(update_board_choice, esos_menu_longmenu_t *ps_menu, uint8_t u8_c
     ESOS_TASK_BEGIN();
     // 2 index max for the menu, 1 index for null terminator
     static char str_choice[3];
-    itoa(GET_MENU_N(u8_choice), str_choice, 10);
+    itoa(lookupTeamIDFromArrayIndex(u8_choice), str_choice, 10);
 
     static uint8_t u8_i;
     for (u8_i = 1; u8_i < ps_menu->u8_numitems - 1; u8_i++) {
         ps_menu->ast_items[u8_i].ac_line1[0] = str_choice[0];
-        if (GET_MENU_N(u8_choice) < 10) {
+        if (lookupTeamIDFromArrayIndex(u8_choice) < 10) {
             ps_menu->ast_items[u8_i].ac_line1[1] = ' ';
         } else {
             ps_menu->ast_items[u8_i].ac_line1[1] = str_choice[1];
@@ -460,7 +461,7 @@ ESOS_USER_TASK(lcd_menu)
         if (main_menu.u8_choice == MENU_TYPE_SET_WAVEFORM) {
             static uint8_t tempval;
             tempval = wvform.u8_choice;
-            wvform.u8_choice = network[u8_selected_board_ID].wvform; // read waveform we have stored
+            wvform.u8_choice = network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].wvform; // read waveform we have stored
             if (u8_selected_board_ID != MY_ID) {
                 wvform.ast_items[3].b_hidden = 1;
             }
@@ -468,21 +469,21 @@ ESOS_USER_TASK(lcd_menu)
             if (u8_selected_board_ID != MY_ID) {
                 wvform.ast_items[3].b_hidden = 0;
             }
-            network[u8_selected_board_ID].wvform = wvform.u8_choice;
+            network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].wvform = wvform.u8_choice;
             if (u8_selected_board_ID == MY_ID) {
                 ESOS_ALLOCATE_CHILD_TASK(update_hdl);
                 ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
                                          ampl.entries[0].value);
             } else {
                 ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-                ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[u8_selected_board_ID].wvform, 50,
-                                         network[u8_selected_board_ID].ampl);
+                ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].wvform, 50,
+                                         network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].ampl);
                 wvform.u8_choice = tempval;
             }
 
             static uint8_t buf[1];
-            buf[0] = network[u8_selected_board_ID].wvform;
-            ESOS_ECAN_SEND(CANMSG_TYPE_WAVEFORM | calcMsgID(u8_selected_board_ID), buf, 1);
+            buf[0] = network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].wvform;
+            ESOS_ECAN_SEND_TO_TEAM(CANMSG_TYPE_WAVEFORM, lookupTeamIDFromArrayIndex(u8_selected_board_ID), buf, 1);
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
             ESOS_TASK_WAIT_ON_SEND_STRING("sending wvform: ");
             ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
@@ -498,10 +499,10 @@ ESOS_USER_TASK(lcd_menu)
 
             static int16_t tempval;
             tempval = freq.entries[0].value;
-            freq.entries[0].value = network[u8_selected_board_ID].freq; // read waveform we have stored
+            freq.entries[0].value = network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].freq; // read waveform we have stored
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(freq); // display waveform menu with above setting as default
 
-            network[u8_selected_board_ID].freq = freq.entries[0].value; // set new waveform selection to local storage
+            network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].freq = freq.entries[0].value; // set new waveform selection to local storage
             if (u8_selected_board_ID == MY_ID) {
                 // if message targets our board, store data in freq menu and update daca
                 PR4 = FCY / 8 / 128 / freq.entries[0].value;
@@ -521,11 +522,11 @@ ESOS_USER_TASK(lcd_menu)
             }
             static uint8_t buf[2];
             static uint16_t u16_freq;
-            u16_freq = network[u8_selected_board_ID].freq;
+            u16_freq = network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].freq;
             buf[0] = (uint8_t)(u16_freq >> 8);
             buf[1] = (uint8_t)(u16_freq & 0xFF);
 
-            ESOS_ECAN_SEND(CANMSG_TYPE_FREQUENCY | calcMsgID(u8_selected_board_ID), buf, 2);
+            ESOS_ECAN_SEND_TO_TEAM(CANMSG_TYPE_FREQUENCY, lookupTeamIDFromArrayIndex(u8_selected_board_ID), buf, 2);
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
             ESOS_TASK_WAIT_ON_SEND_STRING("sending freq: ");
             ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[0]);
@@ -537,26 +538,26 @@ ESOS_USER_TASK(lcd_menu)
         } else if (main_menu.u8_choice == MENU_TYPE_SET_AMPLTD) {
             static uint8_t tempval;
             tempval = ampl.entries[0].value;
-            ampl.entries[0].value = network[u8_selected_board_ID].ampl; // read waveform we have stored
+            ampl.entries[0].value = network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].ampl; // read waveform we have stored
 
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(ampl); // display waveform menu with above setting as default
 
-            network[u8_selected_board_ID].ampl = ampl.entries[0].value;
+            network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].ampl = ampl.entries[0].value;
             if (u8_selected_board_ID == MY_ID) {
                 ESOS_ALLOCATE_CHILD_TASK(update_hdl);
                 ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 0, wvform.u8_choice, duty.entries[0].value,
                                          ampl.entries[0].value);
             } else {
                 ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-                ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[u8_selected_board_ID].wvform, 50,
-                                         network[u8_selected_board_ID].ampl);
+                ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].wvform, 50,
+                                         network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].ampl);
                 ampl.entries[0].value = tempval;
             }
 
             static uint8_t buf[1];
-            buf[0] = network[u8_selected_board_ID].ampl;
+            buf[0] = network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].ampl;
             buf[0] = dtou3p5(buf[0] / 10, buf[0] % 10);
-            ESOS_ECAN_SEND(CANMSG_TYPE_AMPLITUDE | calcMsgID(u8_selected_board_ID), buf, 1);
+            ESOS_ECAN_SEND_TO_TEAM(CANMSG_TYPE_AMPLITUDE, lookupTeamIDFromArrayIndex(u8_selected_board_ID), buf, 1);
 
             ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
             ESOS_TASK_WAIT_ON_SEND_STRING("sending ampl: ");
@@ -587,13 +588,13 @@ ESOS_USER_TASK(lcd_menu)
             b_updateDS1631 = 0;
             b_requestDS1631 = 0;
         } else if (main_menu.u8_choice == MENU_TYPE_SET_LEDS) {
-            leds.entries[0].value = network[u8_selected_board_ID].leds; // read led value we have stored
+            leds.entries[0].value = network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].leds; // read led value we have stored
             ESOS_TASK_WAIT_ESOS_MENU_ENTRY(leds);
-            network[u8_selected_board_ID].leds = leds.entries[0].value; // set local cache with new value
+            network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].leds = leds.entries[0].value; // set local cache with new value
             static uint8_t buf[1];
-            buf[0] = network[u8_selected_board_ID].leds;
-            ESOS_ECAN_SEND(CANMSG_TYPE_LEDS | calcMsgID(u8_selected_board_ID), buf, 1);
-            leds.entries[0].value = network[MY_ID].leds; // reset led display to local board
+            buf[0] = network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].leds;
+            ESOS_ECAN_SEND_TO_TEAM(CANMSG_TYPE_LEDS, lookupTeamIDFromArrayIndex(u8_selected_board_ID), buf, 1);
+            leds.entries[0].value = network[lookupTeamIDFromArrayIndex(MY_ID)].leds; // reset led display to local board
         } else if (main_menu.u8_choice == MENU_TYPE_ABOUT) {
             ESOS_TASK_WAIT_ESOS_MENU_STATICMENU(about);
         } else if (main_menu.u8_choice == MENU_TYPE_SET_BOARD) {
@@ -608,13 +609,16 @@ ESOS_USER_TASK(lcd_menu)
             ESOS_TASK_WAIT_ON_SEND_STRING("\n");
             ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
-            ESOS_ECAN_SEND(CANMSG_TYPE_WAVEFORM | calcMsgID(u8_selected_board_ID), 0, 0);
+            ESOS_ECAN_SEND_TO_TEAM(CANMSG_TYPE_WAVEFORM, lookupTeamIDFromArrayIndex(u8_selected_board_ID), 0, 0);
             ESOS_TASK_WAIT_TICKS(1);
-            ESOS_ECAN_SEND(CANMSG_TYPE_FREQUENCY | calcMsgID(u8_selected_board_ID), 0, 0);
+            ESOS_ECAN_SEND_TO_TEAM(CANMSG_TYPE_FREQUENCY, lookupTeamIDFromArrayIndex(u8_selected_board_ID), 0, 0);
             ESOS_TASK_WAIT_TICKS(1);
-            ESOS_ECAN_SEND(CANMSG_TYPE_AMPLITUDE | calcMsgID(u8_selected_board_ID), 0, 0);
+            ESOS_ECAN_SEND_TO_TEAM(CANMSG_TYPE_AMPLITUDE, lookupTeamIDFromArrayIndex(u8_selected_board_ID), 0, 0);
             ESOS_TASK_WAIT_TICKS(1);
-            ESOS_ECAN_SEND(CANMSG_TYPE_LEDS | calcMsgID(u8_selected_board_ID), 0, 0);
+            ESOS_ECAN_SEND_TO_TEAM(CANMSG_TYPE_LEDS, lookupTeamIDFromArrayIndex(u8_selected_board_ID), 0, 0);
+
+            network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].temp_lm60 = 0;
+            network[lookupTeamIDFromArrayIndex(u8_selected_board_ID)].temp_1631 = 0;
         }
     }
     ESOS_TASK_END();
@@ -638,7 +642,7 @@ ESOS_USER_TASK(set_led)
 
 ESOS_USER_TASK(update_lm60)
 {
-    // TODO: make this task read local LM60 and assign a signed 7.8 format temp to network[MY_ID].temp_lm60
+    // TODO: make this task read local LM60 and assign a signed 7.8 format temp to network[lookupTeamIDFromArrayIndex(MY_ID)].temp_lm60
     static ESOS_TASK_HANDLE read_temp;
     static uint16_t u16_out;
     static uint32_t u32_out, temp32_ipart, temp32_fpart;
@@ -658,7 +662,7 @@ ESOS_USER_TASK(update_lm60)
             u32_out = (uint32_t)u16_out * 1000; // convert to not use decimals
             u32_out = (u32_out - 424000) / 625; // millimillivolts to temp
 
-            network[MY_ID].temp_lm60 = (int16_t)u32_out;
+            network[lookupTeamIDFromArrayIndex(MY_ID)].temp_lm60 = (int16_t)u32_out;
 
             temp32_ipart = u32_out / 100; // convert to get the integer part
             temp32_fpart = u32_out - temp32_ipart * 100; // subtract out the integer part to get the decimal part
@@ -671,7 +675,7 @@ ESOS_USER_TASK(update_lm60)
                 lm60.lines[1][i] = temp32_str[i];
             }
 
-            network[MY_ID].temp_lm60 = (int16_t)u32_out;
+            network[lookupTeamIDFromArrayIndex(MY_ID)].temp_lm60 = (int16_t)u32_out;
             lm60.value = u32_out;
         }
         ESOS_TASK_WAIT_TICKS(125);
@@ -715,7 +719,7 @@ ESOS_USER_TASK(update_ds1631)
                 _1631.lines[1][i] = temp32_str[i];
             }
 
-            network[MY_ID].temp_1631 = (int16_t)(((uint16_t)u8_hi << 8) | u8_lo);
+            network[lookupTeamIDFromArrayIndex(MY_ID)].temp_1631 = (int16_t)(((uint16_t)u8_hi << 8) | u8_lo);
             _1631.value = u8_hi;
 
             ESOS_TASK_WAIT_TICKS(750); // The Temp sensor can only poll at 750ms with 12 bit mode
@@ -736,14 +740,18 @@ ESOS_USER_TASK(request_temp)
             esos_GetSystemTick() - u32_temp_request_tick > TEMP_REQUEST_INTERVAL) {
             static uint16_t u16_request;
             if (b_requestLM60) {
-                u16_request = CANMSG_TYPE_TEMPERATURE1 | calcMsgID(network_menu.u8_choice);
+                ESOS_ECAN_SEND_TO_TEAM(CANMSG_TYPE_TEMPERATURE1, lookupTeamIDFromArrayIndex(network_menu.u8_choice), 0, 0);
+                
+
                 // ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 // ESOS_TASK_WAIT_ON_SEND_STRING("Requesting LM60: ");
                 // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_request);
                 // ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                 // ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
             } else if (b_requestDS1631) {
-                u16_request = CANMSG_TYPE_TEMPERATURE2 | calcMsgID(network_menu.u8_choice);
+                ESOS_ECAN_SEND_TO_TEAM(CANMSG_TYPE_TEMPERATURE2, lookupTeamIDFromArrayIndex(network_menu.u8_choice), 0, 0);
+                
+
                 // ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 // ESOS_TASK_WAIT_ON_SEND_STRING("Requesting DS1631: ");
                 // ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING(u16_request);
@@ -751,7 +759,6 @@ ESOS_USER_TASK(request_temp)
                 // ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
             }
 
-            ESOS_ECAN_SEND(u16_request, 0, 0);
             u32_temp_request_tick = esos_GetSystemTick();
             ESOS_TASK_WAIT_TICKS(TEMP_REQUEST_INTERVAL);
         }
@@ -813,27 +820,37 @@ ESOS_USER_TASK(ecan_receiver)
         if (u8_msg_type == CANMSG_TYPE_BEACON) {
             if (i8_i >= 0) {
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                if (network[i8_i].tick == 0) {
+                if (network_boards[i8_i].tick == 0) {
                     ESOS_TASK_WAIT_ON_SEND_STRING("Adding board: ");
                     network_menu.ast_items[i8_i].b_hidden = FALSE;
                 } else {
                     ESOS_TASK_WAIT_ON_SEND_STRING("Refreshing board: ");
                     network_menu.ast_items[i8_i].b_hidden = FALSE;
                 }
-                ESOS_TASK_WAIT_ON_SEND_STRING(network[i8_i].can_id.psz_name);
+                ESOS_TASK_WAIT_ON_SEND_STRING(network_boards[i8_i].can_id.psz_name);
                 ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
-                network[i8_i].tick = esos_GetSystemTick();
+                network_boards[i8_i].tick = esos_GetSystemTick();
             }
         } else if (u8_msg_type == CANMSG_TYPE_TEMPERATURE1) {
             if (u8_buf_len == 2) {
-                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                ESOS_TASK_WAIT_ON_SEND_STRING("Storing LM60 data from another board\n");
-                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
                 i16_temp = buf[0] << 8 | buf[1];
-                network[i8_i].temp_lm60 = i16_temp;
+                
+                if (network[lookupTeamIDFromArrayIndex(i8_i)].temp_lm60 == 0) {
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("Storing LM60 data from another board\n");
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                    network[lookupTeamIDFromArrayIndex(i8_i)].temp_lm60 = i16_temp;
+                }
+                else {
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("Averaging LM60 data from another board\n");
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                    network[lookupTeamIDFromArrayIndex(i8_i)].temp_lm60 = network[lookupTeamIDFromArrayIndex(i8_i)].temp_lm60 + i16_temp;
+                    network[lookupTeamIDFromArrayIndex(i8_i)].temp_lm60 /= 2;
+                }
                 if (i8_i == network_menu.u8_choice && b_requestLM60) {
                     static char temp[12] = { 0 };
                     i7point8toa(buf, temp, 0);
@@ -846,7 +863,8 @@ ESOS_USER_TASK(ecan_receiver)
 
                     lm60.value = buf[0] * 100 + buf[1];
                 }
-                network[i8_i].tick = esos_GetSystemTick();
+                network_boards[i8_i].tick = esos_GetSystemTick();
+
             } else if (u8_buf_len == 0 && i8_i == MY_ID) {
                 ESOS_ALLOCATE_CHILD_TASK(read_temp);
                 ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_ON_AVAILABLE_SENSOR, TEMP_CHANNEL, ESOS_SENSOR_VREF_3V0);
@@ -877,22 +895,30 @@ ESOS_USER_TASK(ecan_receiver)
                 ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
-                network[MY_ID].temp_lm60 = (int16_t)((ipart << 8) | newfpart);
+                network[lookupTeamIDFromArrayIndex(MY_ID)].temp_lm60 = (int16_t)((ipart << 8) | newfpart);
 
-                buf[0] = network[MY_ID].temp_lm60 >> 8;
-                buf[1] = network[MY_ID].temp_lm60;
+                buf[0] = network[lookupTeamIDFromArrayIndex(MY_ID)].temp_lm60 >> 8;
+                buf[1] = network[lookupTeamIDFromArrayIndex(MY_ID)].temp_lm60;
                 ESOS_ECAN_SEND(CANMSG_TYPE_TEMPERATURE1 | calcMsgID(MY_ID), buf, 2);
             }
         } else if (u8_msg_type == CANMSG_TYPE_TEMPERATURE2) {
             if (u8_buf_len == 2) {
-                ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                ESOS_TASK_WAIT_ON_SEND_STRING("Storing DS1631 data from another board: ");
-                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(i8_i);
-                ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
-                ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
                 i16_temp = buf[0] << 8 | buf[1];
-                network[i8_i].temp_1631 = i16_temp;
+
+                if (network[lookupTeamIDFromArrayIndex(i8_i)].temp_1631 == 0) {
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("Storing DS1631 data from another board\n");
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                    network[lookupTeamIDFromArrayIndex(i8_i)].temp_1631 = i16_temp;
+                }
+                else {
+                    ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
+                    ESOS_TASK_WAIT_ON_SEND_STRING("Averaging DS1631 data from another board\n");
+                    ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
+                    network[lookupTeamIDFromArrayIndex(i8_i)].temp_1631 = network[lookupTeamIDFromArrayIndex(i8_i)].temp_1631 + i16_temp;
+                    network[lookupTeamIDFromArrayIndex(i8_i)].temp_1631 /= 2;
+                }
                 if (i8_i == network_menu.u8_choice && b_requestDS1631) {
                     static char tmp[12] = { 0 };
                     convert_uint32_t_to_str(buf[0], tmp, 12, 10);
@@ -917,7 +943,8 @@ ESOS_USER_TASK(ecan_receiver)
                 ESOS_TASK_WAIT_ON_SEND_UINT32_AS_HEX_STRING((uint16_t)i16_temp);
                 ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
-                network[i8_i].tick = esos_GetSystemTick();
+                network_boards[i8_i].tick = esos_GetSystemTick();
+
             } else if (u8_buf_len == 0 && i8_i == MY_ID) {
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("Responding to DS1631 data request\n");
@@ -940,13 +967,13 @@ ESOS_USER_TASK(ecan_receiver)
             }
         } else if (u8_msg_type == CANMSG_TYPE_WAVEFORM) {
             if (u8_buf_len == 1 && buf[0] <= 2) { // message contains data, so store it and update accordingly
-                network[i8_i].wvform = buf[0]; // set new waveform selection to local storage
+                network[lookupTeamIDFromArrayIndex(i8_i)].wvform = buf[0]; // set new waveform selection to local storage
                 if (i8_i == MY_ID) {
                     // if message targets our board, store data in wvform menu and update daca
                     ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                     ESOS_TASK_WAIT_ON_SEND_STRING("updating my wvform: ");
                     // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
-                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(network[i8_i].wvform);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(network[lookupTeamIDFromArrayIndex(i8_i)].wvform);
                     ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                     ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                     wvform.u8_choice = buf[0];
@@ -957,16 +984,16 @@ ESOS_USER_TASK(ecan_receiver)
                     ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                     ESOS_TASK_WAIT_ON_SEND_STRING("updating wvform: ");
                     // ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(buf[0]);
-                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(network[i8_i].wvform);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(network[lookupTeamIDFromArrayIndex(i8_i)].wvform);
                     ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                     ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                     // if message is updating the board that this board is subscribed to, update dacb
                     ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-                    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[i8_i].wvform, 50,
-                                             network[i8_i].ampl);
+                    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[lookupTeamIDFromArrayIndex(i8_i)].wvform, 50,
+                                             network[lookupTeamIDFromArrayIndex(i8_i)].ampl);
                 }
             } else if (u8_buf_len == 0 && i8_i == MY_ID) { // if message is a request @ us
-                buf[0] = network[MY_ID].wvform;
+                buf[0] = network[lookupTeamIDFromArrayIndex(MY_ID)].wvform;
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("sending wvform: ");
                 ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[0]);
@@ -979,7 +1006,7 @@ ESOS_USER_TASK(ecan_receiver)
         } else if (u8_msg_type == CANMSG_TYPE_FREQUENCY) {
             if (u8_buf_len == 2) { // message contains data, so store it and update accordingly
                 u16_freq = buf[0] << 8 | buf[1];
-                network[i8_i].freq = u16_freq; // set new waveform selection to local storage
+                network[lookupTeamIDFromArrayIndex(i8_i)].freq = u16_freq; // set new waveform selection to local storage
                 if (i8_i == MY_ID) {
                     // if message targets our board, store data in freq menu and update daca
                     freq.entries[0].value = u16_freq;
@@ -999,7 +1026,7 @@ ESOS_USER_TASK(ecan_receiver)
                     ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                 }
             } else if (u8_buf_len == 0 && i8_i == MY_ID) { // if message is a request @ us
-                u16_freq = network[MY_ID].freq;
+                u16_freq = network[lookupTeamIDFromArrayIndex(MY_ID)].freq;
                 buf[0] = (uint8_t)(u16_freq >> 8);
                 buf[1] = (uint8_t)(u16_freq & 0xFF);
 
@@ -1015,12 +1042,12 @@ ESOS_USER_TASK(ecan_receiver)
         } else if (u8_msg_type == CANMSG_TYPE_AMPLITUDE) {
             if (u8_buf_len == 1) { // message contains data, so store it and update accordingly
                 buf[0] = u3p5toipart(buf[0]) * 10 + u3p5tofpart(buf[0]); // format from 3p5 to deci
-                network[i8_i].ampl = buf[0]; // set new waveform selection to local storage
+                network[lookupTeamIDFromArrayIndex(i8_i)].ampl = buf[0]; // set new waveform selection to local storage
                 if (i8_i == MY_ID) {
                     // if message targets our board, store data in wvform menu and update daca
                     ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                     ESOS_TASK_WAIT_ON_SEND_STRING("updating my ampl: ");
-                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(network[i8_i].ampl);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(network[lookupTeamIDFromArrayIndex(i8_i)].ampl);
                     ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                     ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                     ampl.entries[0].value = buf[0];
@@ -1030,16 +1057,16 @@ ESOS_USER_TASK(ecan_receiver)
                 } else if (i8_i == network_menu.u8_choice) {
                     ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                     ESOS_TASK_WAIT_ON_SEND_STRING("updating ampl: ");
-                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(network[i8_i].ampl);
+                    ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(network[lookupTeamIDFromArrayIndex(i8_i)].ampl);
                     ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                     ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                     // if message is updating the board that this board is subscribed to, update dacb
                     ESOS_ALLOCATE_CHILD_TASK(update_hdl);
-                    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[i8_i].wvform, 50,
-                                             network[i8_i].ampl);
+                    ESOS_TASK_SPAWN_AND_WAIT(update_hdl, update_wvform, 1, network[lookupTeamIDFromArrayIndex(i8_i)].wvform, 50,
+                                             network[lookupTeamIDFromArrayIndex(i8_i)].ampl);
                 }
             } else if (u8_buf_len == 0 && i8_i == MY_ID) { // if message is a request @ us
-                buf[0] = network[MY_ID].ampl;
+                buf[0] = network[lookupTeamIDFromArrayIndex(MY_ID)].ampl;
                 buf[0] = dtou3p5(buf[0] / 10, buf[0] % 10); // format deci to 3p5
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("sending ampl: ");
@@ -1052,7 +1079,7 @@ ESOS_USER_TASK(ecan_receiver)
         } else if (u8_msg_type == CANMSG_TYPE_LEDS) {
             // 1 byte led display value
             if (u8_buf_len == 1) {
-                network[i8_i].leds = buf[0];
+                network[lookupTeamIDFromArrayIndex(i8_i)].leds = buf[0];
                 if (i8_i == MY_ID) {
                     leds.entries[0].value = buf[0];
                     ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
@@ -1060,7 +1087,7 @@ ESOS_USER_TASK(ecan_receiver)
                     ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                 }
             } else if (u8_buf_len == 0 && i8_i == MY_ID) {
-                buf[0] = network[MY_ID].leds;
+                buf[0] = network[lookupTeamIDFromArrayIndex(MY_ID)].leds;
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("sending leds: ");
                 ESOS_TASK_WAIT_ON_SEND_UINT8_AS_HEX_STRING(buf[0]);
@@ -1082,7 +1109,7 @@ ESOS_USER_TASK(ecan_beacon_network)
     ESOS_TASK_BEGIN();
 
     while (TRUE) {
-        ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_BEACON), 0, 0);
+        ESOS_ECAN_SEND(CANMSG_TYPE_BEACON | calcMsgID(MY_ID), 0, 0);
         ESOS_TASK_WAIT_TICKS(ECAN_BEACON_INTERVAL);
     }
 
@@ -1117,19 +1144,19 @@ ESOS_USER_TASK(ecan_beacon_temp)
         fpart = fpart / 100;
         static uint8_t newfpart;
         newfpart = (uint8_t)fpart;
-        network[MY_ID].temp_lm60 = (int16_t)((ipart << 8) | newfpart);
+        network[lookupTeamIDFromArrayIndex(MY_ID)].temp_lm60 = (int16_t)((ipart << 8) | newfpart);
 
-        buf[0] = network[MY_ID].temp_lm60 >> 8;
-        buf[1] = network[MY_ID].temp_lm60;
+        buf[0] = network[lookupTeamIDFromArrayIndex(MY_ID)].temp_lm60 >> 8;
+        buf[1] = network[lookupTeamIDFromArrayIndex(MY_ID)].temp_lm60;
 
-        ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_TEMPERATURE1), buf, 2);
+        ESOS_ECAN_SEND(CANMSG_TYPE_TEMPERATURE1 | calcMsgID(MY_ID), buf, 2);
         ESOS_TASK_WAIT_TICKS(ECAN_BEACON_TEMP_INTERVAL);
         /* ds1631 */
         ESOS_TASK_WAIT_ON_AVAILABLE_I2C();
         ESOS_TASK_WAIT_ON_WRITE1I2C1(DS1631ADDR, 0xAA); // Send READ command
         ESOS_TASK_WAIT_ON_READ2I2C1(DS1631ADDR, buf[0], buf[1]);
         ESOS_TASK_SIGNAL_AVAILABLE_I2C();
-        ESOS_ECAN_SEND(MY_MSG_ID(CANMSG_TYPE_TEMPERATURE2), buf, 2);
+        ESOS_ECAN_SEND(CANMSG_TYPE_TEMPERATURE2 | calcMsgID(MY_ID), buf, 2);
         ESOS_TASK_WAIT_TICKS(ECAN_BEACON_TEMP_INTERVAL);
     }
 
@@ -1147,14 +1174,14 @@ ESOS_USER_TASK(ecan_clean_network)
         for (u8_i = 0; u8_i < NUM_OF_IDS; u8_i++) {
             u32_curr_tick = esos_GetSystemTick();
             // skip if this board or other has board never been online
-            if (u8_i == MY_ID || network[u8_i].tick == 0) {
+            if (u8_i == MY_ID || network_boards[u8_i].tick == 0) {
                 continue;
-            } else if (u32_curr_tick - network[u8_i].tick > ECAN_CLEAN_INTERVAL) {
-                network[u8_i].tick = 0;
+            } else if (u32_curr_tick - network_boards[u8_i].tick > ECAN_CLEAN_INTERVAL) {
+                network_boards[u8_i].tick = 0;
                 network_menu.ast_items[u8_i].b_hidden = TRUE;
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("Removing ");
-                ESOS_TASK_WAIT_ON_SEND_STRING(network[u8_i].can_id.psz_name);
+                ESOS_TASK_WAIT_ON_SEND_STRING(network_boards[u8_i].can_id.psz_name);
                 ESOS_TASK_WAIT_ON_SEND_STRING("'s board from network.\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
             }
@@ -1170,19 +1197,19 @@ void initialize_network()
 {
     uint8_t u8_i;
     for (u8_i = 0; u8_i < NUM_OF_IDS; u8_i++) {
-        network[u8_i].can_id = aCANID_IDs[u8_i];
+        network_boards[u8_i].can_id = aCANID_IDs[u8_i];
         if (u8_i == MY_ID) {
-            network[u8_i].tick = esos_GetSystemTick();
+            network_boards[u8_i].tick = esos_GetSystemTick();
         } else {
-            network[u8_i].tick = 0;
+            network_boards[u8_i].tick = 0;
         }
-        network[u8_i].temp_lm60 = 0;
-        network[u8_i].temp_1631 = 0;
+        network[lookupTeamIDFromArrayIndex(u8_i)].temp_lm60 = 0;
+        network[lookupTeamIDFromArrayIndex(u8_i)].temp_1631 = 0;
     }
-    network[MY_ID].wvform = wvform.u8_choice;
-    network[MY_ID].freq = freq.entries[0].value;
-    network[MY_ID].ampl = ampl.entries[0].value;
-    network[MY_ID].leds = leds.entries[0].value;
+    network[lookupTeamIDFromArrayIndex(MY_ID)].wvform = wvform.u8_choice;
+    network[lookupTeamIDFromArrayIndex(MY_ID)].freq = freq.entries[0].value;
+    network[lookupTeamIDFromArrayIndex(MY_ID)].ampl = ampl.entries[0].value;
+    network[lookupTeamIDFromArrayIndex(MY_ID)].leds = leds.entries[0].value;
 }
 
 void user_init()
