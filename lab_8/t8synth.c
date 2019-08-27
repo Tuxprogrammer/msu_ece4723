@@ -53,9 +53,9 @@ static uint16_t wvform_dataB[128];
 // #define ECAN_BEACON_TEMP_INTERVAL 30000
 // #define ECAN_CLEAN_INTERVAL 120000
 
-#define ECAN_BEACON_INTERVAL 60000
-#define ECAN_BEACON_TEMP_INTERVAL 30000
-#define ECAN_CLEAN_INTERVAL 120000
+#define ECAN_BEACON_INTERVAL 6000
+#define ECAN_BEACON_TEMP_INTERVAL 300000
+#define ECAN_CLEAN_INTERVAL 10000
 
 #define TEMP_REQUEST_INTERVAL 1000
 
@@ -111,7 +111,7 @@ static esos_menu_longmenu_t network_menu = {
     .u8_choice = MY_ID,
     .ast_items =
         {
-            { "cbb330", "1", 1 }, { "woc17", "1", 1 }, { "lec426", "1", 1 }, { "sc2257", "1", 1 },
+            { "cbb330", "1", 1 },  { "sc2257", "1", 1 }, { "lec426", "1", 1 }, { "woc17", "1", 1 },
             { "jdf469", "1", 1 },  { "jtn136", "2", 1 }, { "nrs171", "2", 1 }, { "igh9", "2", 1 },
             { "law448", "2", 1 },  { "rkh134", "2", 1 }, { "gs656", "3", 1 },  { "lrh282", "3", 1 },
             { "reo74", "3", 1 },   { "bmf151", "3", 1 }, { "rfj18", "3", 1 },  { "dc2274", "4", 1 },
@@ -818,7 +818,6 @@ ESOS_USER_TASK(ecan_receiver)
                     network_menu.ast_items[i8_i].b_hidden = FALSE;
                 } else {
                     ESOS_TASK_WAIT_ON_SEND_STRING("Refreshing board: ");
-                    network_menu.ast_items[i8_i].b_hidden = FALSE;
                 }
                 ESOS_TASK_WAIT_ON_SEND_STRING(network[i8_i].can_id.psz_name);
                 ESOS_TASK_WAIT_ON_SEND_STRING("\n");
@@ -845,8 +844,8 @@ ESOS_USER_TASK(ecan_receiver)
                     }
 
                     lm60.value = buf[0] * 100 + buf[1];
+                    network[i8_i].tick = esos_GetSystemTick();
                 }
-                network[i8_i].tick = esos_GetSystemTick();
             } else if (u8_buf_len == 0 && i8_i == MY_ID) {
                 ESOS_ALLOCATE_CHILD_TASK(read_temp);
                 ESOS_TASK_SPAWN_AND_WAIT(read_temp, _WAIT_ON_AVAILABLE_SENSOR, TEMP_CHANNEL, ESOS_SENSOR_VREF_3V0);
@@ -886,9 +885,7 @@ ESOS_USER_TASK(ecan_receiver)
         } else if (u8_msg_type == CANMSG_TYPE_TEMPERATURE2) {
             if (u8_buf_len == 2) {
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
-                ESOS_TASK_WAIT_ON_SEND_STRING("Storing DS1631 data from another board: ");
-                ESOS_TASK_WAIT_ON_SEND_UINT8_AS_DEC_STRING(i8_i);
-                ESOS_TASK_WAIT_ON_SEND_UINT8('\n');
+                ESOS_TASK_WAIT_ON_SEND_STRING("Storing DS1631 data from another board\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
 
                 i16_temp = buf[0] << 8 | buf[1];
@@ -918,6 +915,7 @@ ESOS_USER_TASK(ecan_receiver)
                 ESOS_TASK_WAIT_ON_SEND_STRING("\n");
                 ESOS_TASK_SIGNAL_AVAILABLE_OUT_COMM();
                 network[i8_i].tick = esos_GetSystemTick();
+
             } else if (u8_buf_len == 0 && i8_i == MY_ID) {
                 ESOS_TASK_WAIT_ON_AVAILABLE_OUT_COMM();
                 ESOS_TASK_WAIT_ON_SEND_STRING("Responding to DS1631 data request\n");
