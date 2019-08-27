@@ -1,0 +1,62 @@
+- hosts: all
+  become: yes
+  tasks:
+    - name: Create the 'esos' user
+      # python -c "from passlib.hash import sha512_crypt; import getpass; print(sha512_crypt.using(rounds=5000).hash(getpass.getpass()))"
+      # Username = esos
+      # Password = esos
+      user: |
+        name=esos append=yes state=present createhome=yes shell=/bin/bash
+        password=$6$B0UMKSKfI4Ufr9A2$un0Q5hbuej71zhkyiVnEriXW2Q53xYo4On4ZWAWfTqtoK6vMzm9Wp1.6igL7ncPgpOrxSjhVAlZZCDQJ9wmn3.
+    - name: Allow 'esos' to have passwordless sudo
+      lineinfile:
+        dest: /etc/sudoers
+        line: 'esos ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+      
+    - name: Install APT dependencies for dev environment
+      apt:
+        update_cache: yes
+        cache_valid_time: 8640
+        name: [
+          'python3-pip',
+          'python3-setuptools',
+          'python3-wheel',
+          'python3-dev'
+        ]
+
+    - name: pip install dependencies
+      shell: pip3 install setuptools scons psutil
+
+    - name: Download Microchip XC16 compiler
+      get_url:
+        url: http://www.microchip.com/mplabxc16linux
+        dest: /tmp/xc16.run
+
+    - name: Enable execution of XC16 installer
+      file:
+        path: /tmp/xc16.run
+        owner: esos
+        group: esos
+        mode: '0755'
+
+    - name: Install xc16
+      shell: |
+        /tmp/xc16.run --mode unattended --unattendedmodeui none \
+        --netservername localhost --LicenseType FreeMode --prefix /opt/microchip/xc16
+
+    - name: Allow 'esos' to have passwordless sudo
+      lineinfile:
+        dest: /home/esos/.bashrc
+        line: 'export PATH=$PATH:/opt/microchip/xc16/bin'
+
+    - name: Download Microchip X IDE
+      unarchive:
+        src: https://www.microchip.com/mplabx-ide-linux-installer
+        dest: /tmp
+        remote_src: yes
+
+    - name: Install mplabx
+      shell: |
+        /tmp/MPLABX-v5.25-linux-installer.sh -- --mode unattended --unattendedmodeui none \
+        --installdir /opt/microchip/mplabx --8bitmcu 0 --32bitmcu 0 --othermcu 0

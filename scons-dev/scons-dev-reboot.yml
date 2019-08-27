@@ -1,0 +1,5 @@
+- hosts: all
+  become: yes
+  tasks:
+    - name: Reboot system and wait for it to come back
+      reboot:

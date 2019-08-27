@@ -1,0 +1,56 @@
+# frozen_string_literal: true
+
+# scons-dev Vagrant box
+Vagrant.configure('2') do |config|
+  config.vagrant.plugins = ['vagrant-disksize']
+  # Ubuntu 16.04 (32-bit)
+  config.vm.box = 'ubuntu/xenial32'
+  config.vm.box_url = 'http://files.vagrantup.com/xenial32.box'
+  # TODO: Change the disk size to whatever you want, it has to be > 10GB
+  config.disksize.size = '32GB'
+
+  config.vm.define :dev do |dev|
+    dev.vm.hostname = 'scons-dev'
+
+    dev.vm.provider 'virtualbox' do |vb|
+      vb.name = 'ESOS Development Environment'
+      # TODO: Change these parameters to give the box as much as your system can
+      # These are the absolute minimum values.
+      vb.cpus = 4
+      vb.memory = 4096
+
+      # This enables usb passthrough on the host
+      vb.customize ['modifyvm', :id, '--usb', 'on']
+      vb.customize ['modifyvm', :id, '--usbehci', 'on']
+    end
+
+    dev.vm.provision 'shell', inline:
+      # TODO: Change this line to adjust which desktop environment you get.
+      # Supported options:
+      #   ubuntu-desktop (unity - default)
+      #   kubuntu-desktop (kde)
+      #   lubuntu-desktop (lxde)
+      #   mate-desktop (mate)
+      #   ubuntu-gnome-desktop
+      #   xubuntu-desktop (xfce)
+      # TODO: Also, add any user-specified packages you want to these lines.
+      'apt-get update && apt-get upgrade -y && apt-get install -y \
+        build-essential dkms kubuntu-desktop virtualbox-guest-dkms \
+        virtualbox-guest-utils virtualbox-guest-x11 htop git'
+
+    dev.vm.provision 'ansible' do |ansible|
+      ansible.verbose = true
+      ansible.playbook = 'scons-dev-reboot.yml'
+    end
+
+    dev.vm.provision 'ansible' do |ansible|
+      ansible.verbose = true
+      ansible.playbook = 'scons-dev-install.yml'
+    end
+
+    dev.vm.provision 'ansible' do |ansible|
+      ansible.verbose = true
+      ansible.playbook = 'scons-dev-reboot.yml'
+    end
+  end
+end
